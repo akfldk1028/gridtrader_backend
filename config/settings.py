@@ -30,7 +30,8 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = ["localhost",
-                 "127.0.0.1", ]
+                 "127.0.0.1",
+                 'red-cr6199bv2p9s73akv6g0',]
 
 # Application definition
 CUSTOM_APPS = [
@@ -74,11 +75,27 @@ Q_CLUSTER = {
     'queue_limit': 30,  # 대기열에 넣을 수 있는 최대 작업 수
     'label': 'Django Q',  # 관리자 인터페이스에 표시될 레이블
     'redis': {
-        'host': '127.0.0.1',  # Redis 서버의 호스트 주소
+        'host': 'red-cr6199bv2p9s73akv6g0',  # Redis 서버의 호스트 주소
         'port': 6379,  # Redis 서버의 포트 번호
         'db': 0,  # 사용할 Redis 데이터베이스 번호
     }
 }
+# Q_CLUSTER = {
+#     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
+#     'workers': 4,  # 동시에 실행할 작업자(worker) 수
+#     'recycle': 500,  # 작업자가 이 개수만큼의 작업을 처리한 후 재시작됨
+#     'timeout': 60,  # 작업의 최대 실행 시간(초). 이 시간을 초과하면 작업이 중단됨
+#     'compress': True,  # 작업 데이터를 압축하여 저장
+#     'cpu_affinity': 1,  # 각 작업자를 특정 CPU 코어에 할당 (1은 모든 코어 사용)
+#     'save_limit': 250,  # 결과를 저장할 최대 작업 수
+#     'queue_limit': 30,  # 대기열에 넣을 수 있는 최대 작업 수
+#     'label': 'Django Q',  # 관리자 인터페이스에 표시될 레이블
+#     'redis': {
+#         'host': '127.0.0.1',  # Redis 서버의 호스트 주소
+#         'port': 6379,  # Redis 서버의 포트 번호
+#         'db': 0,  # 사용할 Redis 데이터베이스 번호
+#     }
+# }
 
 
 LOGGING = {
@@ -161,39 +178,66 @@ else:
 
 
 
-REDIS_HOST = 'localhost'
+# REDIS_HOST = 'localhost'
+# REDIS_PORT = 6379
+REDIS_HOST = 'red-cr6199bv2p9s73akv6g0'
 REDIS_PORT = 6379
 
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/0',
+        'LOCATION': 'redis://red-cr6199bv2p9s73akv6g0:6379/0',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     },
     'logSession': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'LOCATION': 'redis://red-cr6199bv2p9s73akv6g0:6379/1',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     },
     'account': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/2',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
-    },
-    'llm': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/3',
+        'LOCATION': 'redis://red-cr6199bv2p9s73akv6g0:6379/2',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     },
 }
+
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': 'redis://127.0.0.1:6379/0',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     },
+#     'logSession': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': 'redis://127.0.0.1:6379/1',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     },
+#     'account': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': 'redis://127.0.0.1:6379/2',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     },
+#     'llm': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': 'redis://127.0.0.1:6379/3',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     },
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

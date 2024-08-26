@@ -13,9 +13,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 import api.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),  # HTTP 요청은 여기서 처리됩니다 (urls.py 사용)
-    "websocket": URLRouter(api.routing.websocket_urlpatterns),  # WebSocket 요청은 여기서 처리됩니다
-})
+application = get_asgi_application()
+
 #
 # application = get_asgi_application()
