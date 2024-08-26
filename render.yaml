@@ -11,7 +11,7 @@ services:
     name: gridtrader_backend
     runtime: python
     region: singapore
-    buildCommand: "./build.sh"
+    buildCommand: "./build.sh && python manage.py collectstatic --noinput"
     startCommand: "python -m gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker"
     envVars:
       - key: DATABASE_URL
