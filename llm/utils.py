@@ -15,7 +15,7 @@ from django.conf import settings
 
 # Binance 클라이언트 초기화
 client = Client(binance_api_key, binance_api_secret)
-symbol = settings.symbol
+symbol = "BNBUSDT"
 
 
 def get_bitcoin_data():
