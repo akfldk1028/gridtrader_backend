@@ -31,7 +31,9 @@ DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = ["localhost",
                  "127.0.0.1",
-                 'red-cr6199bv2p9s73akv6g0',]
+                 'red-cr6199bv2p9s73akv6g0',
+                 'gridtrader-backend.onrender.com'
+                 ]
 
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -174,7 +176,7 @@ else:
     DATABASES = {
         'default': dj_database_url.config(
             # Replace this value with your local database's connection string.
-            default='postgresql://postgres:postgres@localhost:5432/gridtrader_db',
+            default='postgresql://hanvit:fpf0LlljqMQ8M5vOuU96rBaRycZJSmoT@dpg-cr61es3tq21c73b7p1ag-a.singapore-postgres.render.com/gridtrader',
             conn_max_age=600
         ),
         'OPTIONS': {
