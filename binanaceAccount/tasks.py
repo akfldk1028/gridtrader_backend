@@ -7,22 +7,32 @@ from datetime import datetime
 from TradeLog.views import BaseDataView  # BaseDataView를 TradeLog 앱에서 가져옵니다
 from django_q.tasks import schedule
 from django_q.models import Schedule
+from django.db.utils import ProgrammingError
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 60 * 3  # 10 minutes in seconds
 
 
 def setup_update_account_info_task():
-    # 기존 스케줄이 있다면 삭제
-    Schedule.objects.filter(func='binanaceAccount.tasks.update_account_info').delete()
+    try:
+        with transaction.atomic():
+            # 기존 스케줄이 있다면 삭제
+            Schedule.objects.filter(func='binanaceAccount.tasks.update_account_info').delete()
 
-    # 새 스케줄 생성
-    schedule(
-        'binanaceAccount.tasks.update_account_info',
-        schedule_type='I',
-        minutes=2,
-        repeats=-1
-    )
+            # 새 스케줄 생성
+            schedule(
+                'binanaceAccount.tasks.update_account_info',
+                schedule_type='I',
+                minutes=2,
+                repeats=-1
+            )
+    except ProgrammingError:
+        # 데이터베이스 테이블이 아직 없는 경우
+        print("Warning: Django-Q 테이블이 아직 생성되지 않았습니다. 마이그레이션을 실행해주세요.")
+    except Exception as e:
+        # 다른 예외 처리
+        print(f"스케줄 설정 중 오류 발생: {str(e)}")
 
 
 def set_cache_data(account_type, key, data):
