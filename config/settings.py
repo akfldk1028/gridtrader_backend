@@ -160,6 +160,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5000",
+                            'http://127.0.0.1:8000', 'https://35.247.191.93:5000','http://35.247.191.93:5000', ]
+    CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', "http://127.0.0.1:3000", "http://127.0.0.1:5000",
+                            'https://35.247.191.93:5000','http://35.247.191.93:5000',]
+
+else:
+    CORS_ALLOWED_ORIGINS = ["https://gridtrader-backend.onrender.com", "https://motive.beauty",
+                            'https://35.247.191.93:5000','http://35.247.191.93:5000',]
+    CSRF_TRUSTED_ORIGINS = ["https://gridtrader-backend.onrender.com", "https://motive.beauty",
+                            'https://35.247.191.93:5000','http://35.247.191.93:5000',]
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 if DEBUG:
