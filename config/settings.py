@@ -33,6 +33,13 @@ ALLOWED_HOSTS = ["localhost",
                  "127.0.0.1",
                  'red-cr6199bv2p9s73akv6g0',]
 
+
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+
 # Application definition
 CUSTOM_APPS = [
     "binanaceAccount.apps.BinanaceaccountConfig",
@@ -293,3 +300,4 @@ BINANCE_API_KEY = env("BINANCE_API_KEY")
 BINANCE_API_SECRET = env("BINANCE_API_SECRET")
 OPENAI_API_KEY = env("OPENAI_API_KEY")
 OPENAI_MODEL_NAME = env("OPENAI_API_KEY")
+symbol = "BNBUSDT"

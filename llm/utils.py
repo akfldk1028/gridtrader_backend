@@ -11,10 +11,11 @@ from django.conf import settings
 # Binance API 키 설정 (테스트넷 사용 시)
 binance_api_key = settings.BINANCE_API_KEY
 binance_api_secret = settings.BINANCE_API_SECRET
+from django.conf import settings
 
 # Binance 클라이언트 초기화
-client = Client(binance_api_key, binance_api_secret, testnet=True)
-symbol = "BNBUSDT"
+client = Client(binance_api_key, binance_api_secret)
+symbol = settings.symbol
 
 
 def get_bitcoin_data():
