@@ -18,8 +18,10 @@ def setup_bitcoin_analysis_task():
     # 현재 시간 가져오기
     now = datetime.now()
 
-    # 다음 실행 시간 계산 (현재 시간의 다음 정각)
-    next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    # 다음 실행 시간을 오늘 또는 내일 12시 20분으로 설정
+    next_run = now.replace(hour=12, minute=20, second=0, microsecond=0)
+    if now >= next_run:
+        next_run += timedelta(days=1)
 
     # 3시간마다 실행되는 스케줄 생성
     schedule(
@@ -27,14 +29,13 @@ def setup_bitcoin_analysis_task():
         schedule_type=Schedule.HOURLY,
         next_run=next_run,
         repeats=-1,  # 무한 반복
-        minutes=0,
-        hours=3  # 3시간마다
+        every=3  # 3시간마다
     )
 
     # 즉시 한 번 실행
     async_task('llm.tasks.run_bitcoin_analysis')
 
-    print(f"Bitcoin analysis task scheduled to run every 3 hours, starting from {next_run}")
+    print(f"비트코인 분석 작업이 {next_run.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
 # def setup_bitcoin_analysis_task():
 #     # 기존 스케줄이 있다면 삭제

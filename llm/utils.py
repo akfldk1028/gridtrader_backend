@@ -219,6 +219,7 @@ def perform_analysis():
     selected_strategy = extract_strategy(result_string)
     current_price = get_current_bitcoin_price()
     print("######################")
+    print("간다이이이이이잇")
     print(f"Analysis complete. Results have been saved to report.md and the database.")
     print(f"Selected Grid Strategy: {selected_strategy}")
     print(f"Price Prediction: {price_prediction}")
