@@ -19,7 +19,7 @@ def setup_bitcoin_analysis_task():
     now = datetime.now()
 
     # 다음 실행 시간을 오늘 또는 내일 12시 20분으로 설정
-    next_run = now.replace(hour=12, minute=40, second=0, microsecond=0)
+    next_run = now.replace(hour=17, minute=15, second=0, microsecond=0)
     if now >= next_run:
         next_run += timedelta(days=1)
 
@@ -144,26 +144,3 @@ def run_bitcoin_analysis():
         print(f"Error in run_bitcoin_analysis task: {str(e)}")
         raise
 
-
-# def get_strategy_config(strategy_name='240824', update_grid_strategy=None):
-#     try:
-#         strategy_config = StrategyConfig.objects.get(name=strategy_name)
-#         config = strategy_config.config['INIT']
-#
-#         vt_symbol = config.get('vt_symbol')
-#         symbol = vt_symbol.split('.')[0]  # "BNBUSDT.BINANCE"에서 "BNBUSDT" 추출
-#         grid_strategy = config['setting'].get('grid_strategy')
-#
-#         if update_grid_strategy:
-#             config['setting']['grid_strategy'] = update_grid_strategy
-#             strategy_config.save()
-#             grid_strategy = update_grid_strategy
-#
-#         return {
-#             'vt_symbol': symbol,
-#             'grid_strategy': grid_strategy
-#         }
-#     except ObjectDoesNotExist:
-#         print(f"Strategy configuration not found for: {strategy_name}")
-#         return None
-#

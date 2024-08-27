@@ -1,4 +1,12 @@
+## django-q
+각 task 응답도 postgre로
+매일 한번씩 수익률 계산
+
+
+
 ## redis 객체들 전부 get 만들고
+
+
 ## postgre get
 ## react 무한루프 
 

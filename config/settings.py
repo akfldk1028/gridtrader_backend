@@ -164,7 +164,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 if DEBUG:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'http://127.0.0.1:8000', 'https://35.247.191.93:5000', 'http://35.247.191.93:5000',
-                            '34.143.243.175']
+                            'http://34.143.243.175']
     CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.243.175']
 
@@ -181,13 +181,14 @@ CSRF_COOKIE_SECURE = True
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 if DEBUG:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'OPTIONS': {
-                'timeout': 20,  # 타임아웃 시간을 20초로 설정
-            }
-        }
+        'default': dj_database_url.config(
+            # Replace this value with your local database's connection string.
+            default='postgresql://hanvit:fpf0LlljqMQ8M5vOuU96rBaRycZJSmoT@dpg-cr61es3tq21c73b7p1ag-a.singapore-postgres.render.com/gridtrader',
+            conn_max_age=600
+        ),
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+        },
     }
 else:
     DATABASES = {
