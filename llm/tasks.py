@@ -34,7 +34,8 @@ def setup_bitcoin_analysis_task():
 
     # 즉시 한 번 실행
     # async_task('llm.tasks.run_bitcoin_analysis')
-
+    ########print
+    print('시시시시ㅣ발')
     print(f"비트코인 분석 작업이 {next_run.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
 # def setup_bitcoin_analysis_task():
