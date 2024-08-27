@@ -15,20 +15,35 @@ def setup_bitcoin_analysis_task():
     # 기존 스케줄이 있다면 삭제
     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
 
+
+    #     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
+    #     if now > evening_run:
+    #         evening_run += timedelta(days=1)
+    #
+    #     # 오전 9시에 실행되는 스케줄 생성
+    #     schedule(
+    #         'llm.tasks.run_bitcoin_analysis',
+    #         schedule_type=Schedule.DAILY,
+    #         next_run=morning_run
+    #     )
     # 현재 시간 가져오기
+
+
     now = datetime.now()
 
     # 다음 실행 시간을 오늘 또는 내일 12시 20분으로 설정
-    next_run = now.replace(hour=17, minute=15, second=0, microsecond=0)
-    if now >= next_run:
-        next_run += timedelta(days=1)
+    # 현재 시간 기준으로 다음 정각을 찾기
+    now = datetime.now()
+    next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    if now.minute == 0:
+        next_hour = now
 
-    # 3시간마다 실행되는 스케줄 생성 (CRON 사용)
+    # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
     schedule(
         'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron='20 */3 * * *',  # 매 3시간마다 20분에 실행
-        next_run=next_run,
+        cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
+        next_run=next_hour,
         repeats=-1  # 무한 반복
     )
 
@@ -36,41 +51,8 @@ def setup_bitcoin_analysis_task():
     # async_task('llm.tasks.run_bitcoin_analysis')
     ########print
     print('시시시시ㅣ발')
-    print(f"비트코인 분석 작업이 {next_run.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
+    print(f"비트코인 분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
-# def setup_bitcoin_analysis_task():
-#     # 기존 스케줄이 있다면 삭제
-#     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
-#
-#     # 현재 날짜 가져오기
-#     now = datetime.now()
-#
-#     # 오늘 오전 9시
-#     morning_run = now.replace(hour=9, minute=0, second=0, microsecond=0)
-#     if now > morning_run:
-#         morning_run += timedelta(days=1)
-#
-#     # 오늘 오후 9시
-#     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
-#     if now > evening_run:
-#         evening_run += timedelta(days=1)
-#
-#     # 오전 9시에 실행되는 스케줄 생성
-#     schedule(
-#         'llm.tasks.run_bitcoin_analysis',
-#         schedule_type=Schedule.DAILY,
-#         next_run=morning_run
-#     )
-#
-#     # 오후 9시에 실행되는 스케줄 생성
-#     schedule(
-#         'llm.tasks.run_bitcoin_analysis',
-#         schedule_type=Schedule.DAILY,
-#         next_run=evening_run
-#     )
-#
-#     # 즉시 한 번 실행
-#     async_task('llm.tasks.run_bitcoin_analysis')
 
 
 
