@@ -159,8 +159,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
-
 if DEBUG:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'http://127.0.0.1:8000', 'https://35.247.191.93:5000', 'http://35.247.191.93:5000',
@@ -176,6 +174,8 @@ else:
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -295,8 +295,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
-
 
 # This production code might break development mode, so we check whether we're in DEBUG mode
 if not DEBUG:
