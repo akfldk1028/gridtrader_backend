@@ -23,13 +23,13 @@ def setup_bitcoin_analysis_task():
     if now >= next_run:
         next_run += timedelta(days=1)
 
-    # 3시간마다 실행되는 스케줄 생성
+    # 3시간마다 실행되는 스케줄 생성 (CRON 사용)
     schedule(
         'llm.tasks.run_bitcoin_analysis',
-        schedule_type=Schedule.HOURLY,
+        schedule_type=Schedule.CRON,
+        cron='20 */3 * * *',  # 매 3시간마다 20분에 실행
         next_run=next_run,
-        repeats=-1,  # 무한 반복
-        every=3  # 3시간마다
+        repeats=-1  # 무한 반복
     )
 
     # 즉시 한 번 실행
