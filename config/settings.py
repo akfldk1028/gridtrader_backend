@@ -165,13 +165,13 @@ if DEBUG:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'http://127.0.0.1:8000', 'https://35.247.191.93:5000', 'http://35.247.191.93:5000',
                             'http://34.143.243.175']
-    CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', "http://127.0.0.1:3000", "http://127.0.0.1:5000",
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.243.175']
 
 else:
-    CORS_ALLOWED_ORIGINS = ["https://gridtrader-backend.onrender.com",
+    CORS_ALLOWED_ORIGINS = ["https://gridtrader-backend.onrender.com", "http://localhost:3000", "http://127.0.0.1:3000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.243.175']
-    CSRF_TRUSTED_ORIGINS = ["https://gridtrader-backend.onrender.com",
+    CSRF_TRUSTED_ORIGINS = ["https://gridtrader-backend.onrender.com", "http://localhost:3000", "http://127.0.0.1:3000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.243.175']
 
 SESSION_COOKIE_SECURE = True

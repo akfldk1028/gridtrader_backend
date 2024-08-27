@@ -56,7 +56,107 @@ class BinanceAPIView(APIView):
             print(f"Error syncing server time: {e}")
             raise
 
+class FuturesBalanceView(BinanceAPIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sync_server_time()
+    def get(self, request):
+        try:
+            futures_balances = self.client.futures_account_balance()
+            futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
+            return Response(futures_usdt_balance)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class ServerTimeView(BinanceAPIView):
+
+
+    def get(self, request):
+        try:
+            server_time = self.client.get_server_time()
+            return Response(server_time)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class FuturesPositionView(BinanceAPIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sync_server_time()
+
+    def get_positions(self, symbol=None):
+        params = {}
+        if symbol:
+            params['symbol'] = symbol
+
+        # 타임스탬프를 직접 추가
+        params['timestamp'] = int(time.time() * 1000 + self.client.timestamp_offset)
+
+        return self.client.futures_position_information(**params)
+
+    def calculate_profit_percentage(self, position):
+        try:
+            position_amt = Decimal(position.get('positionAmt', '0'))
+            if position_amt == Decimal('0'):
+                return Decimal('0')
+
+            entry_price = Decimal(position.get('entryPrice', '0'))
+            mark_price = Decimal(position.get('markPrice', '0'))
+            leverage = Decimal(position.get('leverage', '1'))
+
+            if entry_price == Decimal('0'):
+                return Decimal('0')
+
+            if position_amt > Decimal('0'):  # Long position
+                profit_percentage = ((mark_price - entry_price) / entry_price) * 100 * leverage
+            else:  # Short position
+                profit_percentage = ((entry_price - mark_price) / entry_price) * 100 * leverage
+
+            return profit_percentage.quantize(Decimal('0.01'))
+        except (InvalidOperation, ZeroDivisionError):
+            return Decimal('0')
+
+    def get(self, request):
+        print(f"Received request: {request.GET}")
+        try:
+            # symbols = request.GET.get('symbols', '')
+            # symbols = [symbol.strip().upper() for symbol in symbols.split(',') if symbol.strip()]
+            symbol = request.GET.get('symbols', '')
+            symbols = symbol.strip().upper() if symbol else ''
+
+            # print(f"Processing symbols: {symbols}")
+
+            all_positions = self.get_positions(symbols)
+            # print(f"Received positions from Binance: {all_positions}")
+
+            if symbols:
+                filtered_positions = [pos for pos in all_positions if pos["symbol"] in symbols]
+            else:
+                filtered_positions = [pos for pos in all_positions if float(pos["positionAmt"]) != 0]
+
+            for pos in filtered_positions:
+                pos['profit_percentage'] = float(self.calculate_profit_percentage(pos))
+
+            print(f"Returning filtered positions: {filtered_positions}")
+            return Response(filtered_positions)
+        except BinanceAPIException as e:
+            print(f"BinanceAPIException: {str(e)}")
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class FuturesAccountInfoView(BinanceAPIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sync_server_time()
+    def get(self, request):
+        try:
+            futures_account_info = self.client.futures_account()
+            return Response(futures_account_info)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 class AccountInfoView(BinanceAPIView):
     def get(self, request):
         try:
@@ -198,16 +298,7 @@ class SpotAccountInfoView(BinanceAPIView):
 
 
 
-class FuturesAccountInfoView(BinanceAPIView):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.sync_server_time()
-    def get(self, request):
-        try:
-            futures_account_info = self.client.futures_account()
-            return Response(futures_account_info)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SpotBalanceView(BinanceAPIView):
     def __init__(self, **kwargs):
@@ -227,95 +318,6 @@ class SpotBalanceView(BinanceAPIView):
 
 
 
-class FuturesBalanceView(BinanceAPIView):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.sync_server_time()
-    def get(self, request):
-        try:
-            futures_balances = self.client.futures_account_balance()
-            futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
-            return Response(futures_usdt_balance)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-class ServerTimeView(BinanceAPIView):
-
-
-    def get(self, request):
-        try:
-            server_time = self.client.get_server_time()
-            return Response(server_time)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class FuturesPositionView(BinanceAPIView):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.sync_server_time()
-
-    def get_positions(self, symbol=None):
-        params = {}
-        if symbol:
-            params['symbol'] = symbol
-
-        # 타임스탬프를 직접 추가
-        params['timestamp'] = int(time.time() * 1000 + self.client.timestamp_offset)
-
-        return self.client.futures_position_information(**params)
-
-    def calculate_profit_percentage(self, position):
-        try:
-            position_amt = Decimal(position.get('positionAmt', '0'))
-            if position_amt == Decimal('0'):
-                return Decimal('0')
-
-            entry_price = Decimal(position.get('entryPrice', '0'))
-            mark_price = Decimal(position.get('markPrice', '0'))
-            leverage = Decimal(position.get('leverage', '1'))
-
-            if entry_price == Decimal('0'):
-                return Decimal('0')
-
-            if position_amt > Decimal('0'):  # Long position
-                profit_percentage = ((mark_price - entry_price) / entry_price) * 100 * leverage
-            else:  # Short position
-                profit_percentage = ((entry_price - mark_price) / entry_price) * 100 * leverage
-
-            return profit_percentage.quantize(Decimal('0.01'))
-        except (InvalidOperation, ZeroDivisionError):
-            return Decimal('0')
-
-    def get(self, request):
-        print(f"Received request: {request.GET}")
-        try:
-            # symbols = request.GET.get('symbols', '')
-            # symbols = [symbol.strip().upper() for symbol in symbols.split(',') if symbol.strip()]
-            symbol = request.GET.get('symbols', '')
-            symbols = symbol.strip().upper() if symbol else ''
-
-            # print(f"Processing symbols: {symbols}")
-
-            all_positions = self.get_positions(symbols)
-            # print(f"Received positions from Binance: {all_positions}")
-
-            if symbols:
-                filtered_positions = [pos for pos in all_positions if pos["symbol"] in symbols]
-            else:
-                filtered_positions = [pos for pos in all_positions if float(pos["positionAmt"]) != 0]
-
-            for pos in filtered_positions:
-                pos['profit_percentage'] = float(self.calculate_profit_percentage(pos))
-
-            print(f"Returning filtered positions: {filtered_positions}")
-            return Response(filtered_positions)
-        except BinanceAPIException as e:
-            print(f"BinanceAPIException: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            print(f"Unexpected error: {str(e)}")
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
