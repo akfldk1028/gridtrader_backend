@@ -19,7 +19,7 @@ def setup_bitcoin_analysis_task():
     now = datetime.now()
 
     # 다음 실행 시간을 오늘 또는 내일 12시 20분으로 설정
-    next_run = now.replace(hour=12, minute=25, second=0, microsecond=0)
+    next_run = now.replace(hour=12, minute=40, second=0, microsecond=0)
     if now >= next_run:
         next_run += timedelta(days=1)
 
