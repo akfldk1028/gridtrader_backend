@@ -7,18 +7,24 @@ import numpy as np
 import re
 from datetime import datetime
 from django.conf import settings
+from TradeStrategy.models import StrategyConfig
+# from common.models import CommonModel
+from .tasks import get_strategy_config
 
-# Binance API 키 설정 (테스트넷 사용 시)
-binance_api_key = settings.BINANCE_API_KEY
-binance_api_secret = settings.BINANCE_API_SECRET
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 # Binance 클라이언트 초기화
-client = Client(binance_api_key, binance_api_secret)
 symbol = "BNBUSDT"
 
 
-def get_bitcoin_data():
+
+
+binance_api_key = settings.BINANCE_API_KEY
+binance_api_secret = settings.BINANCE_API_SECRET
+client = Client(binance_api_key, binance_api_secret)
+
+def get_bitcoin_data(symbol):
     try:
         # 1시간 및 1일 간격의 데이터 가져오기
         hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_2HOUR, limit=500)
@@ -133,7 +139,22 @@ def get_current_bitcoin_price():
 # 기존 get_current_bitcoin_price 함수 내용...
 
 def perform_analysis():
-    bitcoin_data = get_bitcoin_data()
+
+    config = get_strategy_config()
+    if not config:
+        print("Strategy configuration is invalid.")
+        return None
+
+    vt_symbol = config['vt_symbol']
+    grid_strategy = config['grid_strategy']
+
+    print(f"Current grid_strategy: {grid_strategy}")
+
+    bitcoin_data = get_bitcoin_data(vt_symbol)
+    if not bitcoin_data:
+        print("Failed to fetch bitcoin data.")
+        return None
+
 
     # 태스크 생성
     task1 = Task(

@@ -6,45 +6,69 @@ from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
 from datetime import time, datetime, timedelta
 from TradeStrategy.models import StrategyConfig
+from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def setup_bitcoin_analysis_task():
     # 기존 스케줄이 있다면 삭제
     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
 
-    # 현재 날짜 가져오기
+    # 현재 시간 가져오기
     now = datetime.now()
 
-    # 오늘 오전 9시
-    morning_run = now.replace(hour=9, minute=0, second=0, microsecond=0)
-    if now > morning_run:
-        morning_run += timedelta(days=1)
+    # 다음 실행 시간 계산 (현재 시간의 다음 정각)
+    next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
-    # 오늘 오후 9시
-    evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
-    if now > evening_run:
-        evening_run += timedelta(days=1)
-
-    # 오전 9시에 실행되는 스케줄 생성
+    # 3시간마다 실행되는 스케줄 생성
     schedule(
         'llm.tasks.run_bitcoin_analysis',
-        schedule_type=Schedule.DAILY,
-        next_run=morning_run
-    )
-
-    # 오후 9시에 실행되는 스케줄 생성
-    schedule(
-        'llm.tasks.run_bitcoin_analysis',
-        schedule_type=Schedule.DAILY,
-        next_run=evening_run
+        schedule_type=Schedule.HOURLY,
+        next_run=next_run,
+        repeats=-1,  # 무한 반복
+        minutes=0,
+        hours=3  # 3시간마다
     )
 
     # 즉시 한 번 실행
     async_task('llm.tasks.run_bitcoin_analysis')
+
+    print(f"Bitcoin analysis task scheduled to run every 3 hours, starting from {next_run}")
+
+# def setup_bitcoin_analysis_task():
+#     # 기존 스케줄이 있다면 삭제
+#     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
+#
+#     # 현재 날짜 가져오기
+#     now = datetime.now()
+#
+#     # 오늘 오전 9시
+#     morning_run = now.replace(hour=9, minute=0, second=0, microsecond=0)
+#     if now > morning_run:
+#         morning_run += timedelta(days=1)
+#
+#     # 오늘 오후 9시
+#     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
+#     if now > evening_run:
+#         evening_run += timedelta(days=1)
+#
+#     # 오전 9시에 실행되는 스케줄 생성
+#     schedule(
+#         'llm.tasks.run_bitcoin_analysis',
+#         schedule_type=Schedule.DAILY,
+#         next_run=morning_run
+#     )
+#
+#     # 오후 9시에 실행되는 스케줄 생성
+#     schedule(
+#         'llm.tasks.run_bitcoin_analysis',
+#         schedule_type=Schedule.DAILY,
+#         next_run=evening_run
+#     )
+#
+#     # 즉시 한 번 실행
+#     async_task('llm.tasks.run_bitcoin_analysis')
 
 
 
@@ -104,6 +128,31 @@ def run_bitcoin_analysis():
     except Exception as e:
         logger.error(f"Error in run_bitcoin_analysis task: {str(e)}", exc_info=True)
         raise
+
+
+def get_strategy_config(strategy_name='240824', update_grid_strategy=None):
+    try:
+        strategy_config = StrategyConfig.objects.get(name=strategy_name)
+        config = strategy_config.config['INIT']
+
+        vt_symbol = config.get('vt_symbol')
+        symbol = vt_symbol.split('.')[0]  # "BNBUSDT.BINANCE"에서 "BNBUSDT" 추출
+        grid_strategy = config['setting'].get('grid_strategy')
+
+        if update_grid_strategy:
+            config['setting']['grid_strategy'] = update_grid_strategy
+            strategy_config.save()
+            grid_strategy = update_grid_strategy
+
+        return {
+            'vt_symbol': symbol,
+            'grid_strategy': grid_strategy
+        }
+    except ObjectDoesNotExist:
+        print(f"Strategy configuration not found for: {strategy_name}")
+        return None
+
+
 
 # Django admin에서 주기적 태스크를 설정합니다.
 # 1. Admin 페이지에 접속합니다.

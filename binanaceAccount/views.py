@@ -331,24 +331,40 @@ class LeverageView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+
     def post(self, request):
         try:
             symbols = request.data.get('symbols', [])
             leverage = int(request.data.get('leverage', 10))
+            margin_type = request.data.get('margin_type', 'CROSS').upper()
+
+            if margin_type not in ['CROSS', 'ISOLATED']:
+                return Response({'error': 'Invalid margin type. Must be CROSS or ISOLATED'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
             results = []
             account = BinanceAccount.objects.first()
+
             for symbol in symbols:
                 try:
-                    self.client.futures_change_margin_type(symbol=symbol, marginType="CROSS")
-                    result = self.client.futures_change_leverage(symbol=symbol, leverage=leverage)
-                    results.append({'symbol': symbol, 'status': 'success', 'result': result})
+                    # Set margin type
+                    self.client.futures_change_margin_type(symbol=symbol, marginType=margin_type)
+
+                    # Set leverage
+                    leverage_result = self.client.futures_change_leverage(symbol=symbol, leverage=leverage)
+
+                    results.append({
+                        'symbol': symbol,
+                        'status': 'success',
+                        'margin_type': margin_type,
+                        'leverage_result': leverage_result
+                    })
 
                     BinanceSymbolSettings.objects.update_or_create(
                         symbol=symbol,
                         defaults={
                             'leverage': leverage,
-                            'margin_type': 'CROSS',
+                            'margin_type': margin_type,
                             'account': account
                         }
                     )
@@ -358,7 +374,6 @@ class LeverageView(BinanceAPIView):
             return Response(results)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class OpenOrderView(BinanceAPIView):
     def __init__(self, **kwargs):
