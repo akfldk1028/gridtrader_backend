@@ -9,10 +9,11 @@ from datetime import datetime
 from django.conf import settings
 from TradeStrategy.models import StrategyConfig
 # from common.models import CommonModel
-from .tasks import get_strategy_config
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from llm.etc import get_strategy_config
+
 
 # Binance 클라이언트 초기화
 symbol = "BNBUSDT"
