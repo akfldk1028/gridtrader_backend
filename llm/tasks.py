@@ -105,13 +105,19 @@ def update_strategy_config():
 
 
 def run_bitcoin_analysis():
-    logger.info("Starting Bitcoin analysis task")
+    import time
+
+    start_time = time.time()
+    print("Starting Bitcoin analysis task")
     try:
-        logger.info("Calling perform_analysis function")
+        print("Calling perform_analysis function")
+        analysis_start = time.time()
         result = perform_analysis()
-        logger.info(f"Analysis completed. Results: {result}")
-        logger.info("Creating AnalysisResult object")
-        #TODO SYMBOLE 별로 나중에 여러번
+        analysis_end = time.time()
+        print(f"Analysis completed in {analysis_end - analysis_start:.2f} seconds. Results: {result}")
+
+        print("Creating AnalysisResult object")
+        db_start = time.time()
         analysis_result = AnalysisResult.objects.create(
             symbol=result['symbol'],
             result_string=result['result_string'],
@@ -120,13 +126,20 @@ def run_bitcoin_analysis():
             confidence=float(result['confidence']) if result['confidence'] else None,
             selected_strategy=result['selected_strategy']
         )
+        db_end = time.time()
+        print(f"AnalysisResult object created in {db_end - db_start:.2f} seconds. ID: {analysis_result.id}")
 
-        logger.info(f"AnalysisResult object created with id: {analysis_result.id}")
+        update_start = time.time()
         update_strategy_config()
+        update_end = time.time()
+        print(f"Strategy config updated in {update_end - update_start:.2f} seconds")
 
-        return f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
+        total_time = time.time() - start_time
+        print(f"Total execution time: {total_time:.2f} seconds")
+
+        return f"Analysis completed successfully in {total_time:.2f} seconds. AnalysisResult id: {analysis_result.id}"
     except Exception as e:
-        logger.error(f"Error in run_bitcoin_analysis task: {str(e)}", exc_info=True)
+        print(f"Error in run_bitcoin_analysis task: {str(e)}", exc_info=True)
         raise
 
 
@@ -152,19 +165,3 @@ def get_strategy_config(strategy_name='240824', update_grid_strategy=None):
         print(f"Strategy configuration not found for: {strategy_name}")
         return None
 
-
-
-# Django admin에서 주기적 태스크를 설정합니다.
-# 1. Admin 페이지에 접속합니다.
-# 2. "Periodic tasks" 섹션으로 이동합니다.
-# 3. "ADD PERIODIC TASK" 버튼을 클릭합니다.
-# 4. 태스크 이름을 입력합니다 (예: "Bitcoin Analysis").
-# 5. Task (registered) 드롭다운에서 "analyzer.tasks.run_bitcoin_analysis"를 선택합니다.
-# 6. Interval 스케줄을 선택하고 20분으로 설정합니다.
-# 7. Save 버튼을 클릭합니다.
-
-# 7. Celery Worker 및 Beat 실행
-
-# 터미널에서 다음 명령어를 실행합니다.
-# celery -A config worker -l info
-# celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
