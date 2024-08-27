@@ -11,15 +11,12 @@ class LlmConfig(AppConfig):
         post_migrate.connect(self.on_post_migrate, sender=self)
 
     def on_post_migrate(self, sender, **kwargs):
-        # 데이터베이스 연결 확인
-
-        # Django-Q 스케줄 설정
         try:
             from .tasks import setup_bitcoin_analysis_task
             setup_bitcoin_analysis_task()
         except ProgrammingError:
             print("Warning: Django-Q 테이블이 존재하지 않습니다. 마이그레이션을 실행해주세요.")
-        except ImportError:
-            print("Error: tasks 모듈을 가져올 수 없습니다.")
+        except ImportError as e:
+            print(f"Error importing tasks module: {str(e)}")
         except Exception as e:
             print(f"Error: 스케줄 설정 중 오류 발생: {str(e)}")
