@@ -25,26 +25,43 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.tasks = set()
         await self.sync_server_time()
+        self.periodic_task = asyncio.create_task(self.periodically_send_data())
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard("binance_updates", self.channel_name)
         for task in self.tasks:
             task.cancel()
+        self.periodic_task.cancel()  # 주기적 작업 취소
         await self.client.close_connection()
+    async def periodically_send_data(self):
+        while True:
+            await self.get_futures_balance()
+            await self.get_futures_positions('')
+            await asyncio.sleep(2)  # 5초마다 데이터 전송
 
     async def receive(self, text_data):
         data = json.loads(text_data)
         action = data.get('action')
 
         if action == 'get_futures_balance':
-            task = asyncio.create_task(self.get_futures_balance())
-            self.tasks.add(task)
-            task.add_done_callback(self.tasks.discard)
+            await self.get_futures_balance()
         elif action == 'get_futures_positions':
             symbols = data.get('symbols', '')
-            task = asyncio.create_task(self.get_futures_positions(symbols))
-            self.tasks.add(task)
-            task.add_done_callback(self.tasks.discard)
+            await self.get_futures_positions(symbols)
+
+    # async def receive(self, text_data):
+    #     data = json.loads(text_data)
+    #     action = data.get('action')
+    #
+    #     if action == 'get_futures_balance':
+    #         task = asyncio.create_task(self.get_futures_balance())
+    #         self.tasks.add(task)
+    #         task.add_done_callback(self.tasks.discard)
+    #     elif action == 'get_futures_positions':
+    #         symbols = data.get('symbols', '')
+    #         task = asyncio.create_task(self.get_futures_positions(symbols))
+    #         self.tasks.add(task)
+    #         task.add_done_callback(self.tasks.discard)
         # Add more actions as needed
 
     async def sync_server_time(self):
