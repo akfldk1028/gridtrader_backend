@@ -3,7 +3,7 @@ from django.core.cache import caches
 from .views import SpotAccountInfoView, FuturesAccountInfoView, SpotBalanceView, FuturesBalanceView,FuturesPositionView
 from rest_framework.test import APIRequestFactory
 import json
-from datetime import datetime
+from datetime import time, datetime, timedelta
 from TradeLog.views import BaseDataView  # BaseDataView를 TradeLog 앱에서 가져옵니다
 from django_q.tasks import schedule, async_task
 from django_q.models import Schedule
@@ -34,15 +34,18 @@ def setup_update_account_info_task():
                 minutes=2,
                 repeats=-1
             )
+            # now = datetime.now()
+            now = datetime.now()
+            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
-            # 일일 잔고 저장 스케줄 추가
-            # 일일 잔고 저장 스케줄 추가
+            # 12시간마다 해야할듯
             schedule(
-                'binanaceAccount.tasks.trigger_save_daily_balance',
-                schedule_type='D',  # Daily
-                repeats=-1
+                'llm.tasks.run_bitcoin_analysis',
+                schedule_type=Schedule.CRON,
+                cron='0 */12 * * *',  # 매 3시간마다 정각에 실행
+                next_run=next_hour,
+                repeats=-1  # 무한 반복
             )
-            async_task('binanaceAccount.tasks.trigger_save_daily_balance')
 
     except ProgrammingError:
         # 데이터베이스 테이블이 아직 없는 경우

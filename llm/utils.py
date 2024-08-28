@@ -194,9 +194,9 @@ def perform_analysis():
         determine the most suitable grid trading strategy among regular grid, short grid, and long grid. 
         Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
         Use the following guidelines, but also consider the overall market analysis:
-        - If the price prediction is 'Up' with confidence over 70%, consider 'LongGrid'.
-        - If the price prediction is 'Down' with confidence over 70%, consider 'ShortGrid'.
-        - For confidence levels between 55-70%, consider a mix of strategies or lean towards 'RegularGrid'.
+        - If the price prediction is 'Up' with confidence over 70% or 70%, consider 'LongGrid'.
+        - If the price prediction is 'Down' with confidence over 70% or 70%, consider 'ShortGrid'.
+        - For confidence levels between 55-69%, consider a mix of strategies or lean towards 'RegularGrid'.
         - For confidence levels below 55%, strongly consider 'RegularGrid'.
         End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         expected_output="Recommended grid trading strategy with justification and final selection",
