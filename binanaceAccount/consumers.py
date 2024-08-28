@@ -10,12 +10,15 @@ from decimal import Decimal, InvalidOperation
 from asgiref.sync import sync_to_async
 from .models import DailyBalance
 from django.utils import timezone
+from django.apps import apps
 
 
 
 
 
 class BinanceAPIConsumer(AsyncWebsocketConsumer):
+
+
     async def connect(self):
         await self.accept()
         await self.channel_layer.group_add("binance_updates", self.channel_name)
@@ -122,6 +125,8 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         try:
             futures_balance = await self.get_futures_balance()
             futures_positions = await self.get_futures_positions('')
+
+            DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
 
             await sync_to_async(DailyBalance.objects.update_or_create)(
                 date=timezone.now().date(),
