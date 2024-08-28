@@ -11,6 +11,7 @@ from asgiref.sync import sync_to_async
 from .models import DailyBalance
 from django.utils import timezone
 from django.apps import apps
+import pandas as pd
 
 
 
@@ -48,6 +49,11 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         elif action == 'get_futures_positions':
             symbols = data.get('symbols', '')
             await self.get_futures_positions(symbols)
+        elif action == 'get_bitcoin_data_and_price':
+            symbol = data.get('symbol')
+            await self.get_bitcoin_data_and_price(symbol)
+        elif action == 'save_daily_balance':
+            await self.save_daily_balance()
 
     # async def receive(self, text_data):
     #     data = json.loads(text_data)
@@ -138,19 +144,38 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         except (InvalidOperation, ZeroDivisionError):
             return 0
 
-    async def save_daily_balance(self, event=None):
+    async def get_futures_balance_data(self):
+        futures_balances = await self.client.futures_account_balance()
+        futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
+        return futures_usdt_balance
+
+    async def get_futures_positions_data(self, symbols):
+        params = {}
+        if symbols:
+            params['symbol'] = symbols.strip().upper()
+
+        all_positions = await self.client.futures_position_information(**params)
+
+        filtered_positions = [
+            pos for pos in all_positions
+            if (not symbols or pos["symbol"] in symbols.split(',')) and float(pos["positionAmt"]) != 0
+        ]
+
+        for pos in filtered_positions:
+            pos['profit_percentage'] = self.calculate_profit_percentage(pos)
+
+        return filtered_positions
+    async def save_daily_balance(self):
         try:
-            futures_balance = await self.get_futures_balance()
-            futures_positions = await self.get_futures_positions('')
+            futures_balance = await self.get_futures_balance_data()
+            futures_positions = await self.get_futures_positions_data('')
 
             DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
 
-            await sync_to_async(DailyBalance.objects.update_or_create)(
+            await sync_to_async(DailyBalance.objects.create)(
                 date=timezone.now().date(),
-                defaults={
-                    'futures_balance': futures_balance,
-                    'futures_positions': futures_positions
-                }
+                futures_balance=futures_balance,
+                futures_positions=futures_positions
             )
 
             await self.send(text_data=json.dumps({
@@ -161,4 +186,50 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f"Error saving daily balance: {str(e)}"
+            }))
+    async def get_bitcoin_data_and_price(self, symbol):
+        try:
+            hourly_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1HOUR, limit=500)
+            daily_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1DAY, limit=500)
+            ticker = await self.client.get_symbol_ticker(symbol=symbol)
+            current_price = float(ticker['price'])
+            def process_candles(candles):
+                df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+                                                    'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
+                                                    'taker_buy_quote_asset_volume', 'ignore'])
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+
+                # RSI 계산
+                delta = df['close'].diff()
+                gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                rs = gain / loss
+                df['RSI'] = 100 - (100 / (1 + rs))
+
+                # 스토캐스틱 계산
+                low_14 = df['low'].rolling(window=14).min()
+                high_14 = df['high'].rolling(window=14).max()
+                df['%K'] = (df['close'] - low_14) / (high_14 - low_14) * 100
+                df['%D'] = df['%K'].rolling(window=3).mean()
+
+                return df.to_dict(orient='records')
+
+            bitcoin_data = {
+                'hourly': process_candles(hourly_candles),
+                'daily': process_candles(daily_candles),
+                'current_price': current_price
+            }
+
+            await self.send(text_data=json.dumps({
+                'type': 'bitcoin_data_and_price',
+                'data': bitcoin_data
+            }))
+
+
+        except BinanceAPIException as e:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Error fetching Bitcoin data: {str(e)}"
             }))

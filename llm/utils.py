@@ -13,6 +13,9 @@ from TradeStrategy.models import StrategyConfig
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from llm.etc import get_strategy_config
+from binanaceAccount.consumers import BinanceAPIConsumer
+import websockets
+import json
 
 
 # Binance 클라이언트 초기화
@@ -25,43 +28,43 @@ binance_api_key = settings.BINANCE_API_KEY
 binance_api_secret = settings.BINANCE_API_SECRET
 client = Client(binance_api_key, binance_api_secret)
 
-def get_bitcoin_data(symbol):
-    try:
-        # 1시간 및 1일 간격의 데이터 가져오기
-        hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=500)
-        daily_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=500)
-
-        def process_candles(candles):
-            df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
-                                                'taker_buy_quote_asset_volume', 'ignore'])
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-            df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
-                float)
-
-            # RSI 계산
-            delta = df['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss
-            df['RSI'] = 100 - (100 / (1 + rs))
-
-            # 스토캐스틱 계산
-            low_14 = df['low'].rolling(window=14).min()
-            high_14 = df['high'].rolling(window=14).max()
-            df['%K'] = (df['close'] - low_14) / (high_14 - low_14) * 100
-            df['%D'] = df['%K'].rolling(window=3).mean()
-
-            return df.to_dict(orient='records')
-
-        return {
-            'hourly': process_candles(hourly_candles),
-            'daily': process_candles(daily_candles)
-        }
-    except BinanceAPIException as e:
-        print(f"An error occurred: {e}")
-        return None
+# def get_bitcoin_data(symbol):
+#     try:
+#         # 1시간 및 1일 간격의 데이터 가져오기
+#         hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=500)
+#         daily_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=500)
+#
+#         def process_candles(candles):
+#             df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+#                                                 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
+#                                                 'taker_buy_quote_asset_volume', 'ignore'])
+#             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+#             df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+#             df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
+#                 float)
+#
+#             # RSI 계산
+#             delta = df['close'].diff()
+#             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+#             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+#             rs = gain / loss
+#             df['RSI'] = 100 - (100 / (1 + rs))
+#
+#             # 스토캐스틱 계산
+#             low_14 = df['low'].rolling(window=14).min()
+#             high_14 = df['high'].rolling(window=14).max()
+#             df['%K'] = (df['close'] - low_14) / (high_14 - low_14) * 100
+#             df['%D'] = df['%K'].rolling(window=3).mean()
+#
+#             return df.to_dict(orient='records')
+#
+#         return {
+#             'hourly': process_candles(hourly_candles),
+#             'daily': process_candles(daily_candles)
+#         }
+#     except BinanceAPIException as e:
+#         print(f"An error occurred: {e}")
+#         return None
 
 hourly_analyst = Agent(
     role='Hourly Bitcoin Market Analyst',
@@ -128,18 +131,18 @@ def extract_strategy(text):
     return None
 
 
-def get_current_bitcoin_price():
-    try:
-        ticker = client.get_symbol_ticker(symbol=symbol)
-        return float(ticker['price'])
-    except BinanceAPIException as e:
-        print(f"Error fetching current Bitcoin price: {e}")
-        return None
+# def get_current_bitcoin_price():
+#     try:
+#         ticker = client.get_symbol_ticker(symbol=symbol)
+#         return float(ticker['price'])
+#     except BinanceAPIException as e:
+#         print(f"Error fetching current Bitcoin price: {e}")
+#         return None
 
 
 # 기존 get_current_bitcoin_price 함수 내용...
 
-def perform_analysis():
+async def perform_analysis():
 
     config = get_strategy_config()
     if not config:
@@ -150,11 +153,29 @@ def perform_analysis():
     grid_strategy = config['grid_strategy']
 
     print(f"Current grid_strategy: {grid_strategy}")
+    # WebSocket 연결
+    uri = f"wss://gridtrader-backend.onrender.com/ws/binance/"
+    async with websockets.connect(uri) as websocket:
+        # Bitcoin 데이터 요청
+        await websocket.send(json.dumps({
+            'action': 'get_bitcoin_data_and_price',
+            'symbol': vt_symbol
+        }))
 
-    bitcoin_data = get_bitcoin_data(vt_symbol)
-    if not bitcoin_data:
-        print("Failed to fetch bitcoin data.")
-        return None
+        # 응답 대기
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data['type'] == 'error':
+            print(f"Error: {data['message']}")
+            return None
+
+        if data['type'] != 'bitcoin_data':
+            print(f"Unexpected response type: {data['type']}")
+            return None
+
+        bitcoin_data = data['data']
+        current_price = bitcoin_data['current_price']
 
 
     # 태스크 생성
@@ -216,7 +237,6 @@ def perform_analysis():
 
     price_prediction, confidence = extract_prediction(result_string)
     selected_strategy = extract_strategy(result_string)
-    current_price = get_current_bitcoin_price()
     print("######################")
     print("간다이이이이이잇")
     print(f"Analysis complete. Results have been saved to report.md and the database.")

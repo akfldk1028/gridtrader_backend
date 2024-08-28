@@ -13,7 +13,8 @@ from .models import DailyBalance
 from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-
+import websockets
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -54,38 +55,29 @@ def setup_update_account_info_task():
         print(f"스케줄 설정 중 오류 발생: {str(e)}")
 
 
-def trigger_save_daily_balance():
+async def trigger_save_daily_balance():
     print("Starting update_account_info task")
-    factory = APIRequestFactory()
-    request = factory.get('/')
+    uri = f"wss://gridtrader-backend.onrender.com/ws/binance/"
 
     try:
-        futures_account_view = FuturesAccountInfoView()
-        futures_account_response = futures_account_view.get(request)
-        futures_account_info = futures_account_response.data
+        async with websockets.connect(uri) as websocket:
+            # Send a message to trigger the save_daily_balance action
+            await websocket.send(json.dumps({
+                'action': 'save_daily_balance'
+            }))
 
-        futures_balance_view = FuturesBalanceView()
-        futures_balance_response = futures_balance_view.get(request)
-        futures_usdt_balance = futures_balance_response.data
+            # Wait for the response
+            response = await websocket.recv()
+            response_data = json.loads(response)
 
+            if response_data.get('type') == 'daily_balance_saved':
+                print("Daily balance saved successfully")
+            else:
+                print(f"Error: {response_data.get('message')}")
 
-        futures_Position_view = FuturesPositionView()
-        futures_Position_response = futures_Position_view.get(request)
-        filtered_positions = futures_Position_response.data
-
-
-        # DailyBalance 모델에 저장
-        with transaction.atomic():
-            DailyBalance.objects.update_or_create(
-                date=timezone.now().date(),
-                defaults={
-                    'futures_balance': futures_usdt_balance,
-                    'futures_positions': filtered_positions
-                }
-            )
     except Exception as e:
-        logger.error(f"Error saving daily balance: {str(e)}")
-        print("Daily balance saved successfully");
+        logger.error(f"Error in WebSocket communication: {str(e)}")
+        print(f"Error saving daily balance: {str(e)}")
 
 def set_cache_data(account_type, key, data):
     """
