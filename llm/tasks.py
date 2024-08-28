@@ -34,9 +34,15 @@ def setup_bitcoin_analysis_task():
     # 다음 실행 시간을 오늘 또는 내일 12시 20분으로 설정
     # 현재 시간 기준으로 다음 정각을 찾기
     now = datetime.now()
-    next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
     if now.minute == 0:
         next_hour = now
+
+
+    next_hour = now.replace(hour=10, minute=40, second=0, microsecond=0)
+    if now > next_hour:
+        next_hour += timedelta(days=1)
+
 
     # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
     schedule(

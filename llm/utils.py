@@ -28,7 +28,7 @@ client = Client(binance_api_key, binance_api_secret)
 def get_bitcoin_data(symbol):
     try:
         # 1시간 및 1일 간격의 데이터 가져오기
-        hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_2HOUR, limit=500)
+        hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=500)
         daily_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=500)
 
         def process_candles(candles):
@@ -183,9 +183,8 @@ def perform_analysis():
     task3 = Task(
         description="""Based on all the analyses provided, predict whether the Bitcoin price is more likely to go up or down in the near future.
         Provide a brief explanation for your prediction and assign a confidence level to your prediction as a percentage.
-        Be conservative in your confidence estimates. Only assign high confidence (>70%) if there are very strong indicators.
-        For most predictions, aim for a confidence level between 50-65%.
-        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 60%' or 'Down 55%'.""",
+        Look at the short-term and long-term situation and evaluate it objectively. If you make a mistake, your current Bitcoin futures investment may be liquidated.
+        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 70%' or 'Down 65%'.""",
         expected_output="Bitcoin price movement prediction with explanation and confidence level",
         agent=price_predictor
     )
