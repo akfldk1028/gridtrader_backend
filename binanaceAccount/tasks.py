@@ -38,9 +38,9 @@ def setup_update_account_info_task():
             now = datetime.now()
             next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
-            # 12시간마다 해야할듯
+
             schedule(
-                'llm.tasks.run_bitcoin_analysis',
+                'binanaceAccount.tasks.trigger_save_daily_balance',
                 schedule_type=Schedule.CRON,
                 cron='0 */12 * * *',  # 매 3시간마다 정각에 실행
                 next_run=next_hour,
