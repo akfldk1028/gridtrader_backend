@@ -435,34 +435,3 @@ class CloseOrderView(BinanceAPIView):
 
 
 
-class BinanceFutureProfitView(BinanceAPIView):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.sync_server_time()
-    def get(self, request):
-        try:
-            end_time = int(timezone.now().timestamp() * 1000)
-            start_time = int((timezone.now() - timedelta(hours=1)).timestamp() * 1000)
-
-            income_history = self.client.futures_income_history(startTime=start_time, endTime=end_time)
-
-            hourly_profit = sum(Decimal(income['income']) for income in income_history)
-
-            futures_account_info = self.client.futures_account()
-            current_balance = Decimal(futures_account_info['totalWalletBalance'])
-
-            # profit_obj = BinanceFutureProfit.objects.create(
-            #     timestamp=timezone.now(),
-            #     hourly_profit=hourly_profit,
-            #     current_balance=current_balance
-            # )
-
-            # response_data = {
-            #     'timestamp': profit_obj.timestamp,
-            #     'hourly_profit': float(profit_obj.hourly_profit),
-            #     'current_balance': float(profit_obj.current_balance)
-            # }
-
-            # return Response(response_data)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

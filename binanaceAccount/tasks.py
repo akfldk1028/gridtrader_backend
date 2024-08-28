@@ -24,25 +24,24 @@ def setup_update_account_info_task():
     try:
         with transaction.atomic():
             # 기존 스케줄이 있다면 삭제
-            Schedule.objects.filter(func='binanaceAccount.tasks.update_account_info').delete()
+            # Schedule.objects.filter(func='binanaceAccount.tasks.update_account_info').delete()
+            # schedule(
+            #     'binanaceAccount.tasks.update_account_info',
+            #     schedule_type='I',
+            #     minutes=2,
+            #     repeats=-1
+            # )
+
             Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance').delete()
 
-            # 새 스케줄 생성
-            schedule(
-                'binanaceAccount.tasks.update_account_info',
-                schedule_type='I',
-                minutes=2,
-                repeats=-1
-            )
             # now = datetime.now()
             now = datetime.now()
             next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
-
             schedule(
                 'binanaceAccount.tasks.trigger_save_daily_balance',
                 schedule_type=Schedule.CRON,
-                cron='0 */12 * * *',  # 매 3시간마다 정각에 실행
+                cron='0 */1 * * *',  # 매 3시간마다 정각에 실행
                 next_run=next_hour,
                 repeats=-1  # 무한 반복
             )
@@ -56,13 +55,37 @@ def setup_update_account_info_task():
 
 
 def trigger_save_daily_balance():
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "binance_updates",
-        {
-            "type": "save_daily_balance"
-        }
-    )
+    print("Starting update_account_info task")
+    factory = APIRequestFactory()
+    request = factory.get('/')
+
+    try:
+        futures_account_view = FuturesAccountInfoView()
+        futures_account_response = futures_account_view.get(request)
+        futures_account_info = futures_account_response.data
+
+        futures_balance_view = FuturesBalanceView()
+        futures_balance_response = futures_balance_view.get(request)
+        futures_usdt_balance = futures_balance_response.data
+
+
+        futures_Position_view = FuturesPositionView()
+        futures_Position_response = futures_Position_view.get(request)
+        filtered_positions = futures_Position_response.data
+
+
+        # DailyBalance 모델에 저장
+        with transaction.atomic():
+            DailyBalance.objects.update_or_create(
+                date=timezone.now().date(),
+                defaults={
+                    'futures_balance': futures_usdt_balance,
+                    'futures_positions': filtered_positions
+                }
+            )
+    except Exception as e:
+        logger.error(f"Error saving daily balance: {str(e)}")
+        print("Daily balance saved successfully");
 
 def set_cache_data(account_type, key, data):
     """
