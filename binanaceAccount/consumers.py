@@ -37,7 +37,7 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         while True:
             await self.get_futures_balance()
             await self.get_futures_positions('')
-            await asyncio.sleep(1)  # 2초마다 데이터 전송
+            await asyncio.sleep(2)  # 2초마다 데이터 전송
 
     async def receive(self, text_data):
         data = json.loads(text_data)
