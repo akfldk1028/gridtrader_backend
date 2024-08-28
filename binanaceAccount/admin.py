@@ -1,6 +1,23 @@
 from django.contrib import admin
-from .models import BinanceOrder, BinanceSymbolSettings
+from .models import BinanceOrder, BinanceSymbolSettings, DailyBalance
 
+@admin.register(DailyBalance)
+class DailyBalanceAdmin(admin.ModelAdmin):
+    list_display = ('date', 'get_futures_balance', 'get_futures_positions')
+    list_filter = ('date',)
+    search_fields = ('date',)
+    ordering = ('-date',)
+
+    def get_futures_balance(self, obj):
+        return obj.futures_balance.get('balance', 'N/A')
+    get_futures_balance.short_description = 'Futures Balance'
+
+    def get_futures_positions(self, obj):
+        positions = obj.futures_positions
+        if isinstance(positions, list):
+            return ', '.join([f"{pos.get('symbol', 'N/A')}: {pos.get('positionAmt', 'N/A')}" for pos in positions[:3]])
+        return 'N/A'
+    get_futures_positions.short_description = 'Futures Positions (Top 3)'
 
 @admin.register(BinanceOrder)
 class BinanceOrderAdmin(admin.ModelAdmin):
