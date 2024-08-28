@@ -1,31 +1,5 @@
 from django.contrib import admin
-from .models import BinanceAccount, BinanceFuturesAccount, SpotBalance, FutureBalance, BinanceFuturePosition, BinanceOrder, BinanceSymbolSettings
-
-@admin.register(BinanceFuturePosition)
-class BinanceFuturePositionAdmin(admin.ModelAdmin):
-    list_display = ('symbol', 'position_amt', 'entry_price', 'mark_price', 'un_realized_profit', 'leverage', 'profit_percentage')
-    search_fields = ('symbol',)
-
-@admin.register(SpotBalance)
-class SpotBalanceAdmin(admin.ModelAdmin):
-    list_display = ('asset', 'free', 'locked')
-    search_fields = ('asset',)
-
-@admin.register(FutureBalance)
-class FutureBalanceAdmin(admin.ModelAdmin):
-    list_display = ('asset', 'balance', 'cross_wallet_balance', 'cross_un_pnl', 'available_balance', 'max_withdraw_amount', 'margin_available', 'update_time')
-    search_fields = ('asset',)
-
-@admin.register(BinanceAccount)
-class BinanceAccountAdmin(admin.ModelAdmin):
-    list_display = ('account_type', 'can_trade', 'can_withdraw', 'can_deposit', 'update_time', 'maker_commission', 'taker_commission')
-    list_filter = ('account_type', 'can_trade', 'can_withdraw', 'can_deposit')
-    raw_id_fields = ('spotbalance',)
-
-@admin.register(BinanceFuturesAccount)
-class BinanceFuturesAccountAdmin(admin.ModelAdmin):
-    list_display = ('account_type', 'total_wallet_balance', 'total_unrealized_profit', 'total_margin_balance', 'available_balance', 'max_withdraw_amount')
-    raw_id_fields = ('futurebalance',)
+from .models import BinanceOrder, BinanceSymbolSettings
 
 
 @admin.register(BinanceOrder)

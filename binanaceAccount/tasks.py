@@ -5,10 +5,16 @@ from rest_framework.test import APIRequestFactory
 import json
 from datetime import datetime
 from TradeLog.views import BaseDataView  # BaseDataView를 TradeLog 앱에서 가져옵니다
-from django_q.tasks import schedule
+from django_q.tasks import schedule, async_task
 from django_q.models import Schedule
 from django.db.utils import ProgrammingError
 from django.db import transaction
+from .models import DailyBalance
+from django.utils import timezone
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 60 * 3  # 10 minutes in seconds
@@ -19,6 +25,7 @@ def setup_update_account_info_task():
         with transaction.atomic():
             # 기존 스케줄이 있다면 삭제
             Schedule.objects.filter(func='binanaceAccount.tasks.update_account_info').delete()
+            Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance').delete()
 
             # 새 스케줄 생성
             schedule(
@@ -27,6 +34,16 @@ def setup_update_account_info_task():
                 minutes=2,
                 repeats=-1
             )
+
+            # 일일 잔고 저장 스케줄 추가
+            # 일일 잔고 저장 스케줄 추가
+            schedule(
+                'binanaceAccount.tasks.trigger_save_daily_balance',
+                schedule_type='D',  # Daily
+                repeats=-1
+            )
+            async_task('binanaceAccount.tasks.trigger_save_daily_balance')
+
     except ProgrammingError:
         # 데이터베이스 테이블이 아직 없는 경우
         print("Warning: Django-Q 테이블이 아직 생성되지 않았습니다. 마이그레이션을 실행해주세요.")
@@ -34,6 +51,15 @@ def setup_update_account_info_task():
         # 다른 예외 처리
         print(f"스케줄 설정 중 오류 발생: {str(e)}")
 
+
+def trigger_save_daily_balance():
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "binance_updates",
+        {
+            "type": "save_daily_balance"
+        }
+    )
 
 def set_cache_data(account_type, key, data):
     """

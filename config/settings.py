@@ -66,12 +66,17 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     'django_json_widget',
     'django_q',
+    'channels',
 ]
 # 'django_q',
 
 INSTALLED_APPS = SYSTEM_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
-#
-# # # Django-Q 설정
+
+
+REDIS_URL = "rediss://red-cr6199bv2p9s73akv6g0:m8pIqsoIuvbXvsKTXUVK98uJJB8vSC7Z@singapore-redis.render.com:6379"
+REDIS_HOST = 'singapore-redis.render.com'
+REDIS_PORT = 6379
+
 Q_CLUSTER = {
     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
     'workers': 4,  # 동시에 실행할 작업자(worker) 수
@@ -82,11 +87,7 @@ Q_CLUSTER = {
     'save_limit': 250,  # 결과를 저장할 최대 작업 수
     'queue_limit': 30,  # 대기열에 넣을 수 있는 최대 작업 수
     'label': 'Django Q',  # 관리자 인터페이스에 표시될 레이블
-    'redis': {
-        'host': 'red-cr6199bv2p9s73akv6g0',  # Redis 서버의 호스트 주소
-        'port': 6379,  # Redis 서버의 포트 번호
-        'db': 0,  # 사용할 Redis 데이터베이스 번호
-    }
+    'redis': REDIS_URL,
 }
 # Q_CLUSTER = {
 #     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
@@ -176,7 +177,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 CORS_ALLOW_CREDENTIALS = True
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 if DEBUG:
@@ -202,32 +202,42 @@ else:
         },
     }
 
-# REDIS_HOST = 'localhost'
-# REDIS_PORT = 6379
-REDIS_HOST = 'red-cr6199bv2p9s73akv6g0'
-REDIS_PORT = 6379
-
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://red-cr6199bv2p9s73akv6g0:6379/0',
+        'LOCATION': f"{REDIS_URL}/0",
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SSL': True,
         }
     },
     'logSession': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://red-cr6199bv2p9s73akv6g0:6379/1',
+        'LOCATION': f"{REDIS_URL}/1",
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SSL': True,
         }
     },
     'account': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://red-cr6199bv2p9s73akv6g0:6379/2',
+        'LOCATION': f"{REDIS_URL}/2",
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SSL': True,
+
         }
+    },
+}
+
+ASGI_APPLICATION = 'config.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
     },
 }
 
