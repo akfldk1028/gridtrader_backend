@@ -37,8 +37,8 @@ def setup_update_account_info_task():
 
             # now = datetime.now()
             now = datetime.now()
-            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            # next_hour = now.replace(hour=11, minute=45, second=0, microsecond=0)
+            # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            next_hour = now.replace(hour=17, minute=44, second=0, microsecond=0)
 
             # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
             # if now > next_hour:
@@ -58,7 +58,8 @@ def setup_update_account_info_task():
     except Exception as e:
         # 다른 예외 처리
         print(f"스케줄 설정 중 오류 발생: {str(e)}")
-
+def trigger_save_daily_balance_wrapper():
+    trigger_save_daily_balance()
 
 def trigger_save_daily_balance():
     channel_layer = get_channel_layer()
@@ -70,8 +71,7 @@ def trigger_save_daily_balance():
     )
     print("Triggered save_daily_balance")
 
-def trigger_save_daily_balance_wrapper():
-    trigger_save_daily_balance()
+
 
 
 def set_cache_data(account_type, key, data):

@@ -124,20 +124,31 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
 
 class OnDemandDataConsumer(BinanceBaseConsumer):
     async def connect(self):
+        import uuid
+
         await super().connect()
-        self.channel_name = "binanceQ"
-        await self.channel_layer.group_add(self.channel_name, self.channel_name)
-        print("OnDemandDataConsumer connected")
+        self.group_name = "binanceQ"
+        self.channel_name = f"binanceQ_{uuid.uuid4().hex}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        print(f"OnDemandDataConsumer connected with channel name: {self.channel_name}")
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.channel_name, self.channel_name)
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
         print(f"OnDemandDataConsumer disconnected with code: {close_code}")
         if hasattr(self, 'client'):
             await self.client.close_connection()
         await super().disconnect(close_code)
-    async def save_daily_balance(self, event):
-        # 이 메서드는 channel_layer.send()에 의해 호출됩니다
-        await self.save_daily_balance_logic()
+
+
+    def save_daily_balance(self, event):
+        try:
+            await self.save_daily_balance_logic()
+        except Exception as e:
+            print(f"Error in save_daily_balance: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Error saving daily balance: {str(e)}"
+            }))
 
     async def receive(self, text_data):
         data = json.loads(text_data)
