@@ -16,6 +16,7 @@ from binanaceAccount.consumers import BinanceAPIConsumer
 import websockets
 import json
 from asgiref.sync import sync_to_async
+from django.db import transaction
 
 
 # Binance 클라이언트 초기화
@@ -156,7 +157,7 @@ async def perform_analysis():
             response = await websocket.recv()
             data = json.loads(response)
 
-            if data.get('type') != 'llm_data_and_price':
+            if data.get('type') != 'bitcoin_data_and_price':
                 print(f"Unexpected response type: {data.get('type')}")
                 return None
 
@@ -171,6 +172,7 @@ async def perform_analysis():
             print(f'current_price {current_price}')
             if current_price is None:
                 current_price = 0
+
 
             # 태스크 생성
             task1 = Task(
@@ -236,21 +238,49 @@ async def perform_analysis():
             print(f"Price Prediction: {price_prediction}")
             print(f"Confidence Level: {confidence}%")
 
+            # 결과 생성 및 저장
+            analysis_result = {
+                'symbol': vt_symbol,
+                'result_string': result_string,
+                'current_price': current_price,
+                'price_prediction': price_prediction,
+                'confidence': float(confidence) if confidence else None,
+                'selected_strategy': selected_strategy
+            }
+
+            # 결과를 데이터베이스에 저장
+            saved_result = await create_analysis_result(analysis_result)
+            await update_strategy_config(analysis_result['selected_strategy'])
+
+            return saved_result
+
     except websockets.exceptions.WebSocketException as e:
         print(f"WebSocket error: {str(e)}")
-        return None
     except json.JSONDecodeError as e:
         print(f"JSON decoding error: {str(e)}")
-        return None
     except Exception as e:
         print(f"Unexpected error in perform_analysis: {str(e)}")
-        return None
 
-    return {
-        'symbol': vt_symbol,
-        'result_string': result_string,
-        'current_price': current_price,
-        'price_prediction': price_prediction,
-        'confidence': confidence,
-        'selected_strategy': selected_strategy,
-    }
+    return None
+
+
+@sync_to_async
+def create_analysis_result(data):
+    from .models import AnalysisResult
+    with transaction.atomic():
+        return AnalysisResult.objects.create(**data)
+
+
+@sync_to_async
+def update_strategy_config(selected_strategy):
+    try:
+        with transaction.atomic():
+            strategy_config = StrategyConfig.objects.get(name='240824')
+            current_config = strategy_config.config
+            if 'INIT' in current_config and 'setting' in current_config['INIT']:
+                current_config['INIT']['setting']['grid_strategy'] = selected_strategy
+            strategy_config.config = current_config
+            strategy_config.save()
+        print(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
+    except Exception as e:
+        print(f"Error updating StrategyConfig: {str(e)}")

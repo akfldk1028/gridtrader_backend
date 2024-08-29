@@ -38,7 +38,7 @@ def setup_bitcoin_analysis_task():
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
-    next_hour = now.replace(hour=14, minute=10, second=0, microsecond=0)
+    next_hour = now.replace(hour=14, minute=33, second=0, microsecond=0)
 
     # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
@@ -69,41 +69,12 @@ async def run_bitcoin_analysis():
         from .utils import perform_analysis
         result = await perform_analysis()
         print(result)
-        analysis_result = await create_analysis_result({
-            'symbol': result['symbol'],
-            'result_string': result['result_string'],
-            'current_price': result['current_price'],
-            'price_prediction': result['price_prediction'],
-            'confidence': float(result['confidence']) if result['confidence'] else None,
-            'selected_strategy': result['selected_strategy']
-        })
-
-        await update_strategy_config(result['selected_strategy'])
-
-        return f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
     except Exception as e:
         logger.error(f"Error in run_bitcoin_analysis task: {str(e)}", exc_info=True)
         raise
 
-@sync_to_async
-def create_analysis_result(data):
-    from .models import AnalysisResult
-    with transaction.atomic():
-        return AnalysisResult.objects.create(**data)
 
 
-@sync_to_async
-def update_strategy_config(selected_strategy):
-    try:
-        with transaction.atomic():
-            strategy_config = StrategyConfig.objects.get(name='240824')
-            current_config = strategy_config.config
-            if 'INIT' in current_config and 'setting' in current_config['INIT']:
-                current_config['INIT']['setting']['grid_strategy'] = selected_strategy
-            strategy_config.config = current_config
-            strategy_config.save()
-        logger.info(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
-    except Exception as e:
-        logger.error(f"Error updating StrategyConfig: {str(e)}", exc_info=True)
+
 
 
