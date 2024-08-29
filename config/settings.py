@@ -81,13 +81,16 @@ Q_CLUSTER = {
     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
     'workers': 4,  # 동시에 실행할 작업자(worker) 수
     'recycle': 500,  # 작업자가 이 개수만큼의 작업을 처리한 후 재시작됨
-    'timeout': 60,  # 작업의 최대 실행 시간(초). 이 시간을 초과하면 작업이 중단됨
+    'timeout': 300,  # 작업의 최대 실행 시간(초). 이 시간을 초과하면 작업이 중단됨
     'compress': True,  # 작업 데이터를 압축하여 저장
     'cpu_affinity': 1,  # 각 작업자를 특정 CPU 코어에 할당 (1은 모든 코어 사용)
     'save_limit': 250,  # 결과를 저장할 최대 작업 수
     'queue_limit': 30,  # 대기열에 넣을 수 있는 최대 작업 수
     'label': 'Django Q',  # 관리자 인터페이스에 표시될 레이블
     'redis': REDIS_URL,
+    'retry': 3,  # 작업이 실패할 경우 최대 3번 재시도
+    'retry_delay': 10,  # 재시도 사이의 지연 시간(초)
+
 }
 # Q_CLUSTER = {
 #     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
