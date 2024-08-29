@@ -264,7 +264,6 @@
 #         print(f"Error updating StrategyConfig: {str(e)}")
 
 
-
 import os
 from crewai import Agent, Task, Crew, Process
 from binance.client import Client
@@ -281,16 +280,13 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from llm.etc import get_strategy_config
 
-
 # Binance 클라이언트 초기화
 symbol = "BNBUSDT"
-
-
-
 
 binance_api_key = settings.BINANCE_API_KEY
 binance_api_secret = settings.BINANCE_API_SECRET
 client = Client(binance_api_key, binance_api_secret)
+
 
 def get_bitcoin_data(symbol):
     try:
@@ -329,6 +325,7 @@ def get_bitcoin_data(symbol):
     except BinanceAPIException as e:
         print(f"An error occurred: {e}")
         return None
+
 
 hourly_analyst = Agent(
     role='Hourly Bitcoin Market Analyst',
@@ -370,6 +367,7 @@ price_predictor = Agent(
     allow_delegation=False,
 )
 
+
 def extract_prediction(text):
     # Look for the specific format: "Up X%" or "Down X%"
     match = re.search(r'(Up|Down)\s+(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
@@ -386,6 +384,7 @@ def extract_prediction(text):
         return "Down", down_match.group(1)
 
     return None, None
+
 
 def extract_strategy(text):
     strategies = ["RegularGrid", "ShortGrid", "LongGrid"]
@@ -404,10 +403,32 @@ def get_current_bitcoin_price():
         return None
 
 
+def get_strategy_config(strategy_name='240824'):
+    try:
+        strategy_config = StrategyConfig.objects.get(name=strategy_name)
+        first_config = strategy_config.config.get('INIT', {})
+        vt_symbol = first_config.get('vt_symbol', '')
+        symbol = vt_symbol.split('.')[0] if vt_symbol else ''
+        grid_strategy = first_config.get('setting', {}).get('grid_strategy')
+
+        if not symbol or not grid_strategy:
+            raise ValueError("Invalid configuration: missing symbol or grid_strategy")
+
+        return {
+            'vt_symbol': symbol,
+            'grid_strategy': grid_strategy
+        }
+    except ObjectDoesNotExist:
+        print(f"Strategy configuration not found for: {strategy_name}")
+    except ValueError as e:
+        print(f"Invalid configuration for {strategy_name}: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected error in get_strategy_config: {str(e)}")
+
+
 # 기존 get_current_bitcoin_price 함수 내용...
 
 def perform_analysis():
-
     config = get_strategy_config()
     if not config:
         print("Strategy configuration is invalid.")
@@ -423,7 +444,6 @@ def perform_analysis():
         print("Failed to fetch bitcoin data.")
         return None
 
-
     # 태스크 생성
     task1 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the provided hourly data:
@@ -435,7 +455,6 @@ def perform_analysis():
         agent=hourly_analyst
     )
 
-
     task2 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the provided daily data:
         {bitcoin_data['daily']}
@@ -445,7 +464,6 @@ def perform_analysis():
         expected_output="Detailed Bitcoin market analysis report for 1-day timeframe",
         agent=daily_analyst
     )
-
 
     task3 = Task(
         description="""Based on all the analyses provided, predict whether the Bitcoin price is more likely to go up or down in the near future.
@@ -492,7 +510,7 @@ def perform_analysis():
     print(f"Confidence Level: {confidence}%")
     return {
         'symbol': vt_symbol,
-        'result_string' : result_string,
+        'result_string': result_string,
         'price_prediction': price_prediction,
         'confidence': confidence,
         'selected_strategy': selected_strategy,

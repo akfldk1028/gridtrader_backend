@@ -125,23 +125,29 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
 class OnDemandDataConsumer(BinanceBaseConsumer):
     async def connect(self):
         await super().connect()
+        self.channel_name = "binanceQ"
+        await self.channel_layer.group_add(self.channel_name, self.channel_name)
         print("OnDemandDataConsumer connected")
 
     async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.channel_name, self.channel_name)
         print(f"OnDemandDataConsumer disconnected with code: {close_code}")
         if hasattr(self, 'client'):
             await self.client.close_connection()
         await super().disconnect(close_code)
+    async def save_daily_balance(self, event):
+        # 이 메서드는 channel_layer.send()에 의해 호출됩니다
+        await self.save_daily_balance_logic()
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        action = data.get('action')
-
-        if action == 'get_bitcoin_data_and_price':
-            symbol = data.get('symbol')
-            await self.get_bitcoin_data_and_price(symbol)
-        elif action == 'save_daily_balance':
-            await self.save_daily_balance()
+    # async def receive(self, text_data):
+    #     data = json.loads(text_data)
+    #     action = data.get('action')
+    #
+    #     if action == 'get_bitcoin_data_and_price':
+    #         symbol = data.get('symbol')
+    #         await self.get_bitcoin_data_and_price(symbol)
+    #     elif action == 'save_daily_balance':
+    #         await self.save_daily_balance()
 
 
     async def get_bitcoin_data_and_price(self, symbol):
@@ -195,7 +201,8 @@ class OnDemandDataConsumer(BinanceBaseConsumer):
                 'message': f"Error fetching Bitcoin data: {str(e)}"
             }))
 
-    async def save_daily_balance(self):
+    async def save_daily_balance_logic(self):
+        # 기존의 save_daily_balance 메서드의 내용을 여기로 옮깁니다
         try:
             print("Starting save_daily_balance process")
 

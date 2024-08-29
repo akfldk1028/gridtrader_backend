@@ -60,26 +60,15 @@ def setup_update_account_info_task():
         print(f"스케줄 설정 중 오류 발생: {str(e)}")
 
 
-async def trigger_save_daily_balance():
-    print("Starting update_account_info task")
-    uri = "wss://gridtrader-backend.onrender.com/ws/binanceQ/"
-
-    try:
-        async with websockets.connect(uri) as websocket:
-            await websocket.send(json.dumps({
-                'action': 'save_daily_balance'
-            }))
-
-            response = await websocket.recv()
-            response_data = json.loads(response)
-
-            if response_data.get('type') == 'daily_balance_saved':
-                print("Daily balance saved successfully")
-            else:
-                print(f"Error: {response_data.get('message')}")
-
-    except Exception as e:
-        print(f"Error saving daily balance: {str(e)}")
+def trigger_save_daily_balance():
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.send)(
+        "binanceQ",  # 이 이름은 OnDemandDataConsumer의 channel_name과 일치해야 합니다
+        {
+            "type": "save_daily_balance",
+        }
+    )
+    print("Triggered save_daily_balance")
 
 def trigger_save_daily_balance_wrapper():
     asyncio.run(trigger_save_daily_balance())
