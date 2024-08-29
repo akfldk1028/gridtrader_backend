@@ -503,7 +503,6 @@ def perform_analysis():
     )
 
     results = crew.kickoff()
-    print(results)
 
     task_results = {
         'hourly_analysis': results.task_outputs[0] if len(results.task_outputs) > 0 else "",
@@ -512,6 +511,9 @@ def perform_analysis():
         'strategy_recommendation': results.task_outputs[3] if len(results.task_outputs) > 3 else ""
     }
     result_string = str(results)
+    print(results)
+    print("-----------------------------------------------------")
+    # result_parts = result.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
 
     # price_prediction, confidence = extract_prediction(result_string)
     # selected_strategy = extract_strategy(task_results['strategy_recommendation'])
