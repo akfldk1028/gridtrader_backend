@@ -62,7 +62,7 @@ def setup_update_account_info_task():
 
 async def trigger_save_daily_balance():
     print("Starting update_account_info task")
-    uri = f"wss://gridtrader-backend.onrender.com/ws/binance/"
+    uri = f"wss://gridtrader-backend.onrender.com/ws/binanceQ/"
 
     try:
         async with websockets.connect(uri) as websocket:

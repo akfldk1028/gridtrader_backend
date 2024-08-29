@@ -128,7 +128,7 @@ async def perform_analysis():
 
         print(f"Current grid_strategy: {grid_strategy}")
 
-        uri = "wss://gridtrader-backend.onrender.com/ws/binance/"
+        uri = "wss://gridtrader-backend.onrender.com/ws/binanceQ/"
         async with websockets.connect(uri) as websocket:
             # Bitcoin 데이터 요청
             await websocket.send(json.dumps({
@@ -139,8 +139,8 @@ async def perform_analysis():
             # 응답 대기
             response = await websocket.recv()
             data = json.loads(response)
-
-            if data.get('type') != 'bitcoin_data_and_price':
+            print(data)
+            if data.get('type') != 'llm_data_and_price':
                 print(f"Unexpected response type: {data.get('type')}")
                 return None
 

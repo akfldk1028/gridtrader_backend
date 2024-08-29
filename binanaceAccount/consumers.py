@@ -15,97 +15,16 @@ import pandas as pd
 from django.db import IntegrityError
 
 
-class BinanceAPIConsumer(AsyncWebsocketConsumer):
 
+class BinanceBaseConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
-        await self.channel_layer.group_add("binance_updates", self.channel_name)
-
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
-        self.tasks = set()
-
-        try:
-            await self.sync_server_time()
-        except Exception as e:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': f"Error syncing server time: {str(e)}"
-            }))
-            await self.close()
-            return
-
-        self.periodic_task = self.create_task(self.periodically_send_data())
-    def create_task(self, coro):
-        task = asyncio.create_task(coro)
-        self.tasks.add(task)
-        task.add_done_callback(self.tasks.discard)
-        return task
-    # async def disconnect(self, close_code):
-    #     await self.channel_layer.group_discard("binance_updates", self.channel_name)
-    #     for task in self.tasks:
-    #         task.cancel()
-    #     self.periodic_task.cancel()  # 주기적 작업 취소
-    #     await self.client.close_connection()
+        await self.sync_server_time()
 
     async def disconnect(self, close_code):
-        print(f"Disconnecting with code: {close_code}")
-
-        # Remove from the group
-        await self.channel_layer.group_discard("binance_updates", self.channel_name)
-
-        # Cancel the periodic task
-        if hasattr(self, 'periodic_task'):
-            self.periodic_task.cancel()
-            try:
-                await self.periodic_task
-            except asyncio.CancelledError:
-                pass
-
-        # Cancel other tasks
-        for task in self.tasks:
-            if not task.done():
-                task.cancel()
-                try:
-                    await task
-                except asyncio.CancelledError:
-                    pass
-
-        # Close Binance client connection
         if hasattr(self, 'client'):
             await self.client.close_connection()
-
-        print(f"Disconnected with code: {close_code}")
-
-    async def periodically_send_data(self):
-        while True:
-            try:
-                if self.channel_layer.get_channel(self.channel_name) is None:
-                    print("WebSocket connection closed, stopping periodic task")
-                    break
-                await self.get_futures_balance()
-                await self.get_futures_positions('')
-                await asyncio.sleep(2)  # Send data every 2 seconds
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                print(f"Error in periodic task: {str(e)}")
-                await asyncio.sleep(5)  # Wait 5 seconds before retrying in case of error
-
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        action = data.get('action')
-
-        if action == 'get_futures_balance':
-            await self.get_futures_balance()
-        elif action == 'get_futures_positions':
-            symbols = data.get('symbols', '')
-            await self.get_futures_positions(symbols)
-        elif action == 'get_bitcoin_data_and_price':
-            symbol = data.get('symbol')
-            await self.get_bitcoin_data_and_price(symbol)
-        elif action == 'save_daily_balance':
-            await self.save_daily_balance()
-
 
     async def sync_server_time(self):
         try:
@@ -118,7 +37,6 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
                 'type': 'error',
                 'message': f"Error syncing server time: {str(e)}"
             }))
-
     async def get_futures_balance(self):
         try:
             futures_balances = await self.client.futures_account_balance()
@@ -158,7 +76,6 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
                 'type': 'error',
                 'message': str(e)
             }))
-
     def calculate_profit_percentage(self, position):
         try:
             position_amt = Decimal(position.get('positionAmt', '0'))
@@ -181,60 +98,43 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         except (InvalidOperation, ZeroDivisionError):
             return 0
 
-    async def get_futures_balance_data(self):
-        futures_balances = await self.client.futures_account_balance()
-        futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
-        return futures_usdt_balance
+class PeriodicDataConsumer(BinanceBaseConsumer):
+    async def connect(self):
+        await super().connect()
+        self.periodic_task = asyncio.create_task(self.periodically_send_data())
 
-    async def get_futures_positions_data(self, symbols):
-        params = {}
-        if symbols:
-            params['symbol'] = symbols.strip().upper()
+    async def disconnect(self, close_code):
+        if hasattr(self, 'periodic_task'):
+            self.periodic_task.cancel()
+        await super().disconnect(close_code)
 
-        all_positions = await self.client.futures_position_information(**params)
+    async def periodically_send_data(self):
+        while True:
+            try:
+                await self.get_futures_balance()
+                await self.get_futures_positions('')
+                await asyncio.sleep(2)  # Send data every 2 seconds
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"Error in periodic task: {str(e)}")
+                await asyncio.sleep(5)  # Wait 5 seconds before retrying in case of error
 
-        filtered_positions = [
-            pos for pos in all_positions
-            if (not symbols or pos["symbol"] in symbols.split(',')) and float(pos["positionAmt"]) != 0
-        ]
 
-        for pos in filtered_positions:
-            pos['profit_percentage'] = self.calculate_profit_percentage(pos)
 
-        return filtered_positions
+class OnDemandDataConsumer(BinanceBaseConsumer):
+    async def connect(self):
+        await super().connect()
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        action = data.get('action')
 
-    async def save_daily_balance(self):
-        try:
-            print("Starting save_daily_balance process")
+        if action == 'get_bitcoin_data_and_price':
+            symbol = data.get('symbol')
+            await self.get_bitcoin_data_and_price(symbol)
+        elif action == 'save_daily_balance':
+            await self.save_daily_balance()
 
-            futures_balance = await self.get_futures_balance_data()
-            print(f"Futures balance data: {futures_balance}")
-
-            futures_positions = await self.get_futures_positions_data('')
-            print(f"Futures positions data: {futures_positions}")
-
-            DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
-
-            new_balance = await sync_to_async(DailyBalance.objects.create)(
-                futures_balance=futures_balance,
-                futures_positions=futures_positions
-            )
-
-            print(
-                f"Successfully created DailyBalance record with id {new_balance.id} at {new_balance.created_at}")
-
-            await self.send(text_data=json.dumps({
-                'type': 'daily_balance_saved',
-                'message': 'Daily balance saved successfully',
-                'record_id': new_balance.id,
-                'timestamp': new_balance.created_at.isoformat()
-            }))
-        except Exception as e:
-            print(f"Unexpected error in save_daily_balance: {str(e)}")
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': f"Unexpected error saving daily balance. Please check the logs."
-            }))
 
     async def get_bitcoin_data_and_price(self, symbol):
         try:
@@ -277,13 +177,46 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
             }
 
             await self.send(text_data=json.dumps({
-                'type': 'llm_data_and_price',
+                'type': 'bitcoin_data_and_price',  # 'llm_data_and_price'에서 변경
                 'data': bitcoin_data
             }))
-
 
         except BinanceAPIException as e:
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f"Error fetching Bitcoin data: {str(e)}"
             }))
+
+    async def save_daily_balance(self):
+        try:
+            print("Starting save_daily_balance process")
+
+            futures_balance = await self.get_futures_balance()
+            print(f"Futures balance data: {futures_balance}")
+
+            futures_positions = await self.get_futures_positions('')
+            print(f"Futures positions data: {futures_positions}")
+
+            DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
+
+            new_balance = await sync_to_async(DailyBalance.objects.create)(
+                futures_balance=futures_balance,
+                futures_positions=futures_positions
+            )
+
+            print(
+                f"Successfully created DailyBalance record with id {new_balance.id} at {new_balance.created_at}")
+
+            await self.send(text_data=json.dumps({
+                'type': 'daily_balance_saved',
+                'message': 'Daily balance saved successfully',
+                'record_id': new_balance.id,
+                'timestamp': new_balance.created_at.isoformat()
+            }))
+        except Exception as e:
+            print(f"Unexpected error in save_daily_balance: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Unexpected error saving daily balance. Please check the logs."
+            }))
+
