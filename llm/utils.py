@@ -18,17 +18,11 @@ import json
 from asgiref.sync import sync_to_async
 from django.db import transaction
 
-
 # Binance 클라이언트 초기화
 symbol = "BNBUSDT"
-
-
-
-
 binance_api_key = settings.BINANCE_API_KEY
 binance_api_secret = settings.BINANCE_API_SECRET
 client = Client(binance_api_key, binance_api_secret)
-
 
 hourly_analyst = Agent(
     role='Hourly Bitcoin Market Analyst',
@@ -94,17 +88,6 @@ def extract_strategy(text):
             return strategy
     return None
 
-
-# def get_current_bitcoin_price():
-#     try:
-#         ticker = client.get_symbol_ticker(symbol=symbol)
-#         return float(ticker['price'])
-#     except BinanceAPIException as e:
-#         print(f"Error fetching current Bitcoin price: {e}")
-#         return None
-
-
-# 기존 get_current_bitcoin_price 함수 내용...
 
 
 @sync_to_async

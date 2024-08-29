@@ -50,10 +50,10 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         print(f"Disconnecting with code: {close_code}")
 
-        # 그룹에서 제거
+        # Remove from the group
         await self.channel_layer.group_discard("binance_updates", self.channel_name)
 
-        # 주기적 작업 취소
+        # Cancel the periodic task
         if hasattr(self, 'periodic_task'):
             self.periodic_task.cancel()
             try:
@@ -61,34 +61,35 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
             except asyncio.CancelledError:
                 pass
 
-        # 다른 태스크들 취소
-        # for task in self.tasks:
-        #     if not task.done():
-        #         task.cancel()
-        #         try:
-        #             await task
-        #         except asyncio.CancelledError:
-        #             pass
+        # Cancel other tasks
+        for task in self.tasks:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
-        # Binance 클라이언트 연결 종료
+        # Close Binance client connection
         if hasattr(self, 'client'):
             await self.client.close_connection()
-
-        # 추가적인 정리 작업이 필요한 경우 여기에 추가
 
         print(f"Disconnected with code: {close_code}")
 
     async def periodically_send_data(self):
         while True:
             try:
+                if self.channel_layer.get_channel(self.channel_name) is None:
+                    print("WebSocket connection closed, stopping periodic task")
+                    break
                 await self.get_futures_balance()
                 await self.get_futures_positions('')
-                await asyncio.sleep(2)  # 2초마다 데이터 전송
+                await asyncio.sleep(2)  # Send data every 2 seconds
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 print(f"Error in periodic task: {str(e)}")
-                await asyncio.sleep(5)  # 에러 발생 시 5초 대기 후 재시도
+                await asyncio.sleep(5)  # Wait 5 seconds before retrying in case of error
 
     async def receive(self, text_data):
         data = json.loads(text_data)
