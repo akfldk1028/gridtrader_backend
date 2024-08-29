@@ -71,7 +71,8 @@ def trigger_save_daily_balance():
     print("Triggered save_daily_balance")
 
 def trigger_save_daily_balance_wrapper():
-    asyncio.run(trigger_save_daily_balance())
+    trigger_save_daily_balance()
+
 
 def set_cache_data(account_type, key, data):
     """
