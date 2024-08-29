@@ -503,16 +503,19 @@ def perform_analysis():
     )
 
     results = crew.kickoff()
+    print("CrewOutput type:", type(results))
+
+    result_string = str(results)
+    result_parts = result_string.split("\n\n")
+    print("-----------------------------------------------------")
+    print(results)
 
     task_results = {
-        'hourly_analysis': results.task_outputs[0] if len(results.task_outputs) > 0 else "",
-        'daily_analysis': results.task_outputs[1] if len(results.task_outputs) > 1 else "",
-        'price_prediction': results.task_outputs[2] if len(results.task_outputs) > 2 else "",
-        'strategy_recommendation': results.task_outputs[3] if len(results.task_outputs) > 3 else ""
+        'hourly_analysis': result_parts[0] if len(result_parts) > 0 else "",
+        'daily_analysis': result_parts[1] if len(result_parts) > 1 else "",
+        'price_prediction': result_parts[2] if len(result_parts) > 2 else "",
+        'strategy_recommendation': result_parts[3] if len(result_parts) > 3 else ""
     }
-    result_string = str(results)
-    print(results)
-    print("-----------------------------------------------------")
     # result_parts = result.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
 
     # price_prediction, confidence = extract_prediction(result_string)
@@ -549,8 +552,9 @@ def perform_analysis():
         verbose=True,
         process=Process.sequential
     )
-    korean_summary_result = korean_summary_crew.kickoff()
 
+    korean_summary_result = korean_summary_crew.kickoff()
+    korean_summary = str(korean_summary_result)
 
     print("######################")
     print("분석 완료")
@@ -558,7 +562,7 @@ def perform_analysis():
     print(f"가격 예측: {price_prediction}")
     print(f"신뢰도: {confidence}%")
     print("\n한글 요약:")
-    print(korean_summary_result)  # 한글 요약 결과 출력
+    print(korean_summary)
 
 
     return {
@@ -568,5 +572,5 @@ def perform_analysis():
         'confidence': confidence,
         'selected_strategy': selected_strategy,
         'current_price': current_price,
-        'korean_summary': korean_summary_result
+        'korean_summary': korean_summary
     }

@@ -90,7 +90,6 @@ Q_CLUSTER = {
     'redis': REDIS_URL,
     'retry': 3,  # 작업이 실패할 경우 최대 3번 재시도
     'retry_delay': 10,  # 재시도 사이의 지연 시간(초)
-
 }
 # Q_CLUSTER = {
 #     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
