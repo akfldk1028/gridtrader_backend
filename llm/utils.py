@@ -12,7 +12,6 @@ from TradeStrategy.models import StrategyConfig
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from llm.etc import get_strategy_config
 from binanaceAccount.consumers import BinanceAPIConsumer
 import websockets
 import json
@@ -143,8 +142,33 @@ def extract_strategy(text):
 
 # 기존 get_current_bitcoin_price 함수 내용...
 
+
+@sync_to_async
+def get_strategy_config(strategy_name='240824'):
+    try:
+        strategy_config = StrategyConfig.objects.get(name=strategy_name)
+        first_config = strategy_config.config['INIT']
+
+        vt_symbol = first_config.get('vt_symbol')
+        symbol = vt_symbol.split('.')[0] if vt_symbol else ''  # "BNBUSDT.BINANCE"에서 "BNBUSDT" 추출
+        grid_strategy = first_config['setting'].get('grid_strategy')
+
+        if not symbol or not grid_strategy:
+            raise ValueError("Invalid configuration: missing symbol or grid_strategy")
+
+        return {
+            'vt_symbol': symbol,
+            'grid_strategy': grid_strategy
+        }
+    except ObjectDoesNotExist:
+        print(f"Strategy configuration not found for: {strategy_name}")
+    except Exception as e:
+        print(f"Error in get_strategy_config: {str(e)}")
+    return None
+
+
 async def perform_analysis():
-    config = await sync_to_async(get_strategy_config)()
+    config = await get_strategy_config()
     if not config:
         print("Strategy configuration is invalid.")
         return None
