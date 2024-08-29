@@ -15,31 +15,80 @@ import pandas as pd
 from django.db import IntegrityError
 
 
-
-
-
 class BinanceAPIConsumer(AsyncWebsocketConsumer):
-
 
     async def connect(self):
         await self.accept()
         await self.channel_layer.group_add("binance_updates", self.channel_name)
+
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.tasks = set()
-        await self.sync_server_time()
-        self.periodic_task = asyncio.create_task(self.periodically_send_data())
+
+        try:
+            await self.sync_server_time()
+        except Exception as e:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Error syncing server time: {str(e)}"
+            }))
+            await self.close()
+            return
+
+        self.periodic_task = self.create_task(self.periodically_send_data())
+    def create_task(self, coro):
+        task = asyncio.create_task(coro)
+        self.tasks.add(task)
+        task.add_done_callback(self.tasks.discard)
+        return task
+    # async def disconnect(self, close_code):
+    #     await self.channel_layer.group_discard("binance_updates", self.channel_name)
+    #     for task in self.tasks:
+    #         task.cancel()
+    #     self.periodic_task.cancel()  # 주기적 작업 취소
+    #     await self.client.close_connection()
 
     async def disconnect(self, close_code):
+        print(f"Disconnecting with code: {close_code}")
+
+        # 그룹에서 제거
         await self.channel_layer.group_discard("binance_updates", self.channel_name)
+
+        # 주기적 작업 취소
+        if hasattr(self, 'periodic_task'):
+            self.periodic_task.cancel()
+            try:
+                await self.periodic_task
+            except asyncio.CancelledError:
+                pass
+
+        # 다른 태스크들 취소
         for task in self.tasks:
-            task.cancel()
-        self.periodic_task.cancel()  # 주기적 작업 취소
-        await self.client.close_connection()
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+        # Binance 클라이언트 연결 종료
+        if hasattr(self, 'client'):
+            await self.client.close_connection()
+
+        # 추가적인 정리 작업이 필요한 경우 여기에 추가
+
+        print(f"Disconnected with code: {close_code}")
+
     async def periodically_send_data(self):
         while True:
-            await self.get_futures_balance()
-            await self.get_futures_positions('')
-            await asyncio.sleep(2)  # 2초마다 데이터 전송
+            try:
+                await self.get_futures_balance()
+                await self.get_futures_positions('')
+                await asyncio.sleep(2)  # 2초마다 데이터 전송
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"Error in periodic task: {str(e)}")
+                await asyncio.sleep(5)  # 에러 발생 시 5초 대기 후 재시도
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -56,20 +105,6 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
         elif action == 'save_daily_balance':
             await self.save_daily_balance()
 
-    # async def receive(self, text_data):
-    #     data = json.loads(text_data)
-    #     action = data.get('action')
-    #
-    #     if action == 'get_futures_balance':
-    #         task = asyncio.create_task(self.get_futures_balance())
-    #         self.tasks.add(task)
-    #         task.add_done_callback(self.tasks.discard)
-    #     elif action == 'get_futures_positions':
-    #         symbols = data.get('symbols', '')
-    #         task = asyncio.create_task(self.get_futures_positions(symbols))
-    #         self.tasks.add(task)
-    #         task.add_done_callback(self.tasks.discard)
-        # Add more actions as needed
 
     async def sync_server_time(self):
         try:
@@ -200,20 +235,24 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
                 'message': f"Unexpected error saving daily balance. Please check the logs."
             }))
 
-
     async def get_bitcoin_data_and_price(self, symbol):
         try:
-            hourly_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1HOUR, limit=500)
-            daily_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1DAY, limit=500)
+            hourly_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1HOUR,
+                                                          limit=500)
+            daily_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1DAY,
+                                                         limit=500)
             ticker = await self.client.get_symbol_ticker(symbol=symbol)
             current_price = float(ticker['price'])
+
             def process_candles(candles):
                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                    'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
+                                                    'quote_asset_volume', 'number_of_trades',
+                                                    'taker_buy_base_asset_volume',
                                                     'taker_buy_quote_asset_volume', 'ignore'])
                 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
                 df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
+                    float)
 
                 # RSI 계산
                 delta = df['close'].diff()
