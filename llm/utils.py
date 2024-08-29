@@ -151,6 +151,8 @@ def get_strategy_config(strategy_name='240824'):
 
         vt_symbol = first_config.get('vt_symbol')
         symbol = vt_symbol.split('.')[0] if vt_symbol else ''  # "BNBUSDT.BINANCE"에서 "BNBUSDT" 추출
+        print("--시발호출")
+        print(symbol)
         grid_strategy = first_config['setting'].get('grid_strategy')
 
         if not symbol or not grid_strategy:
@@ -199,7 +201,11 @@ async def perform_analysis():
             return None
 
         bitcoin_data = data['data']
-        current_price = bitcoin_data['current_price']
+        print(bitcoin_data)
+        current_price = bitcoin_data.get('current_price')
+        print(f'current_price {current_price}')
+        if current_price is None:
+            current_price =  0
 
 
     # 태스크 생성
@@ -268,7 +274,7 @@ async def perform_analysis():
     print(f"Price Prediction: {price_prediction}")
     print(f"Confidence Level: {confidence}%")
     return {
-        'symbol': "BNBUSDT",
+        'symbol': vt_symbol,  # "BNBUSDT" 대신 vt_symbol 사용
         'result_string' : result_string,
         'price_prediction': price_prediction,
         'confidence': confidence,
