@@ -501,20 +501,24 @@ def perform_analysis():
         verbose=True,
         process=Process.sequential
     )
+    task1_output = task1.output
+    task2_output = task2.output
+    task3_output = task3.output
+    task4_output = task4.output
 
     results = crew.kickoff()
     print("CrewOutput type:", type(results))
-
     result_string = str(results)
-    result_parts = result_string.split("\n\n")
+    ##type: <class 'crewai.crews.crew_output.CrewOutput'>
+
     print("-----------------------------------------------------")
     print(results)
 
     task_results = {
-        'hourly_analysis': result_parts[0] if len(result_parts) > 0 else "",
-        'daily_analysis': result_parts[1] if len(result_parts) > 1 else "",
-        'price_prediction': result_parts[2] if len(result_parts) > 2 else "",
-        'strategy_recommendation': result_parts[3] if len(result_parts) > 3 else ""
+        'hourly_analysis': task1_output.description,
+        'daily_analysis': task2_output.description,
+        'price_prediction': task3_output.description,
+        'strategy_recommendation': task4_output.description
     }
     # result_parts = result.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
 
