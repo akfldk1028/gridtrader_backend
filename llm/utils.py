@@ -513,6 +513,12 @@ def perform_analysis():
 
     print("-----------------------------------------------------")
     print(results)
+    print(results.raw)
+    print(results.tasks_output)
+    print(type(results.tasks_output))
+
+    print("-----------------------------------------------------")
+
 
     task_results = {
         'hourly_analysis': task1_output.description,
