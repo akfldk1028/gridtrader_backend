@@ -38,7 +38,7 @@ def setup_update_account_info_task():
             # now = datetime.now()
             now = datetime.now()
             # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            next_hour = now.replace(hour=17, minute=49, second=0, microsecond=0)
+            next_hour = now.replace(hour=18, minute=20, second=0, microsecond=0)
 
             # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
             # if now > next_hour:
@@ -63,15 +63,18 @@ def trigger_save_daily_balance_wrapper():
     trigger_save_daily_balance()
 
 def trigger_save_daily_balance():
+    print("trigger_save_daily_balance task started")
     channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.send)(
-        "binanceQ",  # 이 이름은 OnDemandDataConsumer의 channel_name과 일치해야 합니다
-        {
-            "type": "save_daily_balance",
-        }
-    )
-    print("Triggered save_daily_balance")
-
+    try:
+        async_to_sync(channel_layer.group_send)(
+            "binanceQ",
+            {
+                "type": "save_daily_balance",
+            }
+        )
+        print("save_daily_balance message sent to channel layer")
+    except Exception as e:
+        print(f"Error in trigger_save_daily_balance: {str(e)}")
 
 
 

@@ -124,13 +124,11 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
 
 class OnDemandDataConsumer(BinanceBaseConsumer):
     async def connect(self):
-        import uuid
-
         await super().connect()
         self.group_name = "binanceQ"
-        self.channel_name = f"binanceQ_{uuid.uuid4().hex}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         print(f"OnDemandDataConsumer connected with channel name: {self.channel_name}")
+
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
@@ -141,8 +139,11 @@ class OnDemandDataConsumer(BinanceBaseConsumer):
 
 
     async def save_daily_balance(self, event):
+        print(f"save_daily_balance method called with event: {event}")
         try:
+            # 여기에 기존 로직을 유지합니다
             await self.save_daily_balance_logic()
+            print("save_daily_balance completed successfully")
         except Exception as e:
             print(f"Error in save_daily_balance: {str(e)}")
             await self.send(text_data=json.dumps({
@@ -153,7 +154,9 @@ class OnDemandDataConsumer(BinanceBaseConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         action = data.get('action')
-
+        print(data)
+        print(action)
+        print("아아아시발 왜 안대")
         if action == 'get_bitcoin_data_and_price':
             symbol = data.get('symbol')
             await self.get_bitcoin_data_and_price(symbol)

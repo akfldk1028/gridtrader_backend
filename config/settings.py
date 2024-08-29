@@ -126,6 +126,10 @@ LOGGING = {
             'propagate': False,
         },
     },
+    'binanaceAccount': {  # 여기에 귀하의 앱 이름을 넣으세요
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
 }
 
 MIDDLEWARE = [
