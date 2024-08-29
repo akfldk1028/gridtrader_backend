@@ -16,6 +16,7 @@ from asgiref.sync import async_to_sync
 import websockets
 import json
 import asyncio
+from django.apps import apps
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 60 * 3  # 10 minutes in seconds
@@ -38,14 +39,14 @@ def setup_update_account_info_task():
             # now = datetime.now()
             now = datetime.now()
             # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            next_hour = now.replace(hour=18, minute=20, second=0, microsecond=0)
+            next_hour = now.replace(hour=18, minute=35, second=0, microsecond=0)
 
             # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
             # if now > next_hour:
             #     next_hour += timedelta(days=1)
 
             schedule(
-                'binanaceAccount.tasks.trigger_save_daily_balance_wrapper',
+                'binanaceAccount.tasks.trigger_save_daily_balance',
                 schedule_type=Schedule.CRON,
                 cron='0 */1 * * *',  # 매 3시간마다 정각에 실행
                 next_run=next_hour,
@@ -59,10 +60,42 @@ def setup_update_account_info_task():
     except Exception as e:
         # 다른 예외 처리
         print(f"스케줄 설정 중 오류 발생: {str(e)}")
-def trigger_save_daily_balance_wrapper():
-    trigger_save_daily_balance()
+
 
 def trigger_save_daily_balance():
+    print("Starting update_account_info task")
+    factory = APIRequestFactory()
+    request = factory.get('/')
+
+    try:
+        futures_balance_view = FuturesBalanceView()
+        futures_balance_response = futures_balance_view.get(request)
+        futures_usdt_balance = futures_balance_response.data
+
+
+        futures_Position_view = FuturesPositionView()
+        futures_Position_response = futures_Position_view.get(request)
+        filtered_positions = futures_Position_response.data
+
+        DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
+
+        # DailyBalance 모델에 저장
+        new_balance = DailyBalance.objects.create(
+                futures_balance=futures_usdt_balance,
+                futures_positions=filtered_positions
+            )
+        print(
+            f"Successfully created DailyBalance record with id {new_balance.id} at {new_balance.created_at}")
+
+    except Exception as e:
+        logger.error(f"Error saving daily balance: {str(e)}")
+        print("Daily balance saved successfully");
+
+
+def trigger_save_daily_balance_wrapper():
+    trigger_save_daily_balance_websocket()
+
+def trigger_save_daily_balance_websocket():
     print("trigger_save_daily_balance task started")
     channel_layer = get_channel_layer()
     try:
@@ -88,62 +121,6 @@ def set_cache_data(account_type, key, data):
 
 
 
-
-def update_account_info():
-    print("Starting update_account_info task")
-    factory = APIRequestFactory()
-    request = factory.get('/')
-
-    try:
-        # Spot Account Info
-        logger.info("Fetching Spot Account Info")
-        spot_account_view = SpotAccountInfoView()
-        spot_account_response = spot_account_view.get(request)
-        spot_account_info = spot_account_response.data
-        # logger.info(f"Spot Account Info: {spot_account_info}")
-        set_cache_data('spot', 'account_info', spot_account_info)
-
-        # Futures Account Info
-        logger.info("Fetching Futures Account Info")
-        futures_account_view = FuturesAccountInfoView()
-        futures_account_response = futures_account_view.get(request)
-        futures_account_info = futures_account_response.data
-        # logger.info(f"Futures Account Info: {futures_account_info}")
-        set_cache_data('futures', 'account_info', futures_account_info)
-
-        # Spot Balance
-        logger.info("Fetching Spot Balance")
-        spot_balance_view = SpotBalanceView()
-        spot_balance_response = spot_balance_view.get(request)
-        spot_balances = spot_balance_response.data
-        # logger.info(f"Spot Balances: {spot_balances}")
-        set_cache_data('spot', 'balances', spot_balances)
-
-        # Futures Balance
-        logger.info("Fetching Futures Balance")
-        futures_balance_view = FuturesBalanceView()
-        futures_balance_response = futures_balance_view.get(request)
-        futures_usdt_balance = futures_balance_response.data
-        # logger.info(f"Futures USDT Balance: {futures_usdt_balance}")
-        set_cache_data('futures', 'usdt_balance', futures_usdt_balance)
-
-
-        # Futures Position
-        logger.info("Fetching Positions")
-        futures_Position_view = FuturesPositionView()
-        futures_Position_response = futures_Position_view.get(request)
-        futures = futures_Position_response.data
-        # logger.info(f"Futures USDT Balance: {futures_usdt_balance}")
-        set_cache_data('futures', 'positions', futures)
-
-
-        logger.info("Account info successfully updated in cache")
-        return "Update completed successfully"
-    except Exception as e:
-        logger.error(f"Error updating account info: {str(e)}")
-        raise
-
-
 # 캐시에서 데이터를 가져오는 함수 (필요시 사용)
 def get_cache_data(account_type, key):
     cache_key = f"{account_type}:{key}"
@@ -153,17 +130,3 @@ def get_cache_data(account_type, key):
     return None
 
 
-def simple_cache_test(self):
-    logger.info(f"Task id: {self.request.id}")
-    logger.info("Starting simple_cache_test")
-    try:
-        account_cache = caches['account']
-        logger.info(f"Cache backend: {account_cache.backend.__class__.__name__}")  # Redis 백엔드 확인
-        account_cache.set('test_key', 'test_value', timeout=None)
-        logger.info("Cache set completed")
-        verify_value = account_cache.get('test_key')
-        logger.info(f"Verified value from cache: {verify_value}")
-        return f"Cache test completed. Verified value: {verify_value}"
-    except Exception as e:
-        logger.error(f"Error in simple_cache_test: {str(e)}")
-        raise
