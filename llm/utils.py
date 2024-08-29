@@ -192,13 +192,6 @@ async def perform_analysis():
         response = await websocket.recv()
         data = json.loads(response)
 
-        if data['type'] == 'error':
-            print(f"Error: {data['message']}")
-            return None
-
-        if data['type'] != 'get_bitcoin_data_and_price':
-            print(f"Unexpected response type: {data['type']}")
-            return None
 
         bitcoin_data = data['data']
         print(bitcoin_data)

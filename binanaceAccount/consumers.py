@@ -62,13 +62,13 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
                 pass
 
         # 다른 태스크들 취소
-        for task in self.tasks:
-            if not task.done():
-                task.cancel()
-                try:
-                    await task
-                except asyncio.CancelledError:
-                    pass
+        # for task in self.tasks:
+        #     if not task.done():
+        #         task.cancel()
+        #         try:
+        #             await task
+        #         except asyncio.CancelledError:
+        #             pass
 
         # Binance 클라이언트 연결 종료
         if hasattr(self, 'client'):
