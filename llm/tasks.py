@@ -29,9 +29,17 @@ def setup_bitcoin_analysis_task():
     # 현재 시간 가져오기
 
 
-    # now = datetime.now()
     now = datetime.now()
-    next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+
+
+    # 다음 실행 시간을 오전 9시 10분으로 설정
+    next_hour = now.replace(hour=9, minute=15, second=0, microsecond=0)
+
+    # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
+    if now > next_hour:
+        next_hour += timedelta(days=1)
+
 
     # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
     schedule(
@@ -83,7 +91,7 @@ def update_strategy_config():
         logger.error(f"Error updating StrategyConfig: {str(e)}", exc_info=True)
 
 
-def run_bitcoin_analysis():
+async def run_bitcoin_analysis():
     import time
 
     start_time = time.time()
@@ -91,7 +99,7 @@ def run_bitcoin_analysis():
     try:
         print("Calling perform_analysis function")
         analysis_start = time.time()
-        result = perform_analysis()
+        result = await perform_analysis()  # Await the coroutine here
         analysis_end = time.time()
         print(f"Analysis completed in {analysis_end - analysis_start:.2f} seconds. Results: {result}")
 
