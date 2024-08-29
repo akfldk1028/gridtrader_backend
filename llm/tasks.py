@@ -3,39 +3,14 @@ import logging
 from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
 from datetime import time, datetime, timedelta
-import asyncio
-from django.db import transaction
-from crewai import Agent, Task, Crew, Process
-from binance.client import Client
-import re
-from asgiref.sync import sync_to_async
 from TradeStrategy.models import StrategyConfig
-from django.core.exceptions import ObjectDoesNotExist
-import websockets
-import json
 from .utils import perform_analysis  # 여기에 기존 분석 로직을 넣습니다.
 
 logger = logging.getLogger(__name__)
 
 
 def setup_bitcoin_analysis_task():
-    # 기존 스케줄이 있다면 삭제
     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
-
-
-    #     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
-    #     if now > evening_run:
-    #         evening_run += timedelta(days=1)
-    #
-    #     # 오전 9시에 실행되는 스케줄 생성
-    #     schedule(
-    #         'llm.tasks.run_bitcoin_analysis',
-    #         schedule_type=Schedule.DAILY,
-    #         next_run=morning_run
-    #     )
-    # 현재 시간 가져오기
-
-
     now = datetime.now()
     next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
@@ -56,10 +31,7 @@ def setup_bitcoin_analysis_task():
         next_run=next_hour,
         repeats=-1  # 무한 반복
     )
-
-    # 즉시 한 번 실행
     # async_task('llm.tasks.run_bitcoin_analysis')
-    ########print
     print('시시시시ㅣ발')
     print(f"비트코인 분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
@@ -69,10 +41,8 @@ def update_strategy_config():
     try:
         # 가장 최근의 AnalysisResult 가져오기
         latest_analysis = AnalysisResult.objects.latest('created_at')
-
         if latest_analysis:
             selected_strategy = latest_analysis.selected_strategy
-
             # StrategyConfig 모델에서 설정 찾기 (이미지에서는 name이 '240824'입니다)
             strategy_config = StrategyConfig.objects.get(name='240824')
 
@@ -94,23 +64,15 @@ def update_strategy_config():
     except StrategyConfig.DoesNotExist:
         logger.error("StrategyConfig with name '240824' not found")
     except Exception as e:
-        logger.error(f"Error updating StrategyConfig: {str(e)}", exc_info=True)
+        logger.error(f"Error updating StrategyConfig: {str(e)}")
 
 
 def run_bitcoin_analysis():
-    import time
-
-    start_time = time.time()
     print("Starting Bitcoin analysis task")
     try:
         print("Calling perform_analysis function")
-        analysis_start = time.time()
         result = perform_analysis()
-        analysis_end = time.time()
-        print(f"Analysis completed in {analysis_end - analysis_start:.2f} seconds. Results: {result}")
-
         print("Creating AnalysisResult object")
-        db_start = time.time()
         analysis_result = AnalysisResult.objects.create(
             symbol=result['symbol'],
             result_string=result['result_string'],
@@ -119,18 +81,8 @@ def run_bitcoin_analysis():
             confidence=float(result['confidence']) if result['confidence'] else None,
             selected_strategy=result['selected_strategy']
         )
-        db_end = time.time()
-        print(f"AnalysisResult object created in {db_end - db_start:.2f} seconds. ID: {analysis_result.id}")
-
-        update_start = time.time()
         update_strategy_config()
-        update_end = time.time()
-        print(f"Strategy config updated in {update_end - update_start:.2f} seconds")
-
-        total_time = time.time() - start_time
-        print(f"Total execution time: {total_time:.2f} seconds")
-
-        return f"Analysis completed successfully in {total_time:.2f} seconds. AnalysisResult id: {analysis_result.id}"
+        return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
     except Exception as e:
         print(f"Error in run_bitcoin_analysis task: {str(e)}")
         raise

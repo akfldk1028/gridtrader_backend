@@ -34,7 +34,7 @@ def setup_update_account_info_task():
             #     repeats=-1
             # )
 
-            Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance_wrapper').delete()
+            Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance').delete()
 
             # now = datetime.now()
             now = datetime.now()
