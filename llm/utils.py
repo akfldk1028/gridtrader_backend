@@ -5,14 +5,9 @@ from binance.exceptions import BinanceAPIException
 import pandas as pd
 import numpy as np
 import re
-from datetime import datetime
-from django.conf import settings
 from TradeStrategy.models import StrategyConfig
-# from common.models import CommonModel
-
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from binanaceAccount.consumers import BinanceAPIConsumer
 import websockets
 import json
 from asgiref.sync import sync_to_async

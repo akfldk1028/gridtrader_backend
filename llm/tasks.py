@@ -1,15 +1,11 @@
 from .models import AnalysisResult
 from .utils import perform_analysis  # 여기에 기존 분석 로직을 넣습니다.
 import logging
-from .models import AnalysisResult
 from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
 from datetime import time, datetime, timedelta
-from TradeStrategy.models import StrategyConfig
-from django.core.exceptions import ObjectDoesNotExist
 import asyncio
-from asgiref.sync import sync_to_async
-from django.db import transaction
+
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +34,7 @@ def setup_bitcoin_analysis_task():
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
-    next_hour = now.replace(hour=15, minute=28, second=0, microsecond=0)
+    next_hour = now.replace(hour=15, minute=36, second=0, microsecond=0)
 
     # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
