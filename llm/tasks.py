@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def setup_bitcoin_analysis_task():
     # 기존 스케줄이 있다면 삭제
-    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
+    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis_sync').delete()
 
 
     #     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
@@ -38,7 +38,7 @@ def setup_bitcoin_analysis_task():
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
-    next_hour = now.replace(hour=12, minute=45, second=0, microsecond=0)
+    next_hour = now.replace(hour=12, minute=55, second=0, microsecond=0)
 
     # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
@@ -47,7 +47,7 @@ def setup_bitcoin_analysis_task():
 
     # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
     schedule(
-        'llm.tasks.run_bitcoin_analysis',
+        'llm.tasks.run_bitcoin_analysis_sync',
         schedule_type=Schedule.CRON,
         cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
         next_run=next_hour,
@@ -61,33 +61,36 @@ def setup_bitcoin_analysis_task():
     print(f"비트코인 분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
 
+def run_bitcoin_analysis_sync():
+    return asyncio.run(run_bitcoin_analysis())
+
 async def run_bitcoin_analysis():
     try:
+        from .utils import perform_analysis
         result = await perform_analysis()
-        logger.info(f"Analysis performed: {result}")
+        print(result)
+        analysis_result = await create_analysis_result({
+            'symbol': result['symbol'],
+            'result_string': result['result_string'],
+            'current_price': result['current_price'],
+            'price_prediction': result['price_prediction'],
+            'confidence': float(result['confidence']) if result['confidence'] else None,
+            'selected_strategy': result['selected_strategy']
+        })
 
-        analysis_result = await create_analysis_result(result)
         await update_strategy_config(result['selected_strategy'])
 
-        logger.info(f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}")
         return f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
     except Exception as e:
         logger.error(f"Error in run_bitcoin_analysis task: {str(e)}", exc_info=True)
-        # 여기서 예외를 다시 발생시키지 않고, 에러 메시지를 반환합니다.
-        return f"Analysis failed: {str(e)}"
-
+        raise
 
 @sync_to_async
 def create_analysis_result(data):
+    from .models import AnalysisResult
     with transaction.atomic():
-        return AnalysisResult.objects.create(
-            symbol=data['symbol'],
-            result_string=data['result_string'],
-            current_price=data['current_price'],
-            price_prediction=data['price_prediction'],
-            confidence=float(data['confidence']) if data['confidence'] else None,
-            selected_strategy=data['selected_strategy']
-        )
+        return AnalysisResult.objects.create(**data)
+
 
 @sync_to_async
 def update_strategy_config(selected_strategy):
@@ -97,11 +100,10 @@ def update_strategy_config(selected_strategy):
             current_config = strategy_config.config
             if 'INIT' in current_config and 'setting' in current_config['INIT']:
                 current_config['INIT']['setting']['grid_strategy'] = selected_strategy
-                strategy_config.config = current_config
-                strategy_config.save()
-            logger.info(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
-    except StrategyConfig.DoesNotExist:
-        logger.error("StrategyConfig '240824' does not exist")
+            strategy_config.config = current_config
+            strategy_config.save()
+        logger.info(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
     except Exception as e:
-        logger.error(f"Error updating StrategyConfig: {str(e)}")
+        logger.error(f"Error updating StrategyConfig: {str(e)}", exc_info=True)
+
 
