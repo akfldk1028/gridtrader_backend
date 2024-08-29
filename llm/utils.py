@@ -512,19 +512,19 @@ def perform_analysis():
     ##type: <class 'crewai.crews.crew_output.CrewOutput'>
 
     print("-----------------------------------------------------")
-    print(results)
+    print(results) #results.raw)
     print(results.raw)
-    print(results.tasks_output)
-    print(type(results.tasks_output))
+    # print(results.tasks_output)
+    # print(type(results.tasks_output))
 
     print("-----------------------------------------------------")
 
 
     task_results = {
-        'hourly_analysis': task1_output.description,
-        'daily_analysis': task2_output.description,
-        'price_prediction': task3_output.description,
-        'strategy_recommendation': task4_output.description
+        'hourly_analysis': task1_output.raw,
+        'daily_analysis': task2_output.raw,
+        'price_prediction': task3_output.raw,
+        'strategy_recommendation': task4_output.raw
     }
     # result_parts = result.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
 
