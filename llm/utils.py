@@ -503,19 +503,23 @@ def perform_analysis():
     )
 
     results = crew.kickoff()
-
+    print(results)
+    result_parts = results.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
     task_results = {
-        'hourly_analysis': results[0],
-        'daily_analysis': results[1],
-        'price_prediction': results[2],
-        'strategy_recommendation': results[3]
+        'hourly_analysis': result_parts[0] if len(result_parts) > 0 else "",
+        'daily_analysis': result_parts[1] if len(result_parts) > 1 else "",
+        'price_prediction': result_parts[2] if len(result_parts) > 2 else "",
+        'strategy_recommendation': result_parts[3] if len(result_parts) > 3 else ""
     }
-
     result_string = "\n\n".join(str(result) for result in results)
 
-    price_prediction, confidence = extract_prediction(result_string)
+    # price_prediction, confidence = extract_prediction(result_string)
+    # selected_strategy = extract_strategy(task_results['strategy_recommendation'])
+    # current_price = get_current_bitcoin_price()
+    price_prediction, confidence = extract_prediction(task_results['price_prediction'])
     selected_strategy = extract_strategy(task_results['strategy_recommendation'])
     current_price = get_current_bitcoin_price()
+
 
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
@@ -552,7 +556,7 @@ def perform_analysis():
     print(f"가격 예측: {price_prediction}")
     print(f"신뢰도: {confidence}%")
     print("\n한글 요약:")
-    print(korean_summary_result[0])  # 한글 요약 결과 출력
+    print(korean_summary_result)  # 한글 요약 결과 출력
 
 
     return {
@@ -562,5 +566,5 @@ def perform_analysis():
         'confidence': confidence,
         'selected_strategy': selected_strategy,
         'current_price': current_price,
-        'korean_summary': korean_summary_result[0]
+        'korean_summary': korean_summary_result
     }
