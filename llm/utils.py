@@ -501,10 +501,7 @@ def perform_analysis():
         verbose=True,
         process=Process.sequential
     )
-    task1_output = task1.output
-    task2_output = task2.output
-    task3_output = task3.output
-    task4_output = task4.output
+
 
     results = crew.kickoff()
     print("CrewOutput type:", type(results))
@@ -516,15 +513,15 @@ def perform_analysis():
     print(results.raw)
     # print(results.tasks_output)
     # print(type(results.tasks_output))
-
+    # <class 'list'>
     print("-----------------------------------------------------")
 
 
     task_results = {
-        'hourly_analysis': task1_output.raw,
-        'daily_analysis': task2_output.raw,
-        'price_prediction': task3_output.raw,
-        'strategy_recommendation': task4_output.raw
+        'hourly_analysis': results.tasks_output[0],
+        'daily_analysis': results.tasks_output[1],
+        'price_prediction': results.tasks_output[2],
+        'strategy_recommendation': results.tasks_output[3]
     }
     # result_parts = result.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
 
