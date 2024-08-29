@@ -16,6 +16,7 @@ from llm.etc import get_strategy_config
 from binanaceAccount.consumers import BinanceAPIConsumer
 import websockets
 import json
+from asgiref.sync import sync_to_async
 
 
 # Binance 클라이언트 초기화
@@ -143,8 +144,7 @@ def extract_strategy(text):
 # 기존 get_current_bitcoin_price 함수 내용...
 
 async def perform_analysis():
-
-    config = get_strategy_config()
+    config = await sync_to_async(get_strategy_config)()
     if not config:
         print("Strategy configuration is invalid.")
         return None

@@ -9,6 +9,7 @@ from TradeStrategy.models import StrategyConfig
 from django.core.exceptions import ObjectDoesNotExist
 import asyncio
 from asgiref.sync import sync_to_async
+from django.db import transaction
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def setup_bitcoin_analysis_task():
     # 기존 스케줄이 있다면 삭제
-    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
+    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis_sync').delete()
 
 
     #     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
@@ -37,7 +38,7 @@ def setup_bitcoin_analysis_task():
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
-    next_hour = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    next_hour = now.replace(hour=9, minute=52, second=0, microsecond=0)
 
     # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
@@ -46,7 +47,7 @@ def setup_bitcoin_analysis_task():
 
     # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
     schedule(
-        'llm.tasks.run_bitcoin_analysis',
+        'llm.tasks.run_bitcoin_analysis_sync',
         schedule_type=Schedule.CRON,
         cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
         next_run=next_hour,
@@ -60,56 +61,49 @@ def setup_bitcoin_analysis_task():
     print(f"비트코인 분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
 
+def run_bitcoin_analysis_sync():
+    return asyncio.run(run_bitcoin_analysis())
 
-
-def update_strategy_config():
+async def run_bitcoin_analysis():
     try:
-        # 가장 최근의 AnalysisResult 가져오기
-        latest_analysis = AnalysisResult.objects.latest('created_at')
+        from .utils import perform_analysis
+        result = await perform_analysis()
 
-        if latest_analysis:
-            selected_strategy = latest_analysis.selected_strategy
+        analysis_result = await create_analysis_result({
+            'symbol': result['symbol'],
+            'result_string': result['result_string'],
+            'current_price': result['current_price'],
+            'price_prediction': result['price_prediction'],
+            'confidence': float(result['confidence']) if result['confidence'] else None,
+            'selected_strategy': result['selected_strategy']
+        })
 
-            # StrategyConfig 모델에서 설정 찾기 (이미지에서는 name이 '240824'입니다)
+        await update_strategy_config(result['selected_strategy'])
+
+        return f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
+    except Exception as e:
+        logger.error(f"Error in run_bitcoin_analysis task: {str(e)}", exc_info=True)
+        raise
+
+@sync_to_async
+def create_analysis_result(data):
+    from .models import AnalysisResult
+    with transaction.atomic():
+        return AnalysisResult.objects.create(**data)
+
+
+@sync_to_async
+def update_strategy_config(selected_strategy):
+    try:
+        with transaction.atomic():
             strategy_config = StrategyConfig.objects.get(name='240824')
-
-            # 현재 config 가져오기
             current_config = strategy_config.config
-
-            # INIT 내의 setting의 grid_strategy 업데이트
             if 'INIT' in current_config and 'setting' in current_config['INIT']:
                 current_config['INIT']['setting']['grid_strategy'] = selected_strategy
-
-            # 업데이트된 config 저장
             strategy_config.config = current_config
             strategy_config.save()
-
-            logger.info(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
-        else:
-            logger.warning("No AnalysisResult found")
-
-    except StrategyConfig.DoesNotExist:
-        logger.error("StrategyConfig with name '240824' not found")
+        logger.info(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
     except Exception as e:
         logger.error(f"Error updating StrategyConfig: {str(e)}", exc_info=True)
 
 
-def run_bitcoin_analysis():
-    async def async_analysis():
-        try:
-            result = await perform_analysis()
-            analysis_result = await sync_to_async(AnalysisResult.objects.create)(
-                symbol=result['symbol'],
-                result_string=result['result_string'],
-                current_price=result['current_price'],
-                price_prediction=result['price_prediction'],
-                confidence=float(result['confidence']) if result['confidence'] else None,
-                selected_strategy=result['selected_strategy']
-            )
-            await sync_to_async(update_strategy_config)()
-            return f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
-        except Exception as e:
-            print(f"Error in run_bitcoin_analysis task: {str(e)}")
-            raise
-
-    return asyncio.run(async_analysis())
