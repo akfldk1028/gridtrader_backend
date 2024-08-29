@@ -38,7 +38,7 @@ def setup_update_account_info_task():
             # now = datetime.now()
             now = datetime.now()
             # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            next_hour = now.replace(hour=17, minute=44, second=0, microsecond=0)
+            next_hour = now.replace(hour=17, minute=49, second=0, microsecond=0)
 
             # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
             # if now > next_hour:
@@ -51,6 +51,7 @@ def setup_update_account_info_task():
                 next_run=next_hour,
                 repeats=-1  # 무한 반복
             )
+        print(f"기록작업 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 1시간마다 실행되도록 예약되었습니다.")
 
     except ProgrammingError:
         # 데이터베이스 테이블이 아직 없는 경우

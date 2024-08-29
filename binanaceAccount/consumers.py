@@ -140,7 +140,7 @@ class OnDemandDataConsumer(BinanceBaseConsumer):
         await super().disconnect(close_code)
 
 
-    def save_daily_balance(self, event):
+    async def save_daily_balance(self, event):
         try:
             await self.save_daily_balance_logic()
         except Exception as e:
