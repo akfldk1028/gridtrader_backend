@@ -125,6 +125,11 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
 class OnDemandDataConsumer(BinanceBaseConsumer):
     async def connect(self):
         await super().connect()
+        print("OnDemandDataConsumer connected")
+
+    async def disconnect(self, close_code):
+        print(f"OnDemandDataConsumer disconnected with code: {close_code}")
+        await super().disconnect(close_code)
     async def receive(self, text_data):
         data = json.loads(text_data)
         action = data.get('action')
