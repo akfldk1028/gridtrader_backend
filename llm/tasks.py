@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def setup_bitcoin_analysis_task():
     # 기존 스케줄이 있다면 삭제
-    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis_sync').delete()
+    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
 
 
     #     evening_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
@@ -41,7 +41,7 @@ def setup_bitcoin_analysis_task():
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
-    next_hour = now.replace(hour=16, minute=35, second=0, microsecond=0)
+    next_hour = now.replace(hour=16, minute=55, second=0, microsecond=0)
 
     # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
@@ -50,7 +50,7 @@ def setup_bitcoin_analysis_task():
 
     # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
     schedule(
-        'llm.tasks.run_bitcoin_analysis_sync',
+        'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
         cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
         next_run=next_hour,
