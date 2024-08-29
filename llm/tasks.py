@@ -7,6 +7,9 @@ from django_q.models import Schedule
 from datetime import time, datetime, timedelta
 from TradeStrategy.models import StrategyConfig
 from django.core.exceptions import ObjectDoesNotExist
+import asyncio
+from asgiref.sync import sync_to_async
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,7 @@ def setup_bitcoin_analysis_task():
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
-    next_hour = now.replace(hour=9, minute=15, second=0, microsecond=0)
+    next_hour = now.replace(hour=9, minute=30, second=0, microsecond=0)
 
     # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
@@ -91,41 +94,22 @@ def update_strategy_config():
         logger.error(f"Error updating StrategyConfig: {str(e)}", exc_info=True)
 
 
-async def run_bitcoin_analysis():
-    import time
+def run_bitcoin_analysis():
+    async def async_analysis():
+        try:
+            result = await perform_analysis()
+            analysis_result = await sync_to_async(AnalysisResult.objects.create)(
+                symbol=result['symbol'],
+                result_string=result['result_string'],
+                current_price=result['current_price'],
+                price_prediction=result['price_prediction'],
+                confidence=float(result['confidence']) if result['confidence'] else None,
+                selected_strategy=result['selected_strategy']
+            )
+            await sync_to_async(update_strategy_config)()
+            return f"Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
+        except Exception as e:
+            print(f"Error in run_bitcoin_analysis task: {str(e)}")
+            raise
 
-    start_time = time.time()
-    print("Starting Bitcoin analysis task")
-    try:
-        print("Calling perform_analysis function")
-        analysis_start = time.time()
-        result = await perform_analysis()  # Await the coroutine here
-        analysis_end = time.time()
-        print(f"Analysis completed in {analysis_end - analysis_start:.2f} seconds. Results: {result}")
-
-        print("Creating AnalysisResult object")
-        db_start = time.time()
-        analysis_result = AnalysisResult.objects.create(
-            symbol=result['symbol'],
-            result_string=result['result_string'],
-            current_price=result['current_price'],
-            price_prediction=result['price_prediction'],
-            confidence=float(result['confidence']) if result['confidence'] else None,
-            selected_strategy=result['selected_strategy']
-        )
-        db_end = time.time()
-        print(f"AnalysisResult object created in {db_end - db_start:.2f} seconds. ID: {analysis_result.id}")
-
-        update_start = time.time()
-        update_strategy_config()
-        update_end = time.time()
-        print(f"Strategy config updated in {update_end - update_start:.2f} seconds")
-
-        total_time = time.time() - start_time
-        print(f"Total execution time: {total_time:.2f} seconds")
-
-        return f"Analysis completed successfully in {total_time:.2f} seconds. AnalysisResult id: {analysis_result.id}"
-    except Exception as e:
-        print(f"Error in run_bitcoin_analysis task: {str(e)}")
-        raise
-
+    return asyncio.run(async_analysis())

@@ -15,7 +15,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import websockets
 import json
-
+import asyncio
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 60 * 3  # 10 minutes in seconds
@@ -33,19 +33,19 @@ def setup_update_account_info_task():
             #     repeats=-1
             # )
 
-            Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance').delete()
+            Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance_wrapper').delete()
 
             # now = datetime.now()
             now = datetime.now()
             # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            next_hour = now.replace(hour=9, minute=15, second=0, microsecond=0)
+            next_hour = now.replace(hour=9, minute=30, second=0, microsecond=0)
 
             # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
             if now > next_hour:
                 next_hour += timedelta(days=1)
 
             schedule(
-                'binanaceAccount.tasks.trigger_save_daily_balance',
+                'binanaceAccount.tasks.trigger_save_daily_balance_wrapper',
                 schedule_type=Schedule.CRON,
                 cron='0 */1 * * *',  # 매 3시간마다 정각에 실행
                 next_run=next_hour,
@@ -66,12 +66,10 @@ async def trigger_save_daily_balance():
 
     try:
         async with websockets.connect(uri) as websocket:
-            # Send a message to trigger the save_daily_balance action
             await websocket.send(json.dumps({
                 'action': 'save_daily_balance'
             }))
 
-            # Wait for the response
             response = await websocket.recv()
             response_data = json.loads(response)
 
@@ -81,8 +79,10 @@ async def trigger_save_daily_balance():
                 print(f"Error: {response_data.get('message')}")
 
     except Exception as e:
-        logger.error(f"Error in WebSocket communication: {str(e)}")
         print(f"Error saving daily balance: {str(e)}")
+
+def trigger_save_daily_balance_wrapper():
+    asyncio.run(trigger_save_daily_balance())
 
 def set_cache_data(account_type, key, data):
     """
