@@ -172,8 +172,12 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
 
             DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
 
+            # 현재 시간을 가져옵니다 (UTC 기준)
+            now = timezone.now()
+
+            # 새로운 DailyBalance 객체를 생성합니다
             await sync_to_async(DailyBalance.objects.create)(
-                date=timezone.now().date(),
+                date=now,
                 futures_balance=futures_balance,
                 futures_positions=futures_positions
             )
