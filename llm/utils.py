@@ -504,14 +504,14 @@ def perform_analysis():
 
     results = crew.kickoff()
     print(results)
-    result_parts = results.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
+
     task_results = {
-        'hourly_analysis': result_parts[0] if len(result_parts) > 0 else "",
-        'daily_analysis': result_parts[1] if len(result_parts) > 1 else "",
-        'price_prediction': result_parts[2] if len(result_parts) > 2 else "",
-        'strategy_recommendation': result_parts[3] if len(result_parts) > 3 else ""
+        'hourly_analysis': results.task_outputs[0] if len(results.task_outputs) > 0 else "",
+        'daily_analysis': results.task_outputs[1] if len(results.task_outputs) > 1 else "",
+        'price_prediction': results.task_outputs[2] if len(results.task_outputs) > 2 else "",
+        'strategy_recommendation': results.task_outputs[3] if len(results.task_outputs) > 3 else ""
     }
-    result_string = "\n\n".join(str(result) for result in results)
+    result_string = str(results)
 
     # price_prediction, confidence = extract_prediction(result_string)
     # selected_strategy = extract_strategy(task_results['strategy_recommendation'])
@@ -521,6 +521,7 @@ def perform_analysis():
     current_price = get_current_bitcoin_price()
 
 
+    # 한글 요약 생성 (이 부분은 그대로 유지)
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
         1. Hourly Analysis: {task_results['hourly_analysis']}
@@ -538,7 +539,6 @@ def perform_analysis():
         expected_output="A concise Korean summary of the Bitcoin market analysis and predictions",
         agent=korean_summarizer
     )
-
 
     # 한글 요약을 위한 새로운 Crew 생성 및 실행
     korean_summary_crew = Crew(
