@@ -237,9 +237,9 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
 
     async def get_bitcoin_data_and_price(self, symbol):
         try:
-            hourly_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1HOUR,
+            hourly_candles = await self.client.get_klines(symbol=symbol, interval=self.client.KLINE_INTERVAL_1HOUR,
                                                           limit=500)
-            daily_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1DAY,
+            daily_candles = await self.client.get_klines(symbol=symbol, interval=self.client.KLINE_INTERVAL_1DAY,
                                                          limit=500)
             ticker = await self.client.get_symbol_ticker(symbol=symbol)
             current_price = float(ticker['price'])
@@ -276,7 +276,7 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
             }
 
             await self.send(text_data=json.dumps({
-                'type': 'bitcoin_data_and_price',
+                'type': 'llm_data_and_price',
                 'data': bitcoin_data
             }))
 
