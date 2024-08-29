@@ -365,7 +365,15 @@ price_predictor = Agent(
     allow_delegation=False,
 )
 
-
+korean_summarizer = Agent(
+    role='Korean Market Summarizer',
+    goal='Summarize Bitcoin market analysis and predictions in Korean',
+    backstory="""You are a skilled translator and summarizer, specializing in cryptocurrency market analysis. 
+    Your expertise lies in conveying complex market information in clear, concise Korean language. 
+    You are known for your ability to make technical analysis accessible to Korean-speaking audiences.""",
+    verbose=True,
+    allow_delegation=False,
+)
 def extract_prediction(text):
     # Look for the specific format: "Up X%" or "Down X%"
     match = re.search(r'(Up|Down)\s+(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
@@ -494,23 +502,65 @@ def perform_analysis():
         process=Process.sequential
     )
 
-    result = crew.kickoff()
-    result_string = str(result)
+    results = crew.kickoff()
+
+    task_results = {
+        'hourly_analysis': results[0],
+        'daily_analysis': results[1],
+        'price_prediction': results[2],
+        'strategy_recommendation': results[3]
+    }
+
+    result_string = "\n\n".join(str(result) for result in results)
 
     price_prediction, confidence = extract_prediction(result_string)
-    selected_strategy = extract_strategy(result_string)
+    selected_strategy = extract_strategy(task_results['strategy_recommendation'])
     current_price = get_current_bitcoin_price()
+
+    korean_summary_task = Task(
+        description=f"""Summarize the following Bitcoin market analysis in Korean:
+        1. Hourly Analysis: {task_results['hourly_analysis']}
+        2. Daily Analysis: {task_results['daily_analysis']}
+        3. Price Prediction: {task_results['price_prediction']}
+        4. Strategy Recommendation: {task_results['strategy_recommendation']}
+
+        현재 가격: {current_price}
+        가격 예측: {price_prediction}
+        신뢰도: {confidence}%
+        선택된 전략: {selected_strategy}
+
+        Provide a concise summary in Korean, highlighting the key points from each analysis and the final recommendations.
+        Use natural Korean language and explain any technical terms if necessary.""",
+        expected_output="A concise Korean summary of the Bitcoin market analysis and predictions",
+        agent=korean_summarizer
+    )
+
+
+    # 한글 요약을 위한 새로운 Crew 생성 및 실행
+    korean_summary_crew = Crew(
+        agents=[korean_summarizer],
+        tasks=[korean_summary_task],
+        verbose=True,
+        process=Process.sequential
+    )
+    korean_summary_result = korean_summary_crew.kickoff()
+
+
     print("######################")
-    print("간다이이이이이잇")
-    print(f"Analysis complete. Results have been saved to report.md and the database.")
-    print(f"Selected Grid Strategy: {selected_strategy}")
-    print(f"Price Prediction: {price_prediction}")
-    print(f"Confidence Level: {confidence}%")
+    print("분석 완료")
+    print(f"선택된 그리드 전략: {selected_strategy}")
+    print(f"가격 예측: {price_prediction}")
+    print(f"신뢰도: {confidence}%")
+    print("\n한글 요약:")
+    print(korean_summary_result[0])  # 한글 요약 결과 출력
+
+
     return {
         'symbol': vt_symbol,
         'result_string': result_string,
         'price_prediction': price_prediction,
         'confidence': confidence,
         'selected_strategy': selected_strategy,
-        'current_price': current_price
+        'current_price': current_price,
+        'korean_summary': korean_summary_result[0]
     }

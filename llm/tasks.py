@@ -79,7 +79,8 @@ def run_bitcoin_analysis():
             current_price=result['current_price'],
             price_prediction=result['price_prediction'],
             confidence=float(result['confidence']) if result['confidence'] else None,
-            selected_strategy=result['selected_strategy']
+            selected_strategy=result['selected_strategy'],
+            korean_summary = result['korean_summary'] if 'korean_summary' in result else ""
         )
         update_strategy_config()
         return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"

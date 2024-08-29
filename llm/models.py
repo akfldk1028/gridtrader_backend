@@ -5,6 +5,7 @@ from common.models import CommonModel
 class AnalysisResult(CommonModel):
     date = models.DateTimeField(auto_now_add=True )
     symbol = models.CharField(max_length=20 , null=True, blank=True)
+    korean_summary = models.TextField(null=True, blank=True)
     result_string = models.TextField(null=True, blank=True)
     current_price = models.FloatField(null=True, blank=True)
     price_prediction = models.CharField(max_length=10, null=True, blank=True)
