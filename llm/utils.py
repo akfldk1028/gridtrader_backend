@@ -268,7 +268,7 @@ async def perform_analysis():
     print(f"Price Prediction: {price_prediction}")
     print(f"Confidence Level: {confidence}%")
     return {
-        'symbol':  symbol,
+        'symbol': "BNBUSDT",
         'result_string' : result_string,
         'price_prediction': price_prediction,
         'confidence': confidence,

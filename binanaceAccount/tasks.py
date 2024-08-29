@@ -38,7 +38,7 @@ def setup_update_account_info_task():
             # now = datetime.now()
             now = datetime.now()
             # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            next_hour = now.replace(hour=10, minute=20, second=0, microsecond=0)
+            next_hour = now.replace(hour=10, minute=40, second=0, microsecond=0)
 
             # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
             if now > next_hour:

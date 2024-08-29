@@ -12,6 +12,7 @@ from .models import DailyBalance
 from django.utils import timezone
 from django.apps import apps
 import pandas as pd
+from django.db import IntegrityError
 
 
 
@@ -165,32 +166,41 @@ class BinanceAPIConsumer(AsyncWebsocketConsumer):
             pos['profit_percentage'] = self.calculate_profit_percentage(pos)
 
         return filtered_positions
+
     async def save_daily_balance(self):
         try:
+            print("Starting save_daily_balance process")
+
             futures_balance = await self.get_futures_balance_data()
+            print(f"Futures balance data: {futures_balance}")
+
             futures_positions = await self.get_futures_positions_data('')
+            print(f"Futures positions data: {futures_positions}")
 
             DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
 
-            # 현재 시간을 가져옵니다 (UTC 기준)
-            now = timezone.now()
-
-            # 새로운 DailyBalance 객체를 생성합니다
-            await sync_to_async(DailyBalance.objects.create)(
-                date=now,
+            new_balance = await sync_to_async(DailyBalance.objects.create)(
                 futures_balance=futures_balance,
                 futures_positions=futures_positions
             )
 
+            print(
+                f"Successfully created DailyBalance record with id {new_balance.id} at {new_balance.created_at}")
+
             await self.send(text_data=json.dumps({
                 'type': 'daily_balance_saved',
-                'message': 'Daily balance saved successfully'
+                'message': 'Daily balance saved successfully',
+                'record_id': new_balance.id,
+                'timestamp': new_balance.created_at.isoformat()
             }))
         except Exception as e:
+            print(f"Unexpected error in save_daily_balance: {str(e)}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
-                'message': f"Error saving daily balance: {str(e)}"
+                'message': f"Unexpected error saving daily balance. Please check the logs."
             }))
+
+
     async def get_bitcoin_data_and_price(self, symbol):
         try:
             hourly_candles = await self.client.get_klines(symbol=symbol, interval=AsyncClient.KLINE_INTERVAL_1HOUR, limit=500)

@@ -10,16 +10,16 @@ from django.utils import timezone
 
 
 class DailyBalance(CommonModel):
-    date = models.DateField(default=timezone.now, unique=True)
     futures_balance = models.JSONField()
     futures_positions = models.JSONField()
 
     def __str__(self):
-        return f"Balance for {self.date}"
+        return f"Balance for {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
 
     class Meta:
-        ordering = ['-date']
-        get_latest_by = 'date'
+        ordering = ['-created_at']
+        get_latest_by = 'created_at'
+
 
 
 

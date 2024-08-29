@@ -1,12 +1,14 @@
 from django.contrib import admin
 from .models import BinanceOrder, BinanceSymbolSettings, DailyBalance
 
+
+
 @admin.register(DailyBalance)
 class DailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('date', 'get_futures_balance', 'get_futures_positions')
-    list_filter = ('date',)
-    search_fields = ('date',)
-    ordering = ('-date',)
+    list_display = ('created_at', 'get_futures_balance', 'get_futures_positions')
+    list_filter = ('created_at',)
+    search_fields = ('created_at',)
+    ordering = ('-created_at',)
 
     def get_futures_balance(self, obj):
         return obj.futures_balance.get('balance', 'N/A')
