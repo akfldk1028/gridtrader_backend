@@ -196,7 +196,7 @@ async def perform_analysis():
             print(f"Error: {data['message']}")
             return None
 
-        if data['type'] != 'bitcoin_data':
+        if data['type'] != 'get_bitcoin_data_and_price':
             print(f"Unexpected response type: {data['type']}")
             return None
 
@@ -276,8 +276,8 @@ async def perform_analysis():
     return {
         'symbol': vt_symbol,  # "BNBUSDT" 대신 vt_symbol 사용
         'result_string' : result_string,
+        'current_price': current_price,
         'price_prediction': price_prediction,
         'confidence': confidence,
         'selected_strategy': selected_strategy,
-        'current_price': current_price
     }
