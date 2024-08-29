@@ -129,7 +129,10 @@ class OnDemandDataConsumer(BinanceBaseConsumer):
 
     async def disconnect(self, close_code):
         print(f"OnDemandDataConsumer disconnected with code: {close_code}")
+        if hasattr(self, 'client'):
+            await self.client.close_connection()
         await super().disconnect(close_code)
+
     async def receive(self, text_data):
         data = json.loads(text_data)
         action = data.get('action')
