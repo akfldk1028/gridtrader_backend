@@ -521,8 +521,8 @@ def perform_analysis():
     # price_prediction, confidence = extract_prediction(result_string)
     # selected_strategy = extract_strategy(task_results['strategy_recommendation'])
     # current_price = get_current_bitcoin_price()
-    price_prediction, confidence = extract_prediction(task_results['price_prediction'])
-    selected_strategy = extract_strategy(task_results['strategy_recommendation'])
+    price_prediction, confidence = extract_prediction(result_string)
+    selected_strategy = extract_strategy(result_string)
     current_price = get_current_bitcoin_price()
 
 
