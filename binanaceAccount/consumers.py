@@ -40,10 +40,10 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
         Thread(target=run_twm).start()
 
-
     async def disconnect(self, close_code):
+        print("WebSocket 연결 종료")
         if self.user_socket:
-            await self.user_socket.close()
+            await self.user_socket.stop()  # Use stop() instead of close()
         if self.mark_price_socket:
             self.twm.stop_socket(self.mark_price_socket)
         self.twm.stop()
