@@ -126,15 +126,15 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             await self.send_if_changed('futures_positions', positions_data)
 
     def handle_mark_price_update(self, msg):
+        # print(msg)
         try:
+            print(f"Received mark price update: {json.dumps(msg, indent=2)}")
+
             if isinstance(msg, dict):
-                # 단일 마크 가격 업데이트 처리
-                self.process_single_mark_price(msg)
+                self.process_mark_price_data(msg)
             elif isinstance(msg, list):
-                # 여러 마크 가격 업데이트 처리
                 for item in msg:
-                    if isinstance(item, dict):
-                        self.process_single_mark_price(item)
+                    self.process_mark_price_data(item)
             else:
                 print(f"Unexpected message format: {msg}")
         except Exception as e:
@@ -142,19 +142,25 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
         asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
 
-    def process_single_mark_price(self, item):
-        if 'data' in item:
-            data = item['data']
-            symbol = data.get('s')
-            mark_price = data.get('p')
+    def process_mark_price_data(self, data):
+        if isinstance(data, dict):
+            if 'data' in data:
+                self.extract_mark_price(data['data'])
+            else:
+                self.extract_mark_price(data)
+        elif isinstance(data, list):
+            for item in data:
+                self.process_mark_price_data(item)
         else:
-            symbol = item.get('s')
-            mark_price = item.get('p')
+            print(f"Unexpected data format: {data}")
 
+    def extract_mark_price(self, item):
+        symbol = item.get('s')
+        mark_price = item.get('p')
         if symbol and mark_price:
             self.mark_prices[symbol] = mark_price
         else:
-            print(f"Unexpected item format: {item}")
+            print(f"Unable to extract mark price from: {item}")
 
 
     # def handle_mark_price_update(self, msg):
