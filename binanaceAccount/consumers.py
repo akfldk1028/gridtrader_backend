@@ -8,7 +8,9 @@ import json
 from threading import Thread
 class PeriodicDataConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        print("WebSocket 연결 시도")
         await self.accept()
+        print("WebSocket 연결 성공")
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
         self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
@@ -46,6 +48,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             await self.send_futures_positions()
 
     async def start_user_socket(self):
+        print("사용자 소켓 시작")
+
         if self.reconnecting:
             return
         self.reconnecting = True
@@ -53,17 +57,23 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
         asyncio.create_task(self.user_socket_listener())
 
     def start_all_mark_price_socket(self):
+        print("마크 가격 소켓 시작")
+
         self.mark_price_socket = self.twm.start_all_mark_price_socket(
             callback=self.handle_mark_price_update,
             fast=True
         )
 
     async def user_socket_listener(self):
+        print("사용자 소켓 리스너 시작")
+
         async with self.user_socket as tscm:
             while True:
                 try:
                     res = await tscm.recv()
                     if res:
+                        print(f"수신된 데이터: {res}")
+
                         event_type = res.get('e')
                         if event_type == 'ACCOUNT_UPDATE':
                             await self.handle_account_update(res)
@@ -140,6 +150,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             }))
 
     async def send_futures_balance(self):
+        print("선물 잔고 전송 시도")
+
         if 'futures_balance' in self.last_sent_data:
             await self.send(text_data=json.dumps({
                 'type': 'futures_balance',
@@ -147,6 +159,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             }))
 
     async def send_futures_positions(self):
+        print("선물 포지션 전송 시도")
+
         if 'futures_positions' in self.last_sent_data:
             await self.send(text_data=json.dumps({
                 'type': 'futures_positions',
