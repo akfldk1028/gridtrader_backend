@@ -2,15 +2,10 @@ import asyncio
 from django.conf import settings
 import time
 from decimal import Decimal, InvalidOperation
-from asgiref.sync import sync_to_async
-from .models import DailyBalance
-from django.utils import timezone
-from django.apps import apps
-import pandas as pd
-from django.db import IntegrityError
 from binance import AsyncClient, BinanceSocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+
 
 class BinanceBaseConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -34,9 +29,7 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         try:
             server_time = await self.client.get_server_time()
             self.client.timestamp_offset = server_time['serverTime'] - int(time.time() * 1000)
-            print(f"Synced server time. Offset: {self.client.timestamp_offset}ms")
         except Exception as e:
-            print(f"Error syncing server time: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f"Error syncing server time: {str(e)}"
@@ -59,10 +52,7 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
                         event_type = res.get('e')
                         if event_type == 'ACCOUNT_UPDATE':
                             await self.handle_account_update(res)
-                        elif event_type == 'ORDER_TRADE_UPDATE':
-                            await self.handle_order_update(res)
                 except Exception as e:
-                    print(f"Error in user socket listener: {e}")
                     await asyncio.sleep(5)
                     await self.start_user_socket()
                     break
@@ -78,8 +68,10 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
                 'balance': usdt_balance['wb']
             })
 
-        for position in positions:
-            if float(position['pa']) != 0:
+        active_positions = [position for position in positions if float(position['pa']) != 0]
+        if active_positions:
+            positions_data = []
+            for position in active_positions:
                 position_data = {
                     'symbol': position['s'],
                     'positionAmt': position['pa'],
@@ -89,13 +81,12 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
                     'markPrice': position['mp']
                 }
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
-                await self.send_if_changed(f'futures_position_{position["s"]}', position_data)
+                positions_data.append(position_data)
 
-    async def handle_order_update(self, data):
-        pass
+            await self.send_if_changed('futures_positions', positions_data)
 
     async def send_if_changed(self, data_type, data):
-        key = f"{data_type}_{data.get('symbol', '')}"
+        key = data_type
         if self.last_sent_data.get(key) != data:
             self.last_sent_data[key] = data
             await self.send(text_data=json.dumps({
@@ -125,6 +116,7 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         except (InvalidOperation, ZeroDivisionError):
             return 0
 
+
 class PeriodicDataConsumer(BinanceBaseConsumer):
     async def connect(self):
         await super().connect()
@@ -139,12 +131,11 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
         while True:
             try:
                 await self.get_futures_balance()
-                await self.get_futures_positions('')
+                await self.get_futures_positions()
                 await asyncio.sleep(5)  # Send data every 5 seconds
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Error in periodic task: {str(e)}")
                 await asyncio.sleep(5)
 
     async def get_futures_balance(self):
@@ -158,22 +149,29 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
                 'message': str(e)
             }))
 
-    async def get_futures_positions(self, symbols):
+    async def get_futures_positions(self):
         try:
-            params = {}
-            if symbols:
-                params['symbol'] = symbols.strip().upper()
-
-            all_positions = await self.client.futures_position_information(**params)
-
-            filtered_positions = [
+            all_positions = await self.client.futures_position_information()
+            active_positions = [
                 pos for pos in all_positions
-                if (not symbols or pos["symbol"] in symbols.split(',')) and float(pos["positionAmt"]) != 0
+                if float(pos["positionAmt"]) != 0
             ]
 
-            for pos in filtered_positions:
-                pos['profit_percentage'] = self.calculate_profit_percentage(pos)
-                await self.send_if_changed(f'futures_position_{pos["symbol"]}', pos)
+            positions_data = []
+            for pos in active_positions:
+                pos_data = {
+                    'symbol': pos['symbol'],
+                    'positionAmt': pos['positionAmt'],
+                    'entryPrice': pos['entryPrice'],
+                    'markPrice': pos['markPrice'],
+                    'unRealizedProfit': pos['unRealizedProfit'],
+                    'liquidationPrice': pos['liquidationPrice'],
+                    'leverage': pos['leverage'],
+                }
+                pos_data['profit_percentage'] = self.calculate_profit_percentage(pos_data)
+                positions_data.append(pos_data)
+
+            await self.send_if_changed('futures_positions', positions_data)
 
         except Exception as e:
             await self.send(text_data=json.dumps({
@@ -185,7 +183,7 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
         try:
             data = json.loads(text_data)
             if data['type'] == 'get_futures_positions':
-                await self.get_futures_positions(data.get('symbols', ''))
+                await self.get_futures_positions()
             elif data['type'] == 'get_futures_balance':
                 await self.get_futures_balance()
         except json.JSONDecodeError:
@@ -198,7 +196,6 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
                 'type': 'error',
                 'message': str(e)
             }))
-
 
 # class BinanceBaseConsumer(AsyncWebsocketConsumer):
 #     async def connect(self):
