@@ -32,8 +32,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     def start_twm_in_thread(self):
         def run_twm():
-            loop = asyncio.new_event_loop()  # Create a new event loop
-            asyncio.set_event_loop(loop)  # Set this loop as the current one for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             self.twm.start()
             loop.run_until_complete(self.start_all_mark_price_socket())
             loop.run_forever()
@@ -62,7 +62,6 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     async def start_user_socket(self):
         print("사용자 소켓 시작")
-
         if self.reconnecting:
             return
         self.reconnecting = True
@@ -127,16 +126,36 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             await self.send_if_changed('futures_positions', positions_data)
 
     def handle_mark_price_update(self, msg):
-        for item in msg:
-            if isinstance(item, dict):  # Ensure that item is a dictionary
-                symbol = item.get('s')  # Safely access the symbol key
-                mark_price = item.get('p')
-                if symbol and mark_price:
-                    self.mark_prices[symbol] = mark_price
+        try:
+            if isinstance(msg, dict):
+                # 단일 마크 가격 업데이트 처리
+                self.process_single_mark_price(msg)
+            elif isinstance(msg, list):
+                # 여러 마크 가격 업데이트 처리
+                for item in msg:
+                    if isinstance(item, dict):
+                        self.process_single_mark_price(item)
             else:
-                print(f"Unexpected item format: {item}")  # Handle unexpected formats
+                print(f"Unexpected message format: {msg}")
+        except Exception as e:
+            print(f"Error in handle_mark_price_update: {e}")
 
         asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
+
+    def process_single_mark_price(self, item):
+        if 'data' in item:
+            data = item['data']
+            symbol = data.get('s')
+            mark_price = data.get('p')
+        else:
+            symbol = item.get('s')
+            mark_price = item.get('p')
+
+        if symbol and mark_price:
+            self.mark_prices[symbol] = mark_price
+        else:
+            print(f"Unexpected item format: {item}")
+
 
     # def handle_mark_price_update(self, msg):
     #     for item in msg:
