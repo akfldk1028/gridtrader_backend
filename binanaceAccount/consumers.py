@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.apps import apps
 import pandas as pd
 from django.db import IntegrityError
-from binance import AsyncClient, BinanceSocketManager, BinanceAPIException
+from binance import AsyncClient, BinanceSocketManager
 
 
 class BinanceBaseConsumer(AsyncWebsocketConsumer):
