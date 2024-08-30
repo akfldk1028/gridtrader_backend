@@ -2,7 +2,7 @@ import asyncio
 from django.conf import settings
 import time
 from decimal import Decimal, InvalidOperation
-from binance import AsyncClient, BinanceSocketManager
+from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 
@@ -12,6 +12,8 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
+        self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
+        self.twm.start()
         self.user_socket = None
         self.mark_price_socket = None
         self.reconnecting = False
@@ -19,13 +21,14 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         self.mark_prices = {}
         await self.sync_server_time()
         await self.start_user_socket()
-        await self.start_all_mark_price_socket()
+        self.start_all_mark_price_socket()
 
     async def disconnect(self, close_code):
         if self.user_socket:
             await self.user_socket.close()
         if self.mark_price_socket:
-            await self.mark_price_socket.close()
+            self.twm.stop_socket(self.mark_price_socket)
+        self.twm.stop()
         if hasattr(self, 'client'):
             await self.client.close_connection()
         self.reconnecting = False
@@ -47,12 +50,11 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
-    async def start_all_mark_price_socket(self):
-        self.mark_price_socket = self.bm.start_all_mark_price_socket(
+    def start_all_mark_price_socket(self):
+        self.mark_price_socket = self.twm.start_all_mark_price_socket(
             callback=self.handle_mark_price_update,
             fast=True
         )
-        asyncio.create_task(self.mark_price_socket_listener())
 
     async def user_socket_listener(self):
         async with self.user_socket as tscm:
@@ -64,22 +66,10 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
                         if event_type == 'ACCOUNT_UPDATE':
                             await self.handle_account_update(res)
                 except Exception as e:
+                    print(f"Error in user socket: {e}")
                     await asyncio.sleep(5)
                     await self.start_user_socket()
                     break
-
-    async def mark_price_socket_listener(self):
-        while True:
-            try:
-                await self.mark_price_socket.__aenter__()
-                while True:
-                    res = await self.mark_price_socket.recv()
-                    if res:
-                        await self.handle_mark_price_update(res)
-            except Exception as e:
-                print(f"Error in mark price socket: {e}")
-                await asyncio.sleep(5)
-                await self.start_all_mark_price_socket()
 
     async def handle_account_update(self, data):
         balances = data['a']['B']
@@ -109,8 +99,8 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
 
             await self.send_if_changed('futures_positions', positions_data)
 
-    async def handle_mark_price_update(self, data):
-        for item in data:
+    async def handle_mark_price_update(self, msg):
+        for item in msg:
             symbol = item['s']
             mark_price = item['p']
             self.mark_prices[symbol] = mark_price
@@ -198,6 +188,7 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
             except asyncio.CancelledError:
                 break
             except Exception as e:
+                print(f"Error in periodic task: {e}")
                 await asyncio.sleep(1)
 
     async def get_futures_balance(self):
