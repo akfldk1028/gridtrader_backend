@@ -126,7 +126,6 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             await self.send_if_changed('futures_positions', positions_data)
 
     def handle_mark_price_update(self, msg):
-        # print(msg)
         try:
             print(f"Received mark price update: {json.dumps(msg, indent=2)}")
 
@@ -144,10 +143,7 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     def process_mark_price_data(self, data):
         if isinstance(data, dict):
-            if 'data' in data:
-                self.extract_mark_price(data['data'])
-            else:
-                self.extract_mark_price(data)
+            self.extract_mark_price(data)
         elif isinstance(data, list):
             for item in data:
                 self.process_mark_price_data(item)
@@ -155,13 +151,12 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             print(f"Unexpected data format: {data}")
 
     def extract_mark_price(self, item):
-        symbol = item.get('s')
-        mark_price = item.get('p')
+        symbol = item['s']  # 또는 item['s']
+        mark_price = item['p']  # 또는 item['p']
         if symbol and mark_price:
             self.mark_prices[symbol] = mark_price
         else:
             print(f"Unable to extract mark price from: {item}")
-
 
     # def handle_mark_price_update(self, msg):
     #     for item in msg:
