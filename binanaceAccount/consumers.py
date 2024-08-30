@@ -22,14 +22,21 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
         await self.start_user_socket()
         self.start_twm_in_thread()
 
+    # def start_twm_in_thread(self):
+    #     def run_twm():
+    #         asyncio.set_event_loop(asyncio.new_event_loop())
+    #         self.twm.start()
+    #         self.start_all_mark_price_socket()
+    #
+    #     Thread(target=run_twm).start()
+
     def start_twm_in_thread(self):
         def run_twm():
-            asyncio.set_event_loop(asyncio.new_event_loop())
+            loop = asyncio.get_event_loop()
             self.twm.start()
-            self.start_all_mark_price_socket()
+            loop.run_until_complete(self.start_all_mark_price_socket())
 
         Thread(target=run_twm).start()
-
     async def disconnect(self, close_code):
         if self.user_socket:
             await self.user_socket.close()
@@ -56,7 +63,7 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
-    def start_all_mark_price_socket(self):
+    async def start_all_mark_price_socket(self):
         print("마크 가격 소켓 시작")
 
         self.mark_price_socket = self.twm.start_all_mark_price_socket(
