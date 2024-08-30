@@ -127,36 +127,30 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     def handle_mark_price_update(self, msg):
         try:
-            print(f"Received mark price update: {json.dumps(msg, indent=2)}")
+            if isinstance(msg, str):
+                msg = json.loads(msg)
 
-            if isinstance(msg, dict):
-                self.process_mark_price_data(msg)
-            elif isinstance(msg, list):
-                for item in msg:
+            if 'data' in msg and isinstance(msg['data'], list):
+                for item in msg['data']:
                     self.process_mark_price_data(item)
             else:
                 print(f"Unexpected message format: {msg}")
+
+            # 마크 가격 업데이트 후 포지션 업데이트 호출
+            asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
         except Exception as e:
             print(f"Error in handle_mark_price_update: {e}")
 
-        asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
-
     def process_mark_price_data(self, data):
-        if isinstance(data, dict):
-            self.extract_mark_price(data)
-        elif isinstance(data, list):
-            for item in data:
-                self.process_mark_price_data(item)
-        else:
-            print(f"Unexpected data format: {data}")
-
-    def extract_mark_price(self, item):
-        symbol = item['s']  # 또는 item['s']
-        mark_price = item['p']  # 또는 item['p']
+        symbol = data.get('s')
+        mark_price = data.get('p')
         if symbol and mark_price:
             self.mark_prices[symbol] = mark_price
+            print(f"Updated mark price for {symbol}: {mark_price}")
         else:
-            print(f"Unable to extract mark price from: {item}")
+            print(f"Unable to extract mark price from: {data}")
+
+
 
     # def handle_mark_price_update(self, msg):
     #     for item in msg:
@@ -186,6 +180,7 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
                 await self.send_if_changed('futures_positions', positions_data)
 
         except Exception as e:
+            print(f"Error in update_positions_with_new_mark_price: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': str(e)
