@@ -1,8 +1,3 @@
-import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from binance.client import AsyncClient
-from binance.exceptions import BinanceAPIException
-from decimal import Decimal
 import asyncio
 from django.conf import settings
 import time
@@ -14,7 +9,8 @@ from django.apps import apps
 import pandas as pd
 from django.db import IntegrityError
 from binance import AsyncClient, BinanceSocketManager
-
+from channels.generic.websocket import AsyncWebsocketConsumer
+import json
 
 class BinanceBaseConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -22,7 +18,8 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
         self.user_socket = None
-        self.reconnecting = False  # 추가: 재연결 상태를 확인하기 위한 플래그
+        self.reconnecting = False
+        self.last_sent_data = {}
         await self.sync_server_time()
         await self.start_user_socket()
 
@@ -31,14 +28,14 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
             await self.user_socket.close()
         if hasattr(self, 'client'):
             await self.client.close_connection()
-        self.reconnecting = False  # 추가: 연결 종료 시 재연결 상태 초기화
+        self.reconnecting = False
 
     async def sync_server_time(self):
         try:
             server_time = await self.client.get_server_time()
             self.client.timestamp_offset = server_time['serverTime'] - int(time.time() * 1000)
             print(f"Synced server time. Offset: {self.client.timestamp_offset}ms")
-        except BinanceAPIException as e:
+        except Exception as e:
             print(f"Error syncing server time: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
@@ -46,10 +43,10 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
             }))
 
     async def start_user_socket(self):
-        if self.reconnecting:  # 추가: 이미 재연결 중인 경우 재연결 시도 방지
+        if self.reconnecting:
             return
 
-        self.reconnecting = True  # 추가: 재연결 상태 플래그 설정
+        self.reconnecting = True
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
@@ -66,7 +63,7 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
                             await self.handle_order_update(res)
                 except Exception as e:
                     print(f"Error in user socket listener: {e}")
-                    await asyncio.sleep(5)  # Wait before attempting to reconnect
+                    await asyncio.sleep(5)
                     await self.start_user_socket()
                     break
 
@@ -76,13 +73,10 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
 
         usdt_balance = next((b for b in balances if b['a'] == 'USDT'), None)
         if usdt_balance:
-            await self.send(text_data=json.dumps({
-                'type': 'futures_balance',
-                'data': {
-                    'asset': 'USDT',
-                    'balance': usdt_balance['wb']
-                }
-            }))
+            await self.send_if_changed('futures_balance', {
+                'asset': 'USDT',
+                'balance': usdt_balance['wb']
+            })
 
         for position in positions:
             if float(position['pa']) != 0:
@@ -95,52 +89,18 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
                     'markPrice': position['mp']
                 }
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
-                await self.send(text_data=json.dumps({
-                    'type': 'futures_position',
-                    'data': position_data
-                }))
+                await self.send_if_changed(f'futures_position_{position["s"]}', position_data)
 
     async def handle_order_update(self, data):
         pass
 
-    async def get_futures_balance(self):
-        try:
-            futures_balances = await self.client.futures_account_balance()
-            futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
+    async def send_if_changed(self, data_type, data):
+        key = f"{data_type}_{data.get('symbol', '')}"
+        if self.last_sent_data.get(key) != data:
+            self.last_sent_data[key] = data
             await self.send(text_data=json.dumps({
-                'type': 'futures_balance',
-                'data': futures_usdt_balance
-            }))
-        except BinanceAPIException as e:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': str(e)
-            }))
-
-    async def get_futures_positions(self, symbols):
-        try:
-            params = {}
-            if symbols:
-                params['symbol'] = symbols.strip().upper()
-
-            all_positions = await self.client.futures_position_information(**params)
-
-            filtered_positions = [
-                pos for pos in all_positions
-                if (not symbols or pos["symbol"] in symbols.split(',')) and float(pos["positionAmt"]) != 0
-            ]
-
-            for pos in filtered_positions:
-                pos['profit_percentage'] = self.calculate_profit_percentage(pos)
-
-            await self.send(text_data=json.dumps({
-                'type': 'futures_positions',
-                'data': filtered_positions
-            }))
-        except BinanceAPIException as e:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': str(e)
+                'type': data_type,
+                'data': data
             }))
 
     def calculate_profit_percentage(self, position):
@@ -165,7 +125,6 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         except (InvalidOperation, ZeroDivisionError):
             return 0
 
-
 class PeriodicDataConsumer(BinanceBaseConsumer):
     async def connect(self):
         await super().connect()
@@ -181,12 +140,46 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
             try:
                 await self.get_futures_balance()
                 await self.get_futures_positions('')
-                await asyncio.sleep(2)  # Send data every 10 seconds
+                await asyncio.sleep(5)  # Send data every 5 seconds
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 print(f"Error in periodic task: {str(e)}")
                 await asyncio.sleep(5)
+
+    async def get_futures_balance(self):
+        try:
+            futures_balances = await self.client.futures_account_balance()
+            futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
+            await self.send_if_changed('futures_balance', futures_usdt_balance)
+        except Exception as e:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': str(e)
+            }))
+
+    async def get_futures_positions(self, symbols):
+        try:
+            params = {}
+            if symbols:
+                params['symbol'] = symbols.strip().upper()
+
+            all_positions = await self.client.futures_position_information(**params)
+
+            filtered_positions = [
+                pos for pos in all_positions
+                if (not symbols or pos["symbol"] in symbols.split(',')) and float(pos["positionAmt"]) != 0
+            ]
+
+            for pos in filtered_positions:
+                pos['profit_percentage'] = self.calculate_profit_percentage(pos)
+                await self.send_if_changed(f'futures_position_{pos["symbol"]}', pos)
+
+        except Exception as e:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': str(e)
+            }))
 
     async def receive(self, text_data):
         try:
@@ -205,6 +198,8 @@ class PeriodicDataConsumer(BinanceBaseConsumer):
                 'type': 'error',
                 'message': str(e)
             }))
+
+
 # class BinanceBaseConsumer(AsyncWebsocketConsumer):
 #     async def connect(self):
 #         await self.accept()
