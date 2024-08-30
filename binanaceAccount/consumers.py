@@ -128,17 +128,29 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     def handle_mark_price_update(self, msg):
         for item in msg:
-            symbol = item['s']
-            mark_price = item['p']
-            self.mark_prices[symbol] = mark_price
+            if isinstance(item, dict):  # Ensure that item is a dictionary
+                symbol = item.get('s')  # Safely access the symbol key
+                mark_price = item.get('p')
+                if symbol and mark_price:
+                    self.mark_prices[symbol] = mark_price
+            else:
+                print(f"Unexpected item format: {item}")  # Handle unexpected formats
 
-        # Instead of directly calling asyncio.run_coroutine_threadsafe, get the running loop:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), loop)
-        else:
-            # If there's no running loop, execute it normally
-            loop.run_until_complete(self.update_positions_with_new_mark_price())
+        asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
+
+    # def handle_mark_price_update(self, msg):
+    #     for item in msg:
+    #         symbol = item['s']
+    #         mark_price = item['p']
+    #         self.mark_prices[symbol] = mark_price
+    #
+    #     # Instead of directly calling asyncio.run_coroutine_threadsafe, get the running loop:
+    #     loop = asyncio.get_event_loop()
+    #     if loop.is_running():
+    #         asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), loop)
+    #     else:
+    #         # If there's no running loop, execute it normally
+    #         loop.run_until_complete(self.update_positions_with_new_mark_price())
 
     async def update_positions_with_new_mark_price(self):
         try:
