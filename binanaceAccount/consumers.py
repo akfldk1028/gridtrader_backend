@@ -32,13 +32,14 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     def start_twm_in_thread(self):
         def run_twm():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            loop = asyncio.new_event_loop()  # Create a new event loop
+            asyncio.set_event_loop(loop)  # Set this loop as the current one for this thread
             self.twm.start()
             loop.run_until_complete(self.start_all_mark_price_socket())
             loop.run_forever()
 
-        Thread(target=run_twm).start()
+        self.thread = Thread(target=run_twm)
+        self.thread.start()
 
     async def disconnect(self, close_code):
         print("WebSocket 연결 종료")
@@ -131,7 +132,13 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             mark_price = item['p']
             self.mark_prices[symbol] = mark_price
 
-        asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
+        # Instead of directly calling asyncio.run_coroutine_threadsafe, get the running loop:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), loop)
+        else:
+            # If there's no running loop, execute it normally
+            loop.run_until_complete(self.update_positions_with_new_mark_price())
 
     async def update_positions_with_new_mark_price(self):
         try:
