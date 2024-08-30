@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+from threading import Thread
 
 
 class BinanceBaseConsumer(AsyncWebsocketConsumer):
@@ -13,7 +14,6 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
         self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
-        self.twm.start()
         self.user_socket = None
         self.mark_price_socket = None
         self.reconnecting = False
@@ -21,7 +21,15 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
         self.mark_prices = {}
         await self.sync_server_time()
         await self.start_user_socket()
-        self.start_all_mark_price_socket()
+        self.start_twm_in_thread()
+
+    def start_twm_in_thread(self):
+        def run_twm():
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            self.twm.start()
+            self.start_all_mark_price_socket()
+
+        Thread(target=run_twm).start()
 
     async def disconnect(self, close_code):
         if self.user_socket:
@@ -99,13 +107,13 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
 
             await self.send_if_changed('futures_positions', positions_data)
 
-    async def handle_mark_price_update(self, msg):
+    def handle_mark_price_update(self, msg):
         for item in msg:
             symbol = item['s']
             mark_price = item['p']
             self.mark_prices[symbol] = mark_price
 
-        await self.update_positions_with_new_mark_price()
+        asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
 
     async def update_positions_with_new_mark_price(self):
         try:
