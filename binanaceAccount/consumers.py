@@ -81,7 +81,9 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
         if usdt_balance:
             await self.send_if_changed('futures_balance', {
                 'asset': 'USDT',
-                'balance': usdt_balance['wb']
+                'balance': usdt_balance['wb'],
+                'crossWalletBalance': usdt_balance.get('cw', '0'),
+                'availableBalance': usdt_balance.get('ab', '0')
             })
 
         active_positions = [position for position in positions if float(position['pa']) != 0]
