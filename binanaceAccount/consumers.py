@@ -43,7 +43,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         print("WebSocket 연결 종료")
         if self.user_socket:
-            await self.user_socket.stop()  # Use stop() instead of close()
+            # Try manually closing the websocket
+            await self.user_socket.__aexit__(None, None, None)
         if self.mark_price_socket:
             self.twm.stop_socket(self.mark_price_socket)
         self.twm.stop()
