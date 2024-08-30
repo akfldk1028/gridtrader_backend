@@ -32,11 +32,15 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     def start_twm_in_thread(self):
         def run_twm():
-            loop = asyncio.get_event_loop()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             self.twm.start()
             loop.run_until_complete(self.start_all_mark_price_socket())
+            loop.run_forever()
 
         Thread(target=run_twm).start()
+
+
     async def disconnect(self, close_code):
         if self.user_socket:
             await self.user_socket.close()
