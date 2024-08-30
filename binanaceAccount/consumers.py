@@ -43,7 +43,7 @@ class BinanceBaseConsumer(AsyncWebsocketConsumer):
             }))
 
     async def start_user_socket(self):
-        self.user_socket = await self.bm.futures_user_socket()
+        self.user_socket = self.bm.futures_user_socket()  # Remove 'await' here
         asyncio.create_task(self.user_socket_listener())
 
     async def user_socket_listener(self):
