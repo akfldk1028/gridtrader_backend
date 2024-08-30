@@ -38,6 +38,13 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             await self.client.close_connection()
         self.reconnecting = False
 
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        if data['type'] == 'get_futures_balance':
+            await self.send_futures_balance()
+        elif data['type'] == 'get_futures_positions':
+            await self.send_futures_positions()
+
     async def start_user_socket(self):
         if self.reconnecting:
             return
@@ -128,6 +135,20 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': data_type,
                 'data': data
+            }))
+
+    async def send_futures_balance(self):
+        if 'futures_balance' in self.last_sent_data:
+            await self.send(text_data=json.dumps({
+                'type': 'futures_balance',
+                'data': self.last_sent_data['futures_balance']
+            }))
+
+    async def send_futures_positions(self):
+        if 'futures_positions' in self.last_sent_data:
+            await self.send(text_data=json.dumps({
+                'type': 'futures_positions',
+                'data': self.last_sent_data['futures_positions']
             }))
 
     def calculate_profit_percentage(self, position):
