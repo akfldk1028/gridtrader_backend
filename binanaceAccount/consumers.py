@@ -128,30 +128,47 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             'data': data
         }))
 
-    async def handle_mark_price_update(self, data):
-        print(data)
-        for item in data['data']:
-            self.mark_prices[item['s']] = item['p']
-        # Mark price 업데이트 후 포지션 정보 갱신
-        await self.update_positions_with_new_mark_prices()
+    async def handle_mark_price_update(self, message):
+        stream = message['stream']
+        data = message['data']
 
-    async def update_positions_with_new_mark_prices(self):
-        if 'ACCOUNT_UPDATE' in self.last_sent_data:
-            data = self.last_sent_data['ACCOUNT_UPDATE']
-            positions = data['positions']
-            updated = False
-            for pos in positions:
-                if pos['symbol'] in self.mark_prices:
-                    pos['markPrice'] = self.mark_prices[pos['symbol']]
-                    pos['profit_percentage'] = self.calculate_profit_percentage(pos)
-                    updated = True
-            if updated:
-                await self.send_if_changed('ACCOUNT_UPDATE', {
-                    'balance': data['balance'],
-                    'positions': positions
-                })
-        elif self.mark_prices:  # 마크 가격이 있지만 아직 포지션 정보가 없는 경우
-            await self.request_account_update()  # 계정 정보를 요청하는 새로운 메서드
+        updated_symbols = set()
+        active_symbols = set(
+            pos['symbol'] for pos in self.last_sent_data.get('ACCOUNT_UPDATE', {}).get('positions', []))
+
+        for item in data:
+            symbol = item['s']
+            price = item['p']
+            if symbol in active_symbols:
+                if symbol not in self.mark_prices or self.mark_prices[symbol] != price:
+                    self.mark_prices[symbol] = price
+                    updated_symbols.add(symbol)
+
+        if updated_symbols:
+            await self.update_positions_with_new_mark_prices(updated_symbols)
+
+    async def update_positions_with_new_mark_prices(self, updated_symbols):
+        account_data = self.last_sent_data.get('ACCOUNT_UPDATE', {})
+        positions = account_data.get('positions', [])
+        updated_positions = []
+
+        for position in positions:
+            if position['symbol'] in updated_symbols:
+                position['markPrice'] = self.mark_prices[position['symbol']]
+                position['profit_percentage'] = self.calculate_profit_percentage(position)
+                updated_positions.append(position)
+
+        if updated_positions:
+            # 업데이트된 포지션 정보로 ACCOUNT_UPDATE 데이터 갱신
+            account_data['positions'] = positions
+            self.last_sent_data['ACCOUNT_UPDATE'] = account_data
+
+            # 클라이언트에 업데이트된 계정 정보 전송
+            await self.send(text_data=json.dumps({
+                'type': 'ACCOUNT_UPDATE',
+                'data': account_data
+            }))
+
 
     async def request_account_update(self):
         try:
