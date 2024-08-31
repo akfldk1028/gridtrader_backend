@@ -461,6 +461,11 @@ def perform_analysis():
         3. RSI (Relative Strength Index)
         4. Bollinger Bands (using the 'Upper', 'Lower', and 'MA' columns)
         5. Stochastic oscillator
+        6. Technical patterns - look for and analyze patterns such as:
+           - Triangle patterns (ascending, descending, symmetrical)
+           - Head and shoulders
+           - Double tops/bottoms
+           - Flags and pennants
         Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe.
         Consider both bullish and bearish scenarios in your analysis.""",
         expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe",
