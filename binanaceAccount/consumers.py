@@ -118,7 +118,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     'positionAmt': position['pa'],
                     'entryPrice': position['ep'],
                     'unrealizedProfit': position['up'],
-                    'marginType': position['mt'],
+                    'marginType': position.get('mt', ''),
                     'leverage': position['l'],
                     'markPrice': self.mark_prices.get(position['s'], position['mp']),
                     'liquidationPrice': position.get('lp', '0')  # 청산가 추가
