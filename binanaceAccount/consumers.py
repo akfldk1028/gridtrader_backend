@@ -20,7 +20,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
-        self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
 
         self.user_socket = None
         self.mark_price_socket = None
@@ -40,26 +39,20 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         if hasattr(self, 'client'):
             await self.client.close_connection()
 
-
     async def start_user_data_stream(self):
         self.listen_key = await self.client.futures_stream_get_listen_key()
         self.user_socket = self.bm.futures_user_socket()
-
         asyncio.create_task(self.user_socket_listener())
 
-
     async def start_mark_price_socket(self):
-        self.mark_price_socket = self.twm.start_all_mark_price_socket(
-            callback=self.handle_mark_price_update,
-            fast=True
-        )
+        self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
         asyncio.create_task(self.mark_price_socket_listener())
 
     async def keep_listen_key_alive(self):
         while True:
             await asyncio.sleep(30 * 60)  # 30 minutes
             try:
-                await self.client.futures_stream_keep_alive_listen_key(self.listen_key)
+                await self.client.futures_stream_keepalive(self.listen_key)
             except Exception as e:
                 print(f"Error keeping listen key alive: {e}")
                 await self.start_user_data_stream()
@@ -129,7 +122,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         pass
 
     async def handle_mark_price_update(self, data):
-        for item in data:
+        for item in data['data']:
             self.mark_prices[item['s']] = item['p']
         # Mark price 업데이트 후 포지션 정보 갱신
         await self.update_positions_with_new_mark_prices()
