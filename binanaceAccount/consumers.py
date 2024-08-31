@@ -221,14 +221,6 @@ import requests
 #
 
 
-
-
-
-
-
-
-
-
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
@@ -314,7 +306,9 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         if usdt_balance:
             await self.send_if_changed('futures_balance', {
                 'asset': 'USDT',
-                'balance': usdt_balance['wb']
+                'balance': usdt_balance['wb'],
+                'crossWalletBalance': usdt_balance['cw'],  # cross wallet balance
+                'availableBalance': usdt_balance['ab']  # available balance
             })
 
         active_positions = [position for position in positions if float(position['pa']) != 0]
@@ -442,7 +436,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 'type': 'error',
                 'message': str(e)
             }))
-
 
 # class UserDataConsumer(AsyncWebsocketConsumer):
 #     async def connect(self):
@@ -892,4 +885,3 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 #                 'type': 'error',
 #                 'message': str(e)
 #             }))
-
