@@ -43,7 +43,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
     async def start_user_data_stream(self):
         self.listen_key = await self.client.futures_stream_get_listen_key()
-        self.user_socket = self.bm.futures_user_socket(listenKey=self.listen_key)
+        self.user_socket = self.bm.futures_user_socket()
+
         asyncio.create_task(self.user_socket_listener())
 
 
