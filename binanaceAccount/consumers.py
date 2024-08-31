@@ -23,13 +23,15 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
         self.user_socket = None
         self.mark_price_socket = None
-        self.last_sent_data = {}
+        self.last_sent_data = {'ACCOUNT_UPDATE': {'balance': None, 'positions': []}}
         self.mark_prices = {}
         self.listen_key = None
-
+        await self.request_account_update()  # 초기 데이터 로딩
         await self.start_user_data_stream()
         await self.start_mark_price_socket()
         asyncio.create_task(self.keep_listen_key_alive())
+
+
 
     async def disconnect(self, close_code):
         if self.user_socket:
@@ -134,7 +136,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.update_positions_with_new_mark_prices()
 
     async def update_positions_with_new_mark_prices(self):
-        if 'ACCOUNT_UPDATE' in self.last_sent_data:
+        if 'ACCOUNT_UPDATE' in self.last_sent_data and self.last_sent_data['ACCOUNT_UPDATE'].get('positions'):
             data = self.last_sent_data['ACCOUNT_UPDATE']
             positions = data['positions']
             updated = False
@@ -148,6 +150,50 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     'balance': data['balance'],
                     'positions': positions
                 })
+        elif self.mark_prices:  # 마크 가격이 있지만 아직 포지션 정보가 없는 경우
+            await self.request_account_update()  # 계정 정보를 요청하는 새로운 메서드
+
+    async def request_account_update(self):
+        try:
+            account_info = await self.client.futures_account()
+
+            usdt_balance = next((b for b in account_info['assets'] if b['asset'] == 'USDT'), None)
+            balance_data = None
+            if usdt_balance:
+                balance_data = {
+                    'asset': 'USDT',
+                    'balance': usdt_balance['walletBalance'],
+                    'crossWalletBalance': usdt_balance['crossWalletBalance'],
+                    'availableBalance': usdt_balance['availableBalance']
+                }
+
+            positions = account_info['positions']
+            active_positions = [position for position in positions if float(position['positionAmt']) != 0]
+            positions_data = []
+            if active_positions:
+                for position in active_positions:
+                    position_data = {
+                        'symbol': position['symbol'],
+                        'positionAmt': position['positionAmt'],
+                        'entryPrice': position['entryPrice'],
+                        'unrealizedProfit': position['unrealizedProfit'],
+                        'leverage': position['leverage'],
+                        'markPrice': self.mark_prices.get(position['symbol'], position['markPrice'])
+                    }
+                    position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
+                    positions_data.append(position_data)
+
+            await self.send_if_changed('ACCOUNT_UPDATE', {
+                'balance': balance_data,
+                'positions': positions_data
+            })
+
+        except Exception as e:
+            print(f"Error requesting account update: {e}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Error requesting account update: {str(e)}"
+            }))
 
     async def send_if_changed(self, data_type, data):
         key = data_type
