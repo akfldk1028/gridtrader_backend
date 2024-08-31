@@ -303,7 +303,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 try:
                     res = await mps.recv()
                     if res:
-                        await self.handle_mark_price_update(res)
+                        self.handle_mark_price_update(res)
                 except Exception as e:
                     print(f"Error in mark price socket: {e}")
                     await asyncio.sleep(5)
