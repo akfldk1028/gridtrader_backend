@@ -129,13 +129,14 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         }))
 
     async def handle_mark_price_update(self, data):
+        print(data)
         for item in data['data']:
             self.mark_prices[item['s']] = item['p']
         # Mark price 업데이트 후 포지션 정보 갱신
         await self.update_positions_with_new_mark_prices()
 
     async def update_positions_with_new_mark_prices(self):
-        if 'ACCOUNT_UPDATE' in self.last_sent_data and self.last_sent_data['ACCOUNT_UPDATE'].get('positions'):
+        if 'ACCOUNT_UPDATE' in self.last_sent_data:
             data = self.last_sent_data['ACCOUNT_UPDATE']
             positions = data['positions']
             updated = False
