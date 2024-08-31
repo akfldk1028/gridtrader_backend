@@ -45,6 +45,12 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         asyncio.create_task(self.user_socket_listener())
 
     async def start_mark_price_socket(self):
+
+        # {'stream': '!markPrice@arr@1s', 'data': [
+        #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'BTCUSDT', 'p': '59160.00000000', 'P': '59227.68354352',
+        #      'i': '59186.34893617', 'r': '0.00001643', 'T': 1725091200000},
+        #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'ETHUSDT', 'p': '2523.44000000', 'P': '2525.39100082',
+        #      'i': '2524.47886364', 'r': '0.00006360', 'T': 1725091200000},
         self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
         asyncio.create_task(self.mark_price_socket_listener())
 
@@ -88,6 +94,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     break
 
     async def handle_account_update(self, data):
+
+
         balances = data['a']['B']
         positions = data['a']['P']
 
@@ -110,6 +118,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     'positionAmt': position['pa'],
                     'entryPrice': position['ep'],
                     'unrealizedProfit': position['up'],
+                    'marginType': position['mt'],
                     'leverage': position['l'],
                     'markPrice': self.mark_prices.get(position['s'], position['mp']),
                     'liquidationPrice': position.get('lp', '0')  # 청산가 추가

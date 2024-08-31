@@ -35,24 +35,34 @@ def setup_update_account_info_task():
             # )
 
             Schedule.objects.filter(func='binanaceAccount.tasks.trigger_save_daily_balance').delete()
+            now = datetime.now()
+            next_run = now.replace(hour=9, minute=0, second=0, microsecond=0)
+
+            # 만약 현재 시간이 오늘 오전 9시 이후라면, 다음 실행 시간을 오후 9시로 설정
+            if now.hour >= 9:
+                next_run = now.replace(hour=21, minute=0, second=0, microsecond=0)
+
+            # 만약 현재 시간이 오후 9시 이후라면, 다음 날 오전 9시로 설정
+            if now.hour >= 21:
+                next_run = (now + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
 
             # now = datetime.now()
-            now = datetime.now()
-            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-            # next_hour = now.replace(hour=18, minute=35, second=0, microsecond=0)
-
-            # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
-            # if now > next_hour:
-            #     next_hour += timedelta(days=1)
-
+            # next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            # schedule(
+            #     'binanaceAccount.tasks.trigger_save_daily_balance',
+            #     schedule_type=Schedule.CRON,
+            #     cron='0 */1 * * *',  # 매 3시간마다 정각에 실행
+            #     next_run=next_hour,
+            #     repeats=-1  # 무한 반복
+            # )
             schedule(
                 'binanaceAccount.tasks.trigger_save_daily_balance',
                 schedule_type=Schedule.CRON,
-                cron='0 */1 * * *',  # 매 3시간마다 정각에 실행
-                next_run=next_hour,
+                cron='0 9,21 * * *',  # 매일 오전 9시와 오후 9시에 실행
+                next_run=next_run,
                 repeats=-1  # 무한 반복
             )
-        print(f"기록작업 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 1시간마다 실행되도록 예약되었습니다.")
+        print(f"기록작업 {next_run.strftime('%Y-%m-%d %H:%M')}부터 하루에 두 번(오전 9시, 오후 9시) 실행되도록 예약되었습니다.")
 
     except ProgrammingError:
         # 데이터베이스 테이블이 아직 없는 경우
