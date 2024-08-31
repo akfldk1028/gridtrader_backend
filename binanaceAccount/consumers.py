@@ -92,17 +92,18 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         positions = data['a']['P']
 
         usdt_balance = next((b for b in balances if b['a'] == 'USDT'), None)
+        balance_data = None
         if usdt_balance:
-            await self.send_if_changed('futures_balance', {
+            balance_data = {
                 'asset': 'USDT',
                 'balance': usdt_balance['wb'],
                 'crossWalletBalance': usdt_balance['cw'],
                 'availableBalance': usdt_balance['ab']
-            })
+            }
 
         active_positions = [position for position in positions if float(position['pa']) != 0]
+        positions_data = []
         if active_positions:
-            positions_data = []
             for position in active_positions:
                 position_data = {
                     'symbol': position['s'],
@@ -115,11 +116,16 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                 positions_data.append(position_data)
 
-            await self.send_if_changed('futures_positions', positions_data)
+        await self.send_if_changed('ACCOUNT_UPDATE', {
+            'balance': balance_data,
+            'positions': positions_data
+        })
 
     async def handle_order_update(self, data):
-        # 주문 업데이트에 대한 처리
-        pass
+        await self.send(text_data=json.dumps({
+            'type': 'ORDER_TRADE_UPDATE',
+            'data': data
+        }))
 
     async def handle_mark_price_update(self, data):
         for item in data['data']:
@@ -128,8 +134,9 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.update_positions_with_new_mark_prices()
 
     async def update_positions_with_new_mark_prices(self):
-        if 'futures_positions' in self.last_sent_data:
-            positions = self.last_sent_data['futures_positions']
+        if 'ACCOUNT_UPDATE' in self.last_sent_data:
+            data = self.last_sent_data['ACCOUNT_UPDATE']
+            positions = data['positions']
             updated = False
             for pos in positions:
                 if pos['symbol'] in self.mark_prices:
@@ -137,7 +144,10 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     pos['profit_percentage'] = self.calculate_profit_percentage(pos)
                     updated = True
             if updated:
-                await self.send_if_changed('futures_positions', positions)
+                await self.send_if_changed('ACCOUNT_UPDATE', {
+                    'balance': data['balance'],
+                    'positions': positions
+                })
 
     async def send_if_changed(self, data_type, data):
         key = data_type
