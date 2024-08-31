@@ -277,6 +277,8 @@ from TradeStrategy.models import StrategyConfig
 # from common.models import CommonModel
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from .analysis.StochasticRSI import StochasticRSI
+from .analysis.rsi import RSIAnalyzer
 
 # Binance 클라이언트 초기화
 symbol = "BNBUSDT"
@@ -301,19 +303,16 @@ def get_bitcoin_data(symbol):
             df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
                 float)
 
-            # RSI 계산
-            delta = df['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss
-            df['RSI'] = 100 - (100 / (1 + rs))
-
-            # 스토캐스틱 계산
-            low_14 = df['low'].rolling(window=14).min()
-            high_14 = df['high'].rolling(window=14).max()
-            df['%K'] = (df['close'] - low_14) / (high_14 - low_14) * 100
-            df['%D'] = df['%K'].rolling(window=3).mean()
-
+            for ma in [5, 10, 20, 24, 50, 100, 200]:
+                df[f"MA{ma}"] = df["Close"].rolling(window=ma).mean()
+            period = 20
+            multiplier = 2.0
+            df["MA"] = df["close"].rolling(window=period).mean()
+            df["STD"] = df["close"].rolling(window=period).std()
+            df["Upper"] = df["MA"] + (df["STD"] * multiplier)
+            df["Lower"] = df["MA"] - (df["STD"] * multiplier)
+            StochasticRSI(df)
+            RSIAnalyzer(df)
             return df.to_dict(orient='records')
 
         return {

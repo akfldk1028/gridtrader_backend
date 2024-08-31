@@ -12,213 +12,9 @@ import threading
 import hmac
 import hashlib
 import requests
+from binance.exceptions import BinanceAPIException
 
 
-# class BinanceClient:
-#     def __init__(self):
-#         self.base_url = 'wss://fstream.binance.com/ws/'
-#         self.api_url = 'https://fapi.binance.com'
-#         self.api_key = settings.BINANCE_API_KEY
-#         self.api_secret = settings.BINANCE_API_SECRET
-#         self.callbacks = {}
-#         self.user_ws = None
-#
-#     def connect(self):
-#         listen_key = self.get_listen_key()
-#
-#         # User Data Stream 연결
-#         user_socket_url = f"{self.base_url}{listen_key}"
-#         self.user_ws = websocket.WebSocketApp(
-#             user_socket_url,
-#             on_message=self.on_user_message,
-#             on_error=self.on_error,
-#             on_close=self.on_close
-#         )
-#         user_wst = threading.Thread(target=self.user_ws.run_forever)
-#         user_wst.daemon = True
-#         user_wst.start()
-#
-#     def get_listen_key(self):
-#         endpoint = f"{self.api_url}/fapi/v1/listenKey"
-#         headers = {"X-MBX-APIKEY": self.api_key}
-#         response = requests.post(endpoint, headers=headers)
-#         data = response.json()
-#         return data['listenKey']
-#
-#     def on_user_message(self, ws, message):
-#         data = json.loads(message)
-#         event_type = data.get('e')
-#         if event_type in self.callbacks:
-#             self.callbacks[event_type](data)
-#
-#     def on_error(self, ws, error):
-#         print(f"Error: {error}")
-#
-#     def on_close(self, ws, close_status_code, close_msg):
-#         print("WebSocket connection closed")
-#
-#     def add_callback(self, event_type, callback):
-#         self.callbacks[event_type] = callback
-#
-#     def close(self):
-#         if self.user_ws:
-#             self.user_ws.close()
-#
-#     # 초기 데이터 로딩을 위한 REST API 호출 메서드
-#     def get_initial_data(self):
-#         balance_endpoint = f"{self.api_url}/fapi/v2/balance"
-#         position_endpoint = f"{self.api_url}/fapi/v2/positionRisk"
-#
-#         balance_data = self.send_signed_request('GET', balance_endpoint)
-#         position_data = self.send_signed_request('GET', position_endpoint)
-#
-#         return {
-#             'balance': balance_data,
-#             'positions': position_data
-#         }
-#
-#     def send_signed_request(self, method, url_path, payload=None):
-#         if payload is None:
-#             payload = {}
-#         payload['timestamp'] = int(time.time() * 1000)
-#         payload['recvWindow'] = 60000  # 최대 허용 시간
-#         query_string = '&'.join([f"{k}={v}" for k, v in payload.items()])
-#         signature = hmac.new(self.api_secret.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
-#         payload['signature'] = signature
-#         headers = {
-#             'X-MBX-APIKEY': self.api_key
-#         }
-#         response = requests.request(method, f"{url_path}?{query_string}", headers=headers)
-#         return response.json()
-#
-#
-# class BinanceDataConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         await self.accept()
-#         self.binance_client = BinanceClient()
-#         self.binance_client.add_callback('ACCOUNT_UPDATE', self.handle_account_update)
-#
-#         # 초기 데이터 가져오기
-#         await self.fetch_initial_data()
-#
-#         # 웹소켓 연결 시작
-#         self.binance_client.connect()
-#
-#     async def disconnect(self, close_code):
-#         self.binance_client.close()
-#
-#     async def receive(self, text_data):
-#         # 클라이언트로부터의 요청은 무시하고 현재 저장된 데이터만 반환
-#         data = json.loads(text_data)
-#         if data['type'] == 'get_account_info':
-#             await self.send_current_data()
-#
-#     async def fetch_initial_data(self):
-#         # 초기 데이터를 한 번만 REST API를 통해 가져옵니다
-#         initial_data = self.binance_client.get_initial_data()
-#
-#         print("Received initial data:", initial_data)  # 디버깅을 위한 로그
-#
-#         try:
-#             # balance 데이터 처리
-#             if isinstance(initial_data['balance'], list):
-#                 self.current_balance = next((b for b in initial_data['balance'] if b['asset'] == 'USDT'), None)
-#             elif isinstance(initial_data['balance'], dict):
-#                 self.current_balance = initial_data['balance'].get('USDT')
-#             else:
-#                 print("Unexpected balance data format:", initial_data['balance'])
-#                 self.current_balance = None
-#
-#             # positions 데이터 처리
-#             if isinstance(initial_data['positions'], list):
-#                 self.current_positions = [p for p in initial_data['positions'] if float(p.get('positionAmt', '0')) != 0]
-#             else:
-#                 print("Unexpected positions data format:", initial_data['positions'])
-#                 self.current_positions = []
-#
-#             if self.current_balance:
-#                 self.current_balance = {
-#                     'asset': 'USDT',
-#                     'balance': self.current_balance.get('balance', '0'),
-#                     'crossWalletBalance': self.current_balance.get('crossWalletBalance', '0'),
-#                     'availableBalance': self.current_balance.get('availableBalance', '0')
-#                 }
-#
-#         except Exception as e:
-#             print(f"Error processing initial data: {e}")
-#             self.current_balance = None
-#             self.current_positions = []
-#
-#         await self.send_current_data()
-#
-#     async def handle_account_update(self, data):
-#         # User Data Stream으로부터 받은 계정 업데이트 처리
-#         if 'a' in data:
-#             balances = data['a'].get('B', [])
-#             positions = data['a'].get('P', [])
-#
-#             usdt_balance = next((b for b in balances if b['a'] == 'USDT'), None)
-#             if usdt_balance:
-#                 self.current_balance = {
-#                     'asset': 'USDT',
-#                     'balance': usdt_balance['wb'],  # wallet balance
-#                     'crossWalletBalance': usdt_balance['cw'],  # cross wallet balance
-#                     'availableBalance': usdt_balance['ab']  # available balance
-#                 }
-#
-#             if positions:
-#                 self.current_positions = [p for p in positions if float(p['pa']) != 0]
-#
-#             await self.send_current_data()
-#
-#     async def send_current_data(self):
-#         await self.send(text_data=json.dumps({
-#             'type': 'account_update',
-#             'data': {
-#                 'balance': self.current_balance,
-#                 'positions': self.process_positions(self.current_positions)
-#             }
-#         }))
-#
-#
-#     def process_positions(self, positions):
-#         positions_data = []
-#         for pos in positions:
-#             pos_data = {
-#                 'symbol': pos['s'],
-#                 'positionAmt': pos['pa'],
-#                 'entryPrice': pos['ep'],
-#                 'markPrice': pos['mp'],
-#                 'unRealizedProfit': pos['up'],
-#                 'liquidationPrice': pos['lp'],
-#                 'leverage': pos['l'],
-#             }
-#             pos_data['profit_percentage'] = self.calculate_profit_percentage(pos_data)
-#             positions_data.append(pos_data)
-#         return positions_data
-#
-#     def calculate_profit_percentage(self, position):
-#         try:
-#             position_amt = Decimal(position['positionAmt'])
-#             if position_amt == Decimal('0'):
-#                 return Decimal('0')
-#
-#             entry_price = Decimal(position['entryPrice'])
-#             mark_price = Decimal(position['markPrice'])
-#             leverage = Decimal(position['leverage'])
-#
-#             if entry_price == Decimal('0'):
-#                 return Decimal('0')
-#
-#             if position_amt > Decimal('0'):  # Long position
-#                 profit_percentage = ((mark_price - entry_price) / entry_price) * 100 * leverage
-#             else:  # Short position
-#                 profit_percentage = ((entry_price - mark_price) / entry_price) * 100 * leverage
-#
-#             return float(profit_percentage.quantize(Decimal('0.01')))
-#         except (InvalidOperation, ZeroDivisionError):
-#             return 0
-#
 
 
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
@@ -237,6 +33,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.start_user_socket()
         await self.start_twm_in_thread()
         await self.initial_data_fetch()
+        self.periodic_update_task = asyncio.create_task(self.periodic_account_update())
 
     async def disconnect(self, close_code):
         if self.user_socket:
@@ -246,6 +43,17 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         if hasattr(self, 'client'):
             await self.client.close_connection()
         self.reconnecting = False
+
+        # Cancel periodic update task
+        if hasattr(self, 'periodic_update_task'):
+            self.periodic_update_task.cancel()
+
+    async def periodic_account_update(self):
+        while True:
+            await self.get_futures_balance()
+            await self.get_futures_positions()
+            await asyncio.sleep(5)  # Wait for 5 seconds before the next update
+
 
     async def sync_server_time(self):
         try:
@@ -273,11 +81,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             )
 
         Thread(target=run_twm).start()
-    def start_all_mark_price_socket(self):
-        self.mark_price_socket = self.twm.start_all_mark_price_socket(
-            callback=self.handle_mark_price_update,
-            fast=True
-        )
+
     async def initial_data_fetch(self):
         await self.get_futures_balance()
         await self.get_futures_positions()
@@ -399,10 +203,15 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             futures_balances = await self.client.futures_account_balance()
             futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
             await self.send_if_changed('futures_balance', futures_usdt_balance)
+        except BinanceAPIException as e:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Binance API Error: {str(e)}"
+            }))
         except Exception as e:
             await self.send(text_data=json.dumps({
                 'type': 'error',
-                'message': str(e)
+                'message': f"Error fetching futures balance: {str(e)}"
             }))
 
     async def get_futures_positions(self):
@@ -429,10 +238,15 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
             await self.send_if_changed('futures_positions', positions_data)
 
+        except BinanceAPIException as e:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Binance API Error: {str(e)}"
+            }))
         except Exception as e:
             await self.send(text_data=json.dumps({
                 'type': 'error',
-                'message': str(e)
+                'message': f"Error fetching futures positions: {str(e)}"
             }))
 
     async def receive(self, text_data):
