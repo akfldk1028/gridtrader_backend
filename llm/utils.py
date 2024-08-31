@@ -291,8 +291,8 @@ client = Client(binance_api_key, binance_api_secret)
 def get_bitcoin_data(symbol):
     try:
         # 1시간 및 1일 간격의 데이터 가져오기
-        hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=500)
-        daily_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=500)
+        hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=100)
+        daily_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=100)
 
         def process_candles(candles):
             df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
@@ -373,6 +373,8 @@ korean_summarizer = Agent(
     verbose=True,
     allow_delegation=False,
 )
+
+
 def extract_prediction(text):
     # Look for the specific format: "Up X%" or "Down X%"
     match = re.search(r'(Up|Down)\s+(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
@@ -451,9 +453,14 @@ def perform_analysis():
 
     # 태스크 생성
     task1 = Task(
-        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the provided hourly data:
-        {bitcoin_data['hourly']}
-        Examine price trends, volume, RSI, and Stochastic oscillator. 
+        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 72 hours of hourly data:
+        {bitcoin_data['hourly'][-72:]}
+        Focus on the last 72 hours, examining:
+        1. Recent price trends
+        2. Volume changes
+        3. RSI (Relative Strength Index)
+        4. Bollinger Bands (using the 'Upper', 'Lower', and 'MA' columns)
+        5. Stochastic oscillator
         Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe.
         Consider both bullish and bearish scenarios in your analysis.""",
         expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe",
@@ -461,12 +468,26 @@ def perform_analysis():
     )
 
     task2 = Task(
-        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the provided daily data:
-        {bitcoin_data['daily']}
-        Examine price trends, volume, RSI, and Stochastic oscillator. 
-        Identify significant support and resistance levels, and overall market sentiment in the 1-day timeframe.
-        Consider both bullish and bearish scenarios in your analysis.""",
-        expected_output="Detailed Bitcoin market analysis report for 1-day timeframe",
+        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 90 days of daily data:
+        {bitcoin_data['daily'][-90:]}
+        Focus on the last 90 days, examining:
+        1. Price trends and key price levels
+        2. Volume patterns and significant volume spikes
+        3. RSI (Relative Strength Index) - identify overbought/oversold conditions
+        4. Stochastic oscillator - look for potential reversal signals
+        5. Moving Averages (MA) - analyze trends using various MA periods (e.g., 50-day, 100-day)
+        6. Support and resistance levels - identify key levels based on price action and MA
+        7. Technical patterns - look for and analyze patterns such as:
+           - Triangle patterns (ascending, descending, symmetrical)
+           - Head and shoulders
+           - Double tops/bottoms
+           - Flags and pennants
+        8. Overall market sentiment based on the above indicators and patterns
+
+        Provide a balanced analysis considering both bullish and bearish scenarios. 
+        Highlight any significant divergences between price action and indicators.
+        Conclude with an overall market outlook for the short-term (1-2 weeks) and medium-term (1-3 months) based on this analysis.""",
+        expected_output="Detailed Bitcoin market analysis report for the most recent 90 days (1-day timeframe), including technical patterns and market outlook",
         agent=daily_analyst
     )
 
@@ -501,20 +522,18 @@ def perform_analysis():
         process=Process.sequential
     )
 
-
     results = crew.kickoff()
     print("CrewOutput type:", type(results))
     result_string = str(results)
     ##type: <class 'crewai.crews.crew_output.CrewOutput'>
 
     print("-----------------------------------------------------")
-    print(results) #results.raw)
+    print(results)  # results.raw)
     print(results.raw)
     # print(results.tasks_output)
     # print(type(results.tasks_output))
     # <class 'list'>
     print("-----------------------------------------------------")
-
 
     task_results = {
         'hourly_analysis': results.tasks_output[0],
@@ -530,7 +549,6 @@ def perform_analysis():
     price_prediction, confidence = extract_prediction(result_string)
     selected_strategy = extract_strategy(result_string)
     current_price = get_current_bitcoin_price()
-
 
     # 한글 요약 생성 (이 부분은 그대로 유지)
     korean_summary_task = Task(
@@ -569,7 +587,6 @@ def perform_analysis():
     print(f"신뢰도: {confidence}%")
     print("\n한글 요약:")
     print(korean_summary)
-
 
     return {
         'symbol': vt_symbol,
