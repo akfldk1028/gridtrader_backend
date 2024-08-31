@@ -219,7 +219,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             print(f"Error requesting account update: {str(e)}")
-            print(f"Account info: {account_info}")  # 디버깅을 위해 전체 응답 출력
+            # print(f"Account info: {account_info}")  # 디버깅을 위해 전체 응답 출력
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f"Error requesting account update: {str(e)}"
