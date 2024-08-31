@@ -31,8 +31,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.start_mark_price_socket()
         asyncio.create_task(self.keep_listen_key_alive())
 
-
-
     async def disconnect(self, close_code):
         if self.user_socket:
             await self.user_socket.__aexit__(None, None, None)
@@ -113,7 +111,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     'entryPrice': position['ep'],
                     'unrealizedProfit': position['up'],
                     'leverage': position['l'],
-                    'markPrice': self.mark_prices.get(position['s'], position['mp'])
+                    'markPrice': self.mark_prices.get(position['s'], position['mp']),
+                    'liquidationPrice': position.get('lp', '0')  # 청산가 추가
                 }
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                 positions_data.append(position_data)
@@ -178,7 +177,9 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                         'entryPrice': position['entryPrice'],
                         'unrealizedProfit': position['unrealizedProfit'],
                         'leverage': position['leverage'],
-                        'markPrice': self.mark_prices.get(position['symbol'], position['markPrice'])
+                        'markPrice': self.mark_prices.get(position['symbol'], position.get('markPrice', '0')),
+                        'liquidationPrice': position.get('liquidationPrice', '0')  # 청산가 추가
+
                     }
                     position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                     positions_data.append(position_data)
@@ -189,7 +190,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             })
 
         except Exception as e:
-            print(f"Error requesting account update: {e}")
+            print(f"Error requesting account update: {str(e)}")
+            print(f"Account info: {account_info}")  # 디버깅을 위해 전체 응답 출력
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f"Error requesting account update: {str(e)}"
@@ -225,8 +227,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             return float(profit_percentage.quantize(Decimal('0.01')))
         except (InvalidOperation, ZeroDivisionError):
             return 0
-
-
 
 # class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 #     async def connect(self):
