@@ -160,24 +160,76 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
     async def update_positions_with_new_mark_prices(self, updated_symbols):
         account_data = self.last_sent_data.get('ACCOUNT_UPDATE', {})
         positions = account_data.get('positions', [])
-        updated_positions = []
+        balance_data = account_data.get('balance', {})
+
+        total_unrealized_profit = Decimal('0')
 
         for position in positions:
             if position['symbol'] in updated_symbols:
-                position['markPrice'] = self.mark_prices[position['symbol']]
+                old_mark_price = Decimal(position['markPrice'])
+                new_mark_price = Decimal(self.mark_prices[position['symbol']])
+                position_amt = Decimal(position['positionAmt'])
+                entry_price = Decimal(position['entryPrice'])
+
+                # Update markPrice
+                position['markPrice'] = str(new_mark_price)
+
+                # Recalculate unrealizedProfit
+                old_unrealized_profit = Decimal(position['unrealizedProfit'])
+                new_unrealized_profit = position_amt * (new_mark_price - entry_price)
+                position['unrealizedProfit'] = str(new_unrealized_profit)
+
+                # Update profit_percentage
                 position['profit_percentage'] = self.calculate_profit_percentage(position)
-                updated_positions.append(position)
 
-        if updated_positions:
-            # 업데이트된 포지션 정보로 ACCOUNT_UPDATE 데이터 갱신
-            account_data['positions'] = positions
-            self.last_sent_data['ACCOUNT_UPDATE'] = account_data
+                # Calculate the change in unrealized profit
+                unrealized_profit_change = new_unrealized_profit - old_unrealized_profit
+                total_unrealized_profit += unrealized_profit_change
 
-            # 클라이언트에 업데이트된 계정 정보 전송
-            await self.send(text_data=json.dumps({
-                'type': 'ACCOUNT_UPDATE',
-                'data': account_data
-            }))
+        # Update balance data
+        if balance_data:
+            balance = Decimal(balance_data['balance'])
+            cross_wallet_balance = Decimal(balance_data['crossWalletBalance'])
+            available_balance = Decimal(balance_data['availableBalance'])
+
+            balance_data['balance'] = str(balance + total_unrealized_profit)
+            balance_data['crossWalletBalance'] = str(cross_wallet_balance)
+            balance_data['availableBalance'] = str(available_balance)
+
+        # Update the last sent data
+        self.last_sent_data['ACCOUNT_UPDATE'] = {
+            'balance': balance_data,
+            'positions': positions
+        }
+
+        # Send updated account information to the client
+        await self.send(text_data=json.dumps({
+            'type': 'ACCOUNT_UPDATE',
+            'data': self.last_sent_data['ACCOUNT_UPDATE']
+        }))
+
+    # async def update_positions_with_new_mark_prices(self, updated_symbols):
+    #     account_data = self.last_sent_data.get('ACCOUNT_UPDATE', {})
+    #     positions = account_data.get('positions', [])
+    #     updated_positions = []
+    #
+    #     for position in positions:
+    #         if position['symbol'] in updated_symbols:
+    #             position['markPrice'] = self.mark_prices[position['symbol']]
+    #
+    #             position['profit_percentage'] = self.calculate_profit_percentage(position)
+    #             updated_positions.append(position)
+    #
+    #     if updated_positions:
+    #         # 업데이트된 포지션 정보로 ACCOUNT_UPDATE 데이터 갱신
+    #         account_data['positions'] = positions
+    #         self.last_sent_data['ACCOUNT_UPDATE'] = account_data
+    #
+    #         # 클라이언트에 업데이트된 계정 정보 전송
+    #         await self.send(text_data=json.dumps({
+    #             'type': 'ACCOUNT_UPDATE',
+    #             'data': account_data
+    #         }))
 
 
     async def request_account_update(self):
