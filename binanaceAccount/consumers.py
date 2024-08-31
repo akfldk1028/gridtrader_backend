@@ -95,7 +95,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
     async def handle_account_update(self, data):
 
-
+        # print(data)
+        # print("-------------")
         balances = data['a']['B']
         positions = data['a']['P']
 
@@ -118,13 +119,13 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     'positionAmt': position['pa'],
                     'entryPrice': position['ep'],
                     'unrealizedProfit': position['up'],
-                    'marginType': position.get('mt', ''),
                     'leverage': position['l'],
                     'markPrice': self.mark_prices.get(position['s'], position['mp']),
                     'liquidationPrice': position.get('lp', '0')  # 청산가 추가
                 }
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                 positions_data.append(position_data)
+        # 'marginType': position.get('mt', ''),
 
         await self.send_if_changed('ACCOUNT_UPDATE', {
             'balance': balance_data,
