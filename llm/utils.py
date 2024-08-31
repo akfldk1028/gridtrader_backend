@@ -304,7 +304,7 @@ def get_bitcoin_data(symbol):
                 float)
 
             for ma in [5, 10, 20, 24, 50, 100, 200]:
-                df[f"MA{ma}"] = df["Close"].rolling(window=ma).mean()
+                df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
             period = 20
             multiplier = 2.0
             df["MA"] = df["close"].rolling(window=period).mean()

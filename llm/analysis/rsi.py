@@ -10,7 +10,7 @@ class RSIAnalyzer:
 
     def compute_rsi(self):
         # Calculate the difference in price from previous step
-        delta = self.df["Close"].diff()
+        delta = self.df["close"].diff()
         # Make the positive gains (up) and negative gains (down) Series
         up, down = delta.clip(lower=0), -1 * delta.clip(upper=0)
         # Calculate the EWMA

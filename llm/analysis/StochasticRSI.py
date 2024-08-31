@@ -12,7 +12,7 @@ class StochasticRSI:
         self.calculate_stochastic_rsi()
 
     def calculate_rsi(self):
-        delta = self.df["Close"].diff()
+        delta = self.df["close"].diff()
         gain = np.where(delta > 0, delta, 0)
         loss = np.where(delta < 0, -delta, 0)
 
