@@ -116,15 +116,38 @@ class BinanceDataConsumer(AsyncWebsocketConsumer):
     async def fetch_initial_data(self):
         # 초기 데이터를 한 번만 REST API를 통해 가져옵니다
         initial_data = self.binance_client.get_initial_data()
-        self.current_balance = next((b for b in initial_data['balance'] if b['asset'] == 'USDT'), None)
-        if self.current_balance:
-            self.current_balance = {
-                'asset': self.current_balance['asset'],
-                'balance': self.current_balance['balance'],
-                'crossWalletBalance': self.current_balance['crossWalletBalance'],
-                'availableBalance': self.current_balance['availableBalance']
-            }
-        self.current_positions = [p for p in initial_data['positions'] if float(p['positionAmt']) != 0]
+
+        print("Received initial data:", initial_data)  # 디버깅을 위한 로그
+
+        try:
+            # balance 데이터 처리
+            if isinstance(initial_data['balance'], list):
+                self.current_balance = next((b for b in initial_data['balance'] if b['asset'] == 'USDT'), None)
+            elif isinstance(initial_data['balance'], dict):
+                self.current_balance = initial_data['balance'].get('USDT')
+            else:
+                print("Unexpected balance data format:", initial_data['balance'])
+                self.current_balance = None
+
+            # positions 데이터 처리
+            if isinstance(initial_data['positions'], list):
+                self.current_positions = [p for p in initial_data['positions'] if float(p.get('positionAmt', '0')) != 0]
+            else:
+                print("Unexpected positions data format:", initial_data['positions'])
+                self.current_positions = []
+
+            if self.current_balance:
+                self.current_balance = {
+                    'asset': 'USDT',
+                    'balance': self.current_balance.get('balance', '0'),
+                    'crossWalletBalance': self.current_balance.get('crossWalletBalance', '0'),
+                    'availableBalance': self.current_balance.get('availableBalance', '0')
+                }
+
+        except Exception as e:
+            print(f"Error processing initial data: {e}")
+            self.current_balance = None
+            self.current_positions = []
 
         await self.send_current_data()
 
