@@ -41,6 +41,7 @@ class UserDataConsumer(AsyncWebsocketConsumer):
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
+
     async def user_socket_listener(self):
         print("사용자 소켓 리스너 시작")
         async with self.user_socket as tscm:
@@ -57,7 +58,6 @@ class UserDataConsumer(AsyncWebsocketConsumer):
                     await asyncio.sleep(5)
                     await self.start_user_socket()
                     break
-
     async def handle_account_update(self, data):
         balances = data['a']['B']
         positions = data['a']['P']
@@ -105,6 +105,8 @@ class UserDataConsumer(AsyncWebsocketConsumer):
                 'type': 'futures_balance',
                 'data': self.last_sent_data['futures_balance']
             }))
+        else:
+            print("선물 잔고 데이터 없음")
 
     async def send_futures_positions(self):
         print("선물 포지션 전송 시도")
@@ -113,6 +115,8 @@ class UserDataConsumer(AsyncWebsocketConsumer):
                 'type': 'futures_positions',
                 'data': self.last_sent_data['futures_positions']
             }))
+        else:
+            print("선물 포지션 데이터 없음")
 
     def calculate_profit_percentage(self, position):
         try:
