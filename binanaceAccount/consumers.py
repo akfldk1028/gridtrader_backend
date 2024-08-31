@@ -226,6 +226,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
+        self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
+
         self.user_socket = None
         self.mark_price_socket = None
         self.reconnecting = False
@@ -233,14 +235,14 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         self.mark_prices = {}
         await self.sync_server_time()
         await self.start_user_socket()
-        await self.start_mark_price_socket()
+        await self.start_twm_in_thread()
         await self.initial_data_fetch()
 
     async def disconnect(self, close_code):
         if self.user_socket:
-            await self.user_socket.close()
-        if self.mark_price_socket:
-            await self.mark_price_socket.close()
+            await self.user_socket.__aexit__(None, None, None)
+        if self.twm:
+            self.twm.stop()
         if hasattr(self, 'client'):
             await self.client.close_connection()
         self.reconnecting = False
@@ -262,10 +264,20 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
-    async def start_mark_price_socket(self):
-        self.mark_price_socket = self.bm.futures_mark_price_socket()
-        asyncio.create_task(self.mark_price_socket_listener())
+    async def start_twm_in_thread(self):
+        def run_twm():
+            self.twm.start()
+            self.mark_price_socket = self.twm.start_all_mark_price_socket(
+                callback=self.handle_mark_price_update,
+                fast=True
+            )
 
+        Thread(target=run_twm).start()
+    def start_all_mark_price_socket(self):
+        self.mark_price_socket = self.twm.start_all_mark_price_socket(
+            callback=self.handle_mark_price_update,
+            fast=True
+        )
     async def initial_data_fetch(self):
         await self.get_futures_balance()
         await self.get_futures_positions()
@@ -328,12 +340,16 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
             await self.send_if_changed('futures_positions', positions_data)
 
-    async def handle_mark_price_update(self, msg):
+    def handle_mark_price_update(self, msg):
+        asyncio.run_coroutine_threadsafe(self._handle_mark_price_update(msg), asyncio.get_event_loop())
+
+
+    async def _handle_mark_price_update(self, msg):
         symbol = msg['s']
         mark_price = msg['p']
         self.mark_prices[symbol] = mark_price
-
         await self.update_positions_with_new_mark_price(symbol, mark_price)
+
 
     async def update_positions_with_new_mark_price(self, symbol, mark_price):
         if 'futures_positions' in self.last_sent_data:
