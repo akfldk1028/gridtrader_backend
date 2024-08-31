@@ -6,58 +6,22 @@ from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from threading import Thread
-class PeriodicDataConsumer(AsyncWebsocketConsumer):
+class UserDataConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("WebSocket 연결 시도")
+        print("UserData WebSocket 연결 시도")
         await self.accept()
-        print("WebSocket 연결 성공")
+        print("UserData WebSocket 연결 성공")
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
-        self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
         self.user_socket = None
-        self.mark_price_socket = None
         self.reconnecting = False
         self.last_sent_data = {}
-        self.mark_prices = {}
         await self.start_user_socket()
-        self.start_twm_in_thread()
-
-    # def start_twm_in_thread(self):
-    #     def run_twm():
-    #         asyncio.set_event_loop(asyncio.new_event_loop())
-    #         self.twm.start()
-    #         self.start_all_mark_price_socket()
-    #
-    #     Thread(target=run_twm).start()
-
-    def start_twm_in_thread(self):
-        def run_twm():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            self.twm.start()
-            loop.run_until_complete(self.start_all_mark_price_socket())
-
-        self.thread = Thread(target=run_twm)
-        self.thread.start()
-    # def start_twm_in_thread(self):
-    #     def run_twm():
-    #         loop = asyncio.new_event_loop()
-    #         asyncio.set_event_loop(loop)
-    #         self.twm.start()
-    #         loop.run_until_complete(self.start_all_mark_price_socket())
-    #         loop.run_forever()
-    #
-    #     self.thread = Thread(target=run_twm)
-    #     self.thread.start()
 
     async def disconnect(self, close_code):
-        print("WebSocket 연결 종료")
+        print("UserData WebSocket 연결 종료")
         if self.user_socket:
-            # Try manually closing the websocket
             await self.user_socket.__aexit__(None, None, None)
-        if self.mark_price_socket:
-            self.twm.stop_socket(self.mark_price_socket)
-        self.twm.stop()
         if hasattr(self, 'client'):
             await self.client.close_connection()
         self.reconnecting = False
@@ -77,23 +41,14 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
-    async def start_all_mark_price_socket(self):
-        print("마크 가격 소켓 시작")
-        self.mark_price_socket = self.twm.start_all_mark_price_socket(
-            callback=self.handle_mark_price_update,
-            fast=True
-        )
-
     async def user_socket_listener(self):
         print("사용자 소켓 리스너 시작")
-
         async with self.user_socket as tscm:
             while True:
                 try:
                     res = await tscm.recv()
                     if res:
                         print(f"수신된 데이터: {res}")
-
                         event_type = res.get('e')
                         if event_type == 'ACCOUNT_UPDATE':
                             await self.handle_account_update(res)
@@ -126,84 +81,12 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
                     'entryPrice': position['ep'],
                     'unrealizedProfit': position['up'],
                     'leverage': position['l'],
-                    'markPrice': self.mark_prices.get(position['s'], position['mp'])
+                    'markPrice': position['mp']
                 }
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                 positions_data.append(position_data)
 
             await self.send_if_changed('futures_positions', positions_data)
-
-    async def handle_mark_price_update(self, msg):
-        try:
-            if isinstance(msg, str):
-                msg = json.loads(msg)
-
-            if 'data' in msg and isinstance(msg['data'], list):
-                for item in msg['data']:
-                    await self.process_mark_price_data(item)
-            else:
-                print(f"Unexpected message format: {msg}")
-
-            # 마크 가격 업데이트 후 포지션 업데이트 호출
-            await self.update_positions_with_new_mark_price()
-        except Exception as e:
-            print(f"Error in handle_mark_price_update: {e}")
-
-    async def process_mark_price_data(self, data):
-        symbol = data.get('s')
-        mark_price = data.get('p')
-        if symbol and mark_price:
-            self.mark_prices[symbol] = mark_price
-            print(f"Updated mark price for {symbol}: {mark_price}")
-        else:
-            print(f"Unable to extract mark price from: {data}")
-
-
-    # def handle_mark_price_update(self, msg):
-    #     try:
-    #         if isinstance(msg, str):
-    #             msg = json.loads(msg)
-    #
-    #         if 'data' in msg and isinstance(msg['data'], list):
-    #             for item in msg['data']:
-    #                 self.process_mark_price_data(item)
-    #         else:
-    #             print(f"Unexpected message format: {msg}")
-    #
-    #         # 마크 가격 업데이트 후 포지션 업데이트 호출
-    #         asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
-    #     except Exception as e:
-    #         print(f"Error in handle_mark_price_update: {e}")
-    #
-    # def process_mark_price_data(self, data):
-    #     symbol = data.get('s')
-    #     mark_price = data.get('p')
-    #     if symbol and mark_price:
-    #         self.mark_prices[symbol] = mark_price
-    #         # print(f"Updated mark price for {symbol}: {mark_price}")
-    #     else:
-    #         print(f"Unable to extract mark price from: {data}")
-
-
-    async def update_positions_with_new_mark_price(self):
-        try:
-            positions_data = []
-            for symbol, mark_price in self.mark_prices.items():
-                position = next((pos for pos in self.last_sent_data.get('futures_positions', []) if pos['symbol'] == symbol), None)
-                if position:
-                    position['markPrice'] = mark_price
-                    position['profit_percentage'] = self.calculate_profit_percentage(position)
-                    positions_data.append(position)
-
-            if positions_data:
-                await self.send_if_changed('futures_positions', positions_data)
-
-        except Exception as e:
-            print(f"Error in update_positions_with_new_mark_price: {e}")
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': str(e)
-            }))
 
     async def send_if_changed(self, data_type, data):
         key = data_type
@@ -215,10 +98,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             }))
             print(f"데이터 전송: {data_type} - {data}")
 
-
     async def send_futures_balance(self):
         print("선물 잔고 전송 시도")
-
         if 'futures_balance' in self.last_sent_data:
             await self.send(text_data=json.dumps({
                 'type': 'futures_balance',
@@ -227,7 +108,6 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     async def send_futures_positions(self):
         print("선물 포지션 전송 시도")
-
         if 'futures_positions' in self.last_sent_data:
             await self.send(text_data=json.dumps({
                 'type': 'futures_positions',
@@ -255,6 +135,70 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             return float(profit_percentage.quantize(Decimal('0.01')))
         except (InvalidOperation, ZeroDivisionError):
             return 0
+
+class MarkPriceConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        print("MarkPrice WebSocket 연결 시도")
+        await self.accept()
+        print("MarkPrice WebSocket 연결 성공")
+        self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
+        self.mark_price_socket = None
+        self.mark_prices = {}
+        await self.start_twm()
+
+    async def disconnect(self, close_code):
+        print("MarkPrice WebSocket 연결 종료")
+        if self.mark_price_socket:
+            self.twm.stop_socket(self.mark_price_socket)
+        self.twm.stop()
+
+    async def start_twm(self):
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self.twm.start)
+        await self.start_all_mark_price_socket()
+
+    async def start_all_mark_price_socket(self):
+        print("마크 가격 소켓 시작")
+        loop = asyncio.get_event_loop()
+        self.mark_price_socket = await loop.run_in_executor(
+            None,
+            self.twm.start_all_mark_price_socket,
+            self.handle_mark_price_update,
+            True
+        )
+
+    def handle_mark_price_update(self, msg):
+        asyncio.run_coroutine_threadsafe(self._handle_mark_price_update(msg), asyncio.get_event_loop())
+
+    async def _handle_mark_price_update(self, msg):
+        try:
+            if isinstance(msg, str):
+                msg = json.loads(msg)
+
+            if 'data' in msg and isinstance(msg['data'], list):
+                for item in msg['data']:
+                    await self.process_mark_price_data(item)
+            else:
+                print(f"Unexpected message format: {msg}")
+
+            await self.send_mark_prices()
+        except Exception as e:
+            print(f"Error in handle_mark_price_update: {e}")
+
+    async def process_mark_price_data(self, data):
+        symbol = data.get('s')
+        mark_price = data.get('p')
+        if symbol and mark_price:
+            self.mark_prices[symbol] = mark_price
+            print(f"Updated mark price for {symbol}: {mark_price}")
+        else:
+            print(f"Unable to extract mark price from: {data}")
+
+    async def send_mark_prices(self):
+        await self.send(text_data=json.dumps({
+            'type': 'mark_prices',
+            'data': self.mark_prices
+        }))
 
 
 # class BinanceBaseConsumer(AsyncWebsocketConsumer):
