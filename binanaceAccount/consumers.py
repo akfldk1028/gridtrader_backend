@@ -36,10 +36,19 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             asyncio.set_event_loop(loop)
             self.twm.start()
             loop.run_until_complete(self.start_all_mark_price_socket())
-            loop.run_forever()
 
         self.thread = Thread(target=run_twm)
         self.thread.start()
+    # def start_twm_in_thread(self):
+    #     def run_twm():
+    #         loop = asyncio.new_event_loop()
+    #         asyncio.set_event_loop(loop)
+    #         self.twm.start()
+    #         loop.run_until_complete(self.start_all_mark_price_socket())
+    #         loop.run_forever()
+    #
+    #     self.thread = Thread(target=run_twm)
+    #     self.thread.start()
 
     async def disconnect(self, close_code):
         print("WebSocket 연결 종료")
@@ -70,7 +79,6 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
     async def start_all_mark_price_socket(self):
         print("마크 가격 소켓 시작")
-
         self.mark_price_socket = self.twm.start_all_mark_price_socket(
             callback=self.handle_mark_price_update,
             fast=True
@@ -125,23 +133,23 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
 
             await self.send_if_changed('futures_positions', positions_data)
 
-    def handle_mark_price_update(self, msg):
+    async def handle_mark_price_update(self, msg):
         try:
             if isinstance(msg, str):
                 msg = json.loads(msg)
 
             if 'data' in msg and isinstance(msg['data'], list):
                 for item in msg['data']:
-                    self.process_mark_price_data(item)
+                    await self.process_mark_price_data(item)
             else:
                 print(f"Unexpected message format: {msg}")
 
             # 마크 가격 업데이트 후 포지션 업데이트 호출
-            asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
+            await self.update_positions_with_new_mark_price()
         except Exception as e:
             print(f"Error in handle_mark_price_update: {e}")
 
-    def process_mark_price_data(self, data):
+    async def process_mark_price_data(self, data):
         symbol = data.get('s')
         mark_price = data.get('p')
         if symbol and mark_price:
@@ -151,20 +159,31 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
             print(f"Unable to extract mark price from: {data}")
 
 
-
     # def handle_mark_price_update(self, msg):
-    #     for item in msg:
-    #         symbol = item['s']
-    #         mark_price = item['p']
-    #         self.mark_prices[symbol] = mark_price
+    #     try:
+    #         if isinstance(msg, str):
+    #             msg = json.loads(msg)
     #
-    #     # Instead of directly calling asyncio.run_coroutine_threadsafe, get the running loop:
-    #     loop = asyncio.get_event_loop()
-    #     if loop.is_running():
-    #         asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), loop)
+    #         if 'data' in msg and isinstance(msg['data'], list):
+    #             for item in msg['data']:
+    #                 self.process_mark_price_data(item)
+    #         else:
+    #             print(f"Unexpected message format: {msg}")
+    #
+    #         # 마크 가격 업데이트 후 포지션 업데이트 호출
+    #         asyncio.run_coroutine_threadsafe(self.update_positions_with_new_mark_price(), asyncio.get_event_loop())
+    #     except Exception as e:
+    #         print(f"Error in handle_mark_price_update: {e}")
+    #
+    # def process_mark_price_data(self, data):
+    #     symbol = data.get('s')
+    #     mark_price = data.get('p')
+    #     if symbol and mark_price:
+    #         self.mark_prices[symbol] = mark_price
+    #         # print(f"Updated mark price for {symbol}: {mark_price}")
     #     else:
-    #         # If there's no running loop, execute it normally
-    #         loop.run_until_complete(self.update_positions_with_new_mark_price())
+    #         print(f"Unable to extract mark price from: {data}")
+
 
     async def update_positions_with_new_mark_price(self):
         try:
@@ -194,6 +213,8 @@ class PeriodicDataConsumer(AsyncWebsocketConsumer):
                 'type': data_type,
                 'data': data
             }))
+            print(f"데이터 전송: {data_type} - {data}")
+
 
     async def send_futures_balance(self):
         print("선물 잔고 전송 시도")
