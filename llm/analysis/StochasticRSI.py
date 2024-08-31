@@ -11,6 +11,22 @@ class StochasticRSI:
         self.smoothD = smoothD
         self.calculate_stochastic_rsi()
 
+
+    def calculate_stochastic_rsi(self):
+        rsi = self.calculate_rsi()
+        stoch_rsi = (rsi - rsi.rolling(window=self.lengthStoch).min()) / (
+            rsi.rolling(window=self.lengthStoch).max()
+            - rsi.rolling(window=self.lengthStoch).min()
+        )
+
+        # SMA를 사용하여 %K와 %D 계산
+        self.df["%K"] = stoch_rsi.rolling(window=self.smoothK).mean() * 100
+        self.df["%D"] = self.df["%K"].rolling(window=self.smoothD).mean()
+
+        # # NaN 값 처리
+        # self.df["%K"] = self.df["%K"].fillna(0)
+        # self.df["%D"] = self.df["%D"].fillna(0)
+
     def calculate_rsi(self):
         delta = self.df["close"].diff()
         gain = np.where(delta > 0, delta, 0)
@@ -24,30 +40,4 @@ class StochasticRSI:
         rsi = 100 - (100 / (1 + rs))
         return rsi
 
-    def calculate_stochastic_rsi(self):
-        rsi = self.calculate_rsi()
-        stoch_rsi = (rsi - rsi.rolling(window=self.lengthStoch).min()) / (
-            rsi.rolling(window=self.lengthStoch).max()
-            - rsi.rolling(window=self.lengthStoch).min()
-        )
 
-        # SMA를 사용하여 %K와 %D 계산
-        self.df["%K"] = stoch_rsi.rolling(window=self.smoothK).mean() * 100
-        self.df["%D"] = self.df["%K"].rolling(window=self.smoothD).mean()
-
-        # NaN 값 처리
-        self.df["%K"] = self.df["%K"].fillna(0)
-        self.df["%D"] = self.df["%D"].fillna(0)
-
-    def calculate_stochastic_rsi_signals(self):
-        # close buy
-        self.df["Stochastic_Buy"] = (
-            (self.df["%K"].shift(1) > self.df["%D"].shift(1))
-            & (self.df["%K"] < self.df["%D"])
-            & (self.df["%K"] > 80)
-        )
-        self.df["Stochastic_Sell"] = (
-            (self.df["%K"].shift(1) < self.df["%D"].shift(1))
-            & (self.df["%K"] > self.df["%D"])
-            & (self.df["%K"] < 20)
-        )
