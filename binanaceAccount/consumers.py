@@ -20,6 +20,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
+        self.twm = ThreadedWebsocketManager(api_key=settings.BINANCE_API_KEY, api_secret=settings.BINANCE_API_SECRET)
 
         self.user_socket = None
         self.mark_price_socket = None
@@ -38,8 +39,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             await self.mark_price_socket.__aexit__(None, None, None)
         if hasattr(self, 'client'):
             await self.client.close_connection()
-        if self.listen_key:
-            await self.client.futures_stream_close_listen_key(self.listen_key)
+
 
     async def start_user_data_stream(self):
         self.listen_key = await self.client.futures_stream_get_listen_key()
