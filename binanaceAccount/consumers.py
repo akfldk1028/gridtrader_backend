@@ -32,6 +32,22 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.start_user_data_stream()
         await self.start_mark_price_socket()
         asyncio.create_task(self.keep_listen_key_alive())
+        asyncio.create_task(self.request_initial_data())
+
+    async def request_initial_data(self):
+        await asyncio.sleep(5)  # 5초 대기
+        if not self.initial_data_received:
+            print("Initial data not received, requesting manually")
+            try:
+                account_info = await self.client.futures_account()
+                await self.handle_account_update(
+                    {'a': {'B': [account_info], 'P': account_info['positions']}},
+                    is_initial=True
+                )
+            except Exception as e:
+                print(f"Error requesting initial data: {e}")
+
+
 
     async def disconnect(self, close_code):
         if self.user_socket:
@@ -70,8 +86,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                             await self.handle_account_update(res, is_initial=not self.initial_data_received)
                             if not self.initial_data_received:
                                 self.initial_data_received = True
-                                print("Initial data received and processed")  # 디버깅을 위한 로그
-
+                                print("Initial data received and processed")
                         elif event_type == 'ORDER_TRADE_UPDATE':
                             await self.handle_order_update(res)
                 except Exception as e:
@@ -95,6 +110,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     break
 
     async def handle_account_update(self, data, is_initial=False):
+        print(data)
         balances = data['a']['B']
         positions = data['a']['P']
 
