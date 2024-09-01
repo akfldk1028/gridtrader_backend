@@ -70,6 +70,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                             await self.handle_account_update(res, is_initial=not self.initial_data_received)
                             if not self.initial_data_received:
                                 self.initial_data_received = True
+                                print("Initial data received and processed")  # 디버깅을 위한 로그
+
                         elif event_type == 'ORDER_TRADE_UPDATE':
                             await self.handle_order_update(res)
                 except Exception as e:
@@ -132,8 +134,17 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 'type': 'INITIAL_ACCOUNT_DATA',
                 'data': update_data
             }))
+            print("Initial account data sent")  # 디버깅을 위한 로그
         else:
-            await self.send_if_changed('ACCOUNT_UPDATE', update_data)
+            # 항상 데이터를 전송하도록 변경
+            await self.send(text_data=json.dumps({
+                'type': 'ACCOUNT_UPDATE',
+                'data': update_data
+            }))
+            print("Account update sent")  # 디버깅을 위한 로그
+
+        # last_sent_data 업데이트
+        self.last_sent_data['ACCOUNT_UPDATE'] = update_data
 
     async def handle_order_update(self, data):
         await self.send(text_data=json.dumps({
