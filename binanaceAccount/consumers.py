@@ -27,6 +27,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         self.last_sent_data = {'ACCOUNT_UPDATE': {'balance': None, 'positions': []}}
         self.mark_prices = {}
         self.listen_key = None
+        self.initial_data_received = False
 
         await self.start_user_data_stream()
         await self.start_mark_price_socket()
@@ -66,7 +67,9 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     if res:
                         event_type = res.get('e')
                         if event_type == 'ACCOUNT_UPDATE':
-                            await self.handle_account_update(res)
+                            await self.handle_account_update(res, is_initial=not self.initial_data_received)
+                            if not self.initial_data_received:
+                                self.initial_data_received = True
                         elif event_type == 'ORDER_TRADE_UPDATE':
                             await self.handle_order_update(res)
                 except Exception as e:
@@ -74,6 +77,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     await asyncio.sleep(5)
                     await self.start_user_data_stream()
                     break
+
 
     async def mark_price_socket_listener(self):
         async with self.mark_price_socket as mps:
@@ -88,7 +92,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     await self.start_mark_price_socket()
                     break
 
-    async def handle_account_update(self, data):
+    async def handle_account_update(self, data, is_initial=False):
         balances = data['a']['B']
         positions = data['a']['P']
 
@@ -118,10 +122,18 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                 positions_data.append(position_data)
 
-        await self.send_if_changed('ACCOUNT_UPDATE', {
+        update_data = {
             'balance': balance_data,
             'positions': positions_data
-        })
+        }
+
+        if is_initial:
+            await self.send(text_data=json.dumps({
+                'type': 'INITIAL_ACCOUNT_DATA',
+                'data': update_data
+            }))
+        else:
+            await self.send_if_changed('ACCOUNT_UPDATE', update_data)
 
     async def handle_order_update(self, data):
         await self.send(text_data=json.dumps({
