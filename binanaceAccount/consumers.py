@@ -14,6 +14,8 @@ import hashlib
 import requests
 from binance.exceptions import BinanceAPIException
 from typing import Dict, Set, List, Any
+from binance.client import Client
+import aiohttp
 
 
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
@@ -46,19 +48,24 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
     async def initialize_client(self):
         while True:
             try:
+                session = aiohttp.ClientSession()
+                session.proxies = {
+                    'http': f'http://{self.ip_addresses[self.current_ip_index]}',
+                    'https': f'https://{self.ip_addresses[self.current_ip_index]}'
+                }
                 self.client = await AsyncClient.create(
                     settings.BINANCE_API_KEY,
                     settings.BINANCE_API_SECRET,
-                    requests_params={'proxies': {'http': f'http://{self.ip_addresses[self.current_ip_index]}',
-                                                 'https': f'https://{self.ip_addresses[self.current_ip_index]}'}}
+                    requests_params={'timeout': 10},
+                    aiohttp_session=session
                 )
+                await self.sync_server_time()
                 break
             except Exception as e:
                 print(f"Error initializing client with IP {self.ip_addresses[self.current_ip_index]}: {e}")
-                self.rotate_ip()
+                await self.rotate_ip()
                 await asyncio.sleep(1)
-
-    def rotate_ip(self):
+    async def rotate_ip(self):
         self.current_ip_index = (self.current_ip_index + 1) % len(self.ip_addresses)
         print(f"Rotating to IP: {self.ip_addresses[self.current_ip_index]}")
 
@@ -79,7 +86,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 break
             except Exception as e:
                 print(f"Error starting user data stream: {e}")
-                self.rotate_ip()
+                await self.rotate_ip()
                 await self.initialize_client()
                 await asyncio.sleep(1)
 
@@ -97,7 +104,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 break
             except Exception as e:
                 print(f"Error starting mark price socket: {e}")
-                self.rotate_ip()
+                await self.rotate_ip()
                 await self.initialize_client()
                 await asyncio.sleep(1)
 
@@ -108,7 +115,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 await self.client.futures_stream_keepalive(self.listen_key)
             except Exception as e:
                 print(f"Error keeping listen key alive: {e}")
-                self.rotate_ip()
+                await self.rotate_ip()
                 await self.initialize_client()
                 await self.start_user_data_stream()
 
@@ -297,7 +304,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             if "APIError(code=-1003)" in str(e):
                 print(f"Error requesting account update: {str(e)}")
-                self.rotate_ip()
+                await self.rotate_ip()
                 await self.initialize_client()
                 await asyncio.sleep(1)
             else:
