@@ -26,3 +26,24 @@ class LatestSymbolResultView(APIView):
 
         serializer = AnalysisResultSerializer(latest_result)
         return Response(serializer.data)
+
+
+class RecentAnalysisResultsView(APIView):
+    def get(self, request):
+        symbol = request.query_params.get('symbol')
+        count = request.query_params.get('count', 3)  # 기본값을 3으로 설정
+
+        if not symbol:
+            return Response({'error': 'Symbol parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            count = int(count)
+            if count <= 0:
+                raise ValueError
+        except ValueError:
+            return Response({'error': 'Count must be a positive integer'}, status=status.HTTP_400_BAD_REQUEST)
+
+        results = AnalysisResult.objects.filter(symbol=symbol).order_by('-date')[:count]
+
+        serializer = AnalysisResultSerializer(results, many=True)
+        return Response(serializer.data)
