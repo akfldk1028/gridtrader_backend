@@ -22,10 +22,9 @@ class StochasticRSI:
         # SMA를 사용하여 %K와 %D 계산
         self.df["%K"] = stoch_rsi.rolling(window=self.smoothK).mean() * 100
         self.df["%D"] = self.df["%K"].rolling(window=self.smoothD).mean()
-
         # # NaN 값 처리
-        # self.df["%K"] = self.df["%K"].fillna(0)
-        # self.df["%D"] = self.df["%D"].fillna(0)
+        self.df["%K"] = self.df["%K"].fillna(0)
+        self.df["%D"] = self.df["%D"].fillna(0)
 
     def calculate_rsi(self):
         delta = self.df["close"].diff()

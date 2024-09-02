@@ -279,6 +279,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
+from datetime import datetime, timedelta
 
 # Binance 클라이언트 초기화
 symbol = "BNBUSDT"
@@ -290,9 +291,13 @@ client = Client(binance_api_key, binance_api_secret)
 
 def get_bitcoin_data(symbol):
     try:
+        end_date = datetime.now()
+        start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
+        start_date_daily = end_date - timedelta(days=500)  # 500일
+
         # 1시간 및 1일 간격의 데이터 가져오기
-        hourly_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=500)
-        daily_candles = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=500)
+        hourly_candles = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start_date_hourly.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
+        daily_candles = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, start_date_daily.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
 
         def process_candles(candles):
             df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
@@ -300,8 +305,7 @@ def get_bitcoin_data(symbol):
                                                 'taker_buy_quote_asset_volume', 'ignore'])
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-            df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
-                float)
+            df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
 
             for ma in [5, 10, 20, 24, 50, 100, 200]:
                 df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
@@ -319,7 +323,7 @@ def get_bitcoin_data(symbol):
             'hourly': process_candles(hourly_candles),
             'daily': process_candles(daily_candles)
         }
-    except BinanceAPIException as e:
+    except Exception as e:
         print(f"An error occurred: {e}")
         return None
 
@@ -455,7 +459,7 @@ def perform_analysis():
     task1 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 72 hours of hourly data:
         {bitcoin_data['hourly'][-72:]}
-        Focus on the last 72 hours, examining:
+        Focus on the most recent 72 hours, examining:
         1. Recent price trends
         2. Volume changes
         3. RSI (Relative Strength Index)
@@ -475,7 +479,7 @@ def perform_analysis():
     task2 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 90 days of daily data:
         {bitcoin_data['daily'][-90:]}
-        Focus on the last 90 days, examining:
+        Focus on the most recent 90 days, examining:
         1. Price trends and key price levels
         2. Volume patterns and significant volume spikes
         3. RSI (Relative Strength Index) - identify overbought/oversold conditions
@@ -500,7 +504,7 @@ def perform_analysis():
         description="""Based on all the analyses provided, predict whether the Bitcoin price is more likely to go up or down in the near future.
         Provide a brief explanation for your prediction and assign a confidence level to your prediction as a percentage.
         Look at the short-term and long-term situation and evaluate it objectively. If you make a mistake, your current Bitcoin futures investment may be liquidated.
-        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 70%' or 'Down 65%'.""",
+        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%' ,'Down 85%', 'Up 70%' or 'Down 65%'.""",
         expected_output="Bitcoin price movement prediction with explanation and confidence level",
         agent=price_predictor
     )
