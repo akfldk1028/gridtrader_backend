@@ -48,18 +48,18 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
     async def initialize_client(self):
         while True:
             try:
-                session = aiohttp.ClientSession()
-                session.proxies = {
-                    'http': f'http://{self.ip_addresses[self.current_ip_index]}',
-                    'https': f'https://{self.ip_addresses[self.current_ip_index]}'
-                }
+                proxy_url = f'http://{self.ip_addresses[self.current_ip_index]}'
                 self.client = await AsyncClient.create(
-                    settings.BINANCE_API_KEY,
-                    settings.BINANCE_API_SECRET,
+                    api_key=settings.BINANCE_API_KEY,
+                    api_secret=settings.BINANCE_API_SECRET,
                     requests_params={'timeout': 10},
-                    aiohttp_session=session
+                    session_params={
+                        'proxies': {
+                            'http': proxy_url,
+                            'https': proxy_url
+                        }
+                    }
                 )
-                await self.sync_server_time()
                 break
             except Exception as e:
                 print(f"Error initializing client with IP {self.ip_addresses[self.current_ip_index]}: {e}")
