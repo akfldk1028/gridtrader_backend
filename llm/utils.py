@@ -137,14 +137,10 @@ def extract_prediction(text):
     if match:
         return match.group(1), match.group(2)
 
-    # If not found, look for any mention of "Up" or "Down" near a percentage
-    up_match = re.search(r'Up.*?(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
-    down_match = re.search(r'Down.*?(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
+    percentage_match = re.search(r'(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
 
-    if up_match:
-        return "Up", up_match.group(1)
-    elif down_match:
-        return "Down", down_match.group(1)
+    if percentage_match:
+        return "Down", percentage_match.group(1)
 
     return None, None
 
@@ -157,9 +153,9 @@ def extract_strategy(text):
     return None
 
 
-def get_current_bitcoin_price():
+def get_current_bitcoin_price(vt_symbol):
     try:
-        ticker = client.get_symbol_ticker(symbol=symbol)
+        ticker = client.get_symbol_ticker(symbol=vt_symbol)
         return float(ticker['price'])
     except BinanceAPIException as e:
         print(f"Error fetching current Bitcoin price: {e}")
@@ -346,7 +342,7 @@ def perform_analysis():
 
     price_prediction, confidence = extract_prediction(result_string)
     selected_strategy = extract_strategy(result_string)
-    current_price = get_current_bitcoin_price()
+    current_price = get_current_bitcoin_price(vt_symbol)
 
     # 한글 요약 생성 (이 부분은 그대로 유지)
     korean_summary_task = Task(
