@@ -12,6 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 import time
+from typing import List, Dict, Any
 
 
 class BinanceAPIView(APIView):
@@ -56,27 +57,21 @@ class FuturesPositionView(BinanceAPIView):
         super().__init__(**kwargs)
         self.sync_server_time()
 
-    def get_positions(self, symbol=None):
+    def get_positions(self, symbols: List[str] = None) -> List[Dict[str, Any]]:
         params = {}
-        if symbol:
-            params['symbol'] = symbol
-
-        # 타임스탬프를 직접 추가
-        params['timestamp'] = int(time.time() * 1000 + self.client.timestamp_offset)
+        if symbols:
+            params['symbol'] = ','.join(symbols)
 
         return self.client.futures_position_information(**params)
 
-    def calculate_profit_percentage(self, position):
+    def calculate_profit_percentage(self, position: Dict[str, str]) -> Decimal:
         try:
             position_amt = Decimal(position.get('positionAmt', '0'))
-            if position_amt == Decimal('0'):
-                return Decimal('0')
-
             entry_price = Decimal(position.get('entryPrice', '0'))
             mark_price = Decimal(position.get('markPrice', '0'))
             leverage = Decimal(position.get('leverage', '1'))
 
-            if entry_price == Decimal('0'):
+            if position_amt == Decimal('0') or entry_price == Decimal('0'):
                 return Decimal('0')
 
             if position_amt > Decimal('0'):  # Long position
@@ -86,37 +81,38 @@ class FuturesPositionView(BinanceAPIView):
 
             return profit_percentage.quantize(Decimal('0.01'))
         except (InvalidOperation, ZeroDivisionError):
+            print(f"Error calculating profit percentage for position: {position}")
             return Decimal('0')
 
     def get(self, request):
         print(f"Received request: {request.GET}")
         try:
-            # symbols = request.GET.get('symbols', '')
-            # symbols = [symbol.strip().upper() for symbol in symbols.split(',') if symbol.strip()]
-            symbol = request.GET.get('symbols', '')
-            symbols = symbol.strip().upper() if symbol else ''
+            symbols_param = request.GET.get('symbols', '')
+            symbols = [s.strip().upper() for s in symbols_param.split(',')] if symbols_param else []
 
-            # print(f"Processing symbols: {symbols}")
+            print(f"Processing symbols: {symbols}")
 
             all_positions = self.get_positions(symbols)
-            # print(f"Received positions from Binance: {all_positions}")
+            print(f"Received {len(all_positions)} positions from Binance")
 
-            if symbols:
-                filtered_positions = [pos for pos in all_positions if pos["symbol"] in symbols]
-            else:
-                filtered_positions = [pos for pos in all_positions if float(pos["positionAmt"]) != 0]
+            filtered_positions = [
+                pos for pos in all_positions
+                if (not symbols or pos["symbol"] in symbols) and float(pos["positionAmt"]) != 0
+            ]
 
             for pos in filtered_positions:
                 pos['profit_percentage'] = float(self.calculate_profit_percentage(pos))
 
-            print(f"Returning filtered positions: {filtered_positions}")
+            print(f"Returning {len(filtered_positions)} filtered positions")
             return Response(filtered_positions)
+
         except BinanceAPIException as e:
             print(f"BinanceAPIException: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print(f"Unexpected error: {str(e)}")
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"Unexpected error in FuturesPositionView: {str(e)}")
+            return Response({'error': 'An unexpected error occurred. Please try again later.'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class FuturesAccountInfoView(BinanceAPIView):
