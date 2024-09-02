@@ -459,44 +459,50 @@ def perform_analysis():
     task1 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 72 hours of hourly data:
         {bitcoin_data['hourly'][-72:]}
+
+        IMPORTANT: Start your analysis from the most recent data point (the last entry in the provided dataset) and work backwards.
+
         Focus on the most recent 72 hours, examining:
-        1. Recent price trends
-        2. Volume changes
-        3. RSI (Relative Strength Index)
-        4. Bollinger Bands (using the 'Upper', 'Lower', and 'MA' columns)
-        5. Stochastic oscillator
-        6. Technical patterns - look for and analyze patterns such as:
+        1. Recent price trends (start from the latest price)
+        2. Volume changes (compare recent volumes to earlier ones)
+        3. RSI (Relative Strength Index) - focus on the latest readings
+        4. Bollinger Bands (using the 'Upper', 'Lower', and 'MA' columns) - analyze recent price positions relative to the bands
+        5. Stochastic oscillator - examine the most recent signals
+        6. Technical patterns - look for and analyze recent formations of patterns such as:
            - Triangle patterns (ascending, descending, symmetrical)
            - Head and shoulders
            - Double tops/bottoms
            - Flags and pennants
-        Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe.
-        Consider both bullish and bearish scenarios in your analysis.""",
-        expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe",
+        Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe based on the most recent data.
+        Consider both bullish and bearish scenarios in your analysis, with emphasis on the current market conditions.""",
+        expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe, focusing on the most recent market conditions",
         agent=hourly_analyst
     )
 
     task2 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 90 days of daily data:
         {bitcoin_data['daily'][-90:]}
+
+        IMPORTANT: Begin your analysis with the most recent data point (the last entry in the dataset) and work backwards through time.
+
         Focus on the most recent 90 days, examining:
-        1. Price trends and key price levels
-        2. Volume patterns and significant volume spikes
-        3. RSI (Relative Strength Index) - identify overbought/oversold conditions
-        4. Stochastic oscillator - look for potential reversal signals
-        5. Moving Averages (MA) - analyze trends using various MA periods (e.g., 50-day, 100-day)
-        6. Support and resistance levels - identify key levels based on price action and MA
-        7. Technical patterns - look for and analyze patterns such as:
+        1. Price trends and key price levels (start from the latest price)
+        2. Volume patterns and significant volume spikes (focus on recent volume activity)
+        3. RSI (Relative Strength Index) - identify current overbought/oversold conditions
+        4. Stochastic oscillator - look for the most recent potential reversal signals
+        5. Moving Averages (MA) - analyze current trends using various MA periods (e.g., 50-day, 100-day)
+        6. Support and resistance levels - identify key levels based on recent price action and MA
+        7. Technical patterns - look for and analyze recent formations of patterns such as:
            - Triangle patterns (ascending, descending, symmetrical)
            - Head and shoulders
            - Double tops/bottoms
            - Flags and pennants
-        8. Overall market sentiment based on the above indicators and patterns
+        8. Overall market sentiment based on the above indicators and patterns, with emphasis on the current market state
 
-        Provide a balanced analysis considering both bullish and bearish scenarios. 
-        Highlight any significant divergences between price action and indicators.
-        Conclude with an overall market outlook for the short-term (1-2 weeks) and medium-term (1-3 months) based on this analysis.""",
-        expected_output="Detailed Bitcoin market analysis report for the most recent 90 days (1-day timeframe), including technical patterns and market outlook",
+        Provide a balanced analysis considering both bullish and bearish scenarios, focusing on the present market conditions. 
+        Highlight any significant recent divergences between price action and indicators.
+        Conclude with an overall market outlook for the short-term (1-2 weeks) and medium-term (1-3 months) based on this analysis, with particular attention to the most recent market developments.""",
+        expected_output="Detailed Bitcoin market analysis report for the most recent 90 days (1-day timeframe), including technical patterns and market outlook, with emphasis on current market conditions",
         agent=daily_analyst
     )
 
