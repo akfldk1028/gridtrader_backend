@@ -241,9 +241,9 @@ def perform_analysis():
         Focus on the most recent 72 hours, examining:
         1. Recent price trends (start from the latest price)
         2. Volume changes (compare recent volumes to earlier ones)
-        3. RSI (Relative Strength Index) - focus on the latest readings
+        3. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
         4. Bollinger Bands (using the 'Upper', 'Lower', and 'MA' columns) - analyze recent price positions relative to the bands
-        5. Stochastic oscillator - examine the most recent signals
+        5. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
         6. Technical patterns - look for and analyze recent formations of patterns such as:
            - Triangle patterns (ascending, descending, symmetrical)
            - Head and shoulders
@@ -264,8 +264,8 @@ def perform_analysis():
         Focus on the most recent 90 days, examining:
         1. Price trends and key price levels (start from the latest price)
         2. Volume patterns and significant volume spikes (focus on recent volume activity)
-        3. RSI (Relative Strength Index) - identify current overbought/oversold conditions
-        4. Stochastic oscillator - look for the most recent potential reversal signals
+        3. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
+        4. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
         5. Moving Averages (MA) - analyze current trends using various MA periods (e.g., 50-day, 100-day)
         6. Support and resistance levels - identify key levels based on recent price action and MA
         7. Technical patterns - look for and analyze recent formations of patterns such as:
@@ -283,11 +283,22 @@ def perform_analysis():
     )
 
     task3 = Task(
-        description="""Based on all the analyses provided, predict whether the Bitcoin price is more likely to go up or down in the near future.
-        Provide a brief explanation for your prediction and assign a confidence level to your prediction as a percentage.
-        Look at the short-term and long-term situation and evaluate it objectively. If you make a mistake, your current Bitcoin futures investment may be liquidated.
-        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%' ,'Down 85%', 'Up 70%' or 'Down 65%'.""",
-        expected_output="Bitcoin price movement prediction with explanation and confidence level",
+        description="""Predict future Bitcoin price scenarios for the next 4-8 hours (short-term) and 12-24 hours (medium-term):
+
+        1. Describe one bullish and one bearish scenario for each timeframe
+        2. Include specific price targets or ranges for each scenario
+        3. Identify immediate potential triggers or catalysts for each scenario
+        4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe)
+        5. Highlight key technical levels to watch in the very near term
+
+        Focus on forecasting immediate future developments, emphasizing short-term trading perspectives. Consider:
+        - Rapid market sentiment shifts
+        - Immediate changes in trading patterns and volume
+        - Any imminent events or news that could impact Bitcoin price in the next 24 hours
+
+        Based on your analysis, provide a single most likely direction for the next 8 hours.
+        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'.""",
+        expected_output="Concise short-term future scenario analysis for Bitcoin with a single directional prediction and confidence level",
         agent=price_predictor
     )
 
