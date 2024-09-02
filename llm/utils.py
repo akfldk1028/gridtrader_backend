@@ -1,268 +1,3 @@
-# import os
-# from crewai import Agent, Task, Crew, Process
-# from binance.client import Client
-# from binance.exceptions import BinanceAPIException
-# import pandas as pd
-# import numpy as np
-# import re
-# from TradeStrategy.models import StrategyConfig
-# from django.conf import settings
-# from django.core.exceptions import ObjectDoesNotExist
-# import websockets
-# import json
-# from asgiref.sync import sync_to_async
-# from django.db import transaction
-#
-# # Binance 클라이언트 초기화
-# symbol = "BNBUSDT"
-# binance_api_key = settings.BINANCE_API_KEY
-# binance_api_secret = settings.BINANCE_API_SECRET
-# client = Client(binance_api_key, binance_api_secret)
-#
-# hourly_analyst = Agent(
-#     role='Hourly Bitcoin Market Analyst',
-#     goal='Analyze Bitcoin market trends and patterns in 1-hour timeframe',
-#     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
-#     Your expertise lies in technical analysis and identifying market trends in hourly charts.
-#     You are known for your balanced and objective analysis, considering both bullish and bearish scenarios.""",
-#     verbose=True,
-#     allow_delegation=False,
-# )
-#
-# daily_analyst = Agent(
-#     role='Daily Bitcoin Market Analyst',
-#     goal='Analyze Bitcoin market trends and patterns in 1-day timeframe',
-#     backstory="""You are an experienced cryptocurrency market analyst specializing in medium to long-term Bitcoin analysis.
-#     Your expertise lies in technical analysis and identifying market trends in daily charts.
-#     You are known for your cautious approach, always considering multiple market scenarios.""",
-#     verbose=True,
-#     allow_delegation=False,
-# )
-#
-# strategist = Agent(
-#     role='Grid Trading Strategist',
-#     goal='Determine the most suitable grid trading strategy based on market analysis',
-#     backstory="""You are a seasoned trading strategist with deep knowledge of various grid trading techniques.
-#     You excel at matching market conditions with appropriate trading strategies.
-#     You are known for your adaptive approach, often recommending a mix of strategies or regular grid trading in uncertain markets.""",
-#     verbose=True,
-#     allow_delegation=False,
-# )
-#
-# price_predictor = Agent(
-#     role='Bitcoin Price Predictor',
-#     goal='Predict the future price movement of Bitcoin and provide a confidence level',
-#     backstory="""You are an expert in price prediction for cryptocurrencies, especially Bitcoin.
-#     You use a combination of technical analysis, market sentiment, and historical patterns to make educated guesses about future price movements.
-#     You are known for your conservative estimates and rarely give extremely high confidence levels.""",
-#     verbose=True,
-#     allow_delegation=False,
-# )
-#
-# def extract_prediction(text):
-#     # Look for the specific format: "Up X%" or "Down X%"
-#     match = re.search(r'(Up|Down)\s+(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
-#     if match:
-#         return match.group(1), match.group(2)
-#
-#     # If not found, look for any mention of "Up" or "Down" near a percentage
-#     up_match = re.search(r'Up.*?(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
-#     down_match = re.search(r'Down.*?(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
-#
-#     if up_match:
-#         return "Up", up_match.group(1)
-#     elif down_match:
-#         return "Down", down_match.group(1)
-#
-#     return None, None
-#
-# def extract_strategy(text):
-#     strategies = ["RegularGrid", "ShortGrid", "LongGrid"]
-#     for strategy in strategies:
-#         if strategy in text:
-#             return strategy
-#     return None
-#
-#
-#
-# @sync_to_async
-# def get_strategy_config(strategy_name='240824'):
-#     try:
-#         strategy_config = StrategyConfig.objects.get(name=strategy_name)
-#         first_config = strategy_config.config['INIT']
-#
-#         vt_symbol = first_config.get('vt_symbol')
-#         symbol = vt_symbol.split('.')[0] if vt_symbol else ''  # "BNBUSDT.BINANCE"에서 "BNBUSDT" 추출
-#         print("--시발호출")
-#         print(symbol)
-#         grid_strategy = first_config['setting'].get('grid_strategy')
-#
-#         if not symbol or not grid_strategy:
-#             raise ValueError("Invalid configuration: missing symbol or grid_strategy")
-#
-#         return {
-#             'vt_symbol': symbol,
-#             'grid_strategy': grid_strategy
-#         }
-#     except ObjectDoesNotExist:
-#         print(f"Strategy configuration not found for: {strategy_name}")
-#     except Exception as e:
-#         print(f"Error in get_strategy_config: {str(e)}")
-#     return None
-#
-#
-# async def perform_analysis():
-#     try:
-#         config = await get_strategy_config()
-#         if not config:
-#             print("Strategy configuration is invalid.")
-#             return None
-#
-#         vt_symbol = config['vt_symbol']
-#         grid_strategy = config['grid_strategy']
-#
-#         print(f"Current grid_strategy: {grid_strategy}")
-#
-#         uri = "wss://gridtrader-backend.onrender.com/ws/binanceQ/"
-#         async with websockets.connect(uri) as websocket:
-#             # Bitcoin 데이터 요청
-#             await websocket.send(json.dumps({
-#                 'action': 'get_bitcoin_data_and_price',
-#                 'symbol': vt_symbol
-#             }))
-#
-#             # 응답 대기
-#             response = await websocket.recv()
-#             data = json.loads(response)
-#             print(data)
-#             if data.get('type') != 'llm_data_and_price':
-#                 print(f"Unexpected response type: {data.get('type')}")
-#                 return None
-#
-#             bitcoin_data = data.get('data', {})
-#             if not bitcoin_data:
-#                 print("Failed to receive Bitcoin data")
-#                 return None
-#
-#             print("Received Bitcoin data:", bitcoin_data)
-#
-#             current_price = bitcoin_data.get('current_price')
-#             print(f'current_price {current_price}')
-#             if current_price is None:
-#                 current_price = 0
-#
-#
-#             # 태스크 생성
-#             task1 = Task(
-#                 description=f"""Conduct a comprehensive analysis of the Bitcoin market using the provided hourly data:
-#                 {bitcoin_data.get('hourly', [])}
-#                 Examine price trends, volume, RSI, and Stochastic oscillator.
-#                 Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe.
-#                 Consider both bullish and bearish scenarios in your analysis.""",
-#                 expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe",
-#                 agent=hourly_analyst
-#             )
-#
-#             task2 = Task(
-#                 description=f"""Conduct a comprehensive analysis of the Bitcoin market using the provided daily data:
-#                 {bitcoin_data.get('daily', [])}
-#                 Examine price trends, volume, RSI, and Stochastic oscillator.
-#                 Identify significant support and resistance levels, and overall market sentiment in the 1-day timeframe.
-#                 Consider both bullish and bearish scenarios in your analysis.""",
-#                 expected_output="Detailed Bitcoin market analysis report for 1-day timeframe",
-#                 agent=daily_analyst
-#             )
-#
-#             task3 = Task(
-#                 description="""Based on all the analyses provided, predict whether the Bitcoin price is more likely to go up or down in the near future.
-#                 Provide a brief explanation for your prediction and assign a confidence level to your prediction as a percentage.
-#                 Look at the short-term and long-term situation and evaluate it objectively. If you make a mistake, your current Bitcoin futures investment may be liquidated.
-#                 End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 70%' or 'Down 65%'.""",
-#                 expected_output="Bitcoin price movement prediction with explanation and confidence level",
-#                 agent=price_predictor
-#             )
-#
-#             task4 = Task(
-#                 description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction,
-#                 determine the most suitable grid trading strategy among regular grid, short grid, and long grid.
-#                 Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
-#                 Use the following guidelines, but also consider the overall market analysis:
-#                 - If the price prediction is 'Up' with confidence over 70% or 70%, consider 'LongGrid'.
-#                 - If the price prediction is 'Down' with confidence over 70% or 70%, consider 'ShortGrid'.
-#                 - For confidence levels between 55-69%, consider a mix of strategies or lean towards 'RegularGrid'.
-#                 - For confidence levels below 55%, strongly consider 'RegularGrid'.
-#                 End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
-#                 expected_output="Recommended grid trading strategy with justification and final selection",
-#                 agent=strategist
-#             )
-#
-#             # Crew 인스턴스화
-#             crew = Crew(
-#                 agents=[hourly_analyst, daily_analyst, price_predictor, strategist],
-#                 tasks=[task1, task2, task3, task4],
-#                 verbose=True,
-#                 process=Process.sequential
-#             )
-#
-#             result = crew.kickoff()
-#             result_string = str(result)
-#
-#             price_prediction, confidence = extract_prediction(result_string)
-#             selected_strategy = extract_strategy(result_string)
-#             print("######################")
-#             print("간다이이이이이잇")
-#             print(f"Analysis complete. Results have been saved to report.md and the database.")
-#             print(f"Selected Grid Strategy: {selected_strategy}")
-#             print(f"Price Prediction: {price_prediction}")
-#             print(f"Confidence Level: {confidence}%")
-#
-#             # 결과 생성 및 저장
-#             analysis_result = {
-#                 'symbol': vt_symbol,
-#                 'result_string': result_string,
-#                 'current_price': current_price,
-#                 'price_prediction': price_prediction,
-#                 'confidence': float(confidence) if confidence else None,
-#                 'selected_strategy': selected_strategy
-#             }
-#
-#             # 결과를 데이터베이스에 저장
-#             saved_result = await create_analysis_result(analysis_result)
-#             await update_strategy_config(analysis_result['selected_strategy'])
-#
-#             return saved_result
-#
-#     except websockets.exceptions.WebSocketException as e:
-#         print(f"WebSocket error: {str(e)}")
-#     except json.JSONDecodeError as e:
-#         print(f"JSON decoding error: {str(e)}")
-#     except Exception as e:
-#         print(f"Unexpected error in perform_analysis: {str(e)}")
-#
-#     return None
-#
-#
-# @sync_to_async
-# def create_analysis_result(data):
-#     from .models import AnalysisResult
-#     with transaction.atomic():
-#         return AnalysisResult.objects.create(**data)
-#
-#
-# @sync_to_async
-# def update_strategy_config(selected_strategy):
-#     try:
-#         with transaction.atomic():
-#             strategy_config = StrategyConfig.objects.get(name='240824')
-#             current_config = strategy_config.config
-#             if 'INIT' in current_config and 'setting' in current_config['INIT']:
-#                 current_config['INIT']['setting']['grid_strategy'] = selected_strategy
-#             strategy_config.config = current_config
-#             strategy_config.save()
-#         print(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
-#     except Exception as e:
-#         print(f"Error updating StrategyConfig: {str(e)}")
-
 
 import os
 from crewai import Agent, Task, Crew, Process
@@ -280,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
 from datetime import datetime, timedelta
+import requests
 
 # Binance 클라이언트 초기화
 symbol = "BNBUSDT"
@@ -287,7 +23,13 @@ symbol = "BNBUSDT"
 binance_api_key = settings.BINANCE_API_KEY
 binance_api_secret = settings.BINANCE_API_SECRET
 client = Client(binance_api_key, binance_api_secret)
+cryptocompare_api_key = "400daae3cf09044e5d78b3fc744b107731547031372de5573431166b96d16db7"
 
+def get_crypto_news():
+    url = f"https://min-api.cryptocompare.com/data/v2/news/?lang=EN&api_key={cryptocompare_api_key}"
+    response = requests.get(url)
+    news_data = response.json()['Data']
+    return news_data[:30]  # 최근 10개의 뉴스만 반환
 
 def get_bitcoin_data(symbol):
     try:
@@ -327,9 +69,19 @@ def get_bitcoin_data(symbol):
         print(f"An error occurred: {e}")
         return None
 
+news_analyst = Agent(
+    role='Crypto News Trend Analyst',
+    goal='Analyze recent cryptocurrency news to predict short-term and long-term Bitcoin price trends',
+    backstory="""You are a seasoned crypto news analyst with an exceptional ability to predict market trends. 
+    Your expertise lies in quickly digesting news information and translating it into actionable trend forecasts for Bitcoin. 
+    You have a proven track record of accurately predicting both short-term (24-48 hours) and long-term (1-2 weeks) price movements based on news sentiment and market-moving events.""",
+    verbose=True,
+    allow_delegation=False
+)
+
 
 hourly_analyst = Agent(
-    role='Hourly Bitcoin Market Analyst',
+    role=f'Hourly {symbol} Market Analyst',
     goal='Analyze Bitcoin market trends and patterns in 1-hour timeframe',
     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in hourly charts.
@@ -339,7 +91,7 @@ hourly_analyst = Agent(
 )
 
 daily_analyst = Agent(
-    role='Daily Bitcoin Market Analyst',
+    role=f'Daily {symbol} Market Analyst',
     goal='Analyze Bitcoin market trends and patterns in 1-day timeframe',
     backstory="""You are an experienced cryptocurrency market analyst specializing in medium to long-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in daily charts.
@@ -359,7 +111,7 @@ strategist = Agent(
 )
 
 price_predictor = Agent(
-    role='Bitcoin Price Predictor',
+    role=f'{symbol} Price Predictor',
     goal='Predict the future price movement of Bitcoin and provide a confidence level',
     backstory="""You are an expert in price prediction for cryptocurrencies, especially Bitcoin. 
     You use a combination of technical analysis, market sentiment, and historical patterns to make educated guesses about future price movements.
@@ -455,6 +207,30 @@ def perform_analysis():
         print("Failed to fetch bitcoin data.")
         return None
 
+    task_news = Task(
+        description=f"""Analyze the following recent cryptocurrency news items and determine their potential impact on Bitcoin's price trend:
+        {[{
+            'title': news['title'],
+            'content': news['body'],
+        } for news in get_crypto_news()]}
+
+        1. Quickly review all news items, focusing on their potential impact on Bitcoin's price.
+        2. Identify key themes or events that could significantly influence Bitcoin's price.
+        3. Based on the overall sentiment of the news, determine:
+           a) The likely short-term trend (next 24-48 hours): Bullish, Bearish, or Neutral
+           b) The potential long-term trend (next 1-2 weeks): Bullish, Bearish, or Neutral
+
+        Provide a concise summary (3-5 sentences) explaining your trend predictions, referencing the most impactful news items.
+
+        End your analysis with two lines:
+        "NEWS_Short-term trend: [Bullish/Bearish/Neutral]"
+        "NEWS_Long-term trend: [Bullish/Bearish/Neutral]"
+        """,
+        expected_output="Concise analysis of Bitcoin's likely price trends based on recent news, with clear short-term and long-term trend predictions.",
+        agent=news_analyst
+    )
+
+
     # 태스크 생성
     task1 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 72 hours of hourly data:
@@ -516,14 +292,13 @@ def perform_analysis():
     )
 
     task4 = Task(
-        description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction,
+        description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction, and the news analysis,
         determine the most suitable grid trading strategy among regular grid, short grid, and long grid. 
         Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
         Use the following guidelines, but also consider the overall market analysis:
         - If the price prediction is 'Up' with confidence over 70% or 70%, consider 'LongGrid'.
         - If the price prediction is 'Down' with confidence over 70% or 70%, consider 'ShortGrid'.
-        - For confidence levels between 55-69%, consider a mix of strategies or lean towards 'RegularGrid'.
-        - For confidence levels below 55%, strongly consider 'RegularGrid'.
+        Otherwise, consider 'RegularGrid'.
         End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         expected_output="Recommended grid trading strategy with justification and final selection",
         agent=strategist
@@ -531,8 +306,8 @@ def perform_analysis():
 
     # Crew 인스턴스화
     crew = Crew(
-        agents=[hourly_analyst, daily_analyst, price_predictor, strategist],
-        tasks=[task1, task2, task3, task4],
+        agents=[news_analyst, hourly_analyst, daily_analyst, price_predictor, strategist],
+        tasks=[task_news, task1, task2, task3, task4],
         verbose=True,
         process=Process.sequential
     )
@@ -544,23 +319,20 @@ def perform_analysis():
 
     print("-----------------------------------------------------")
     print(results)  # results.raw)
-    print(results.raw)
+    # print(results.raw)
     # print(results.tasks_output)
     # print(type(results.tasks_output))
     # <class 'list'>
     print("-----------------------------------------------------")
 
     task_results = {
-        'hourly_analysis': results.tasks_output[0],
-        'daily_analysis': results.tasks_output[1],
-        'price_prediction': results.tasks_output[2],
-        'strategy_recommendation': results.tasks_output[3]
+        'bitcoin_news_analysis': results.tasks_output[0],
+        'hourly_analysis': results.tasks_output[1],
+        'daily_analysis': results.tasks_output[2],
+        'price_prediction': results.tasks_output[3],
+        'strategy_recommendation': results.tasks_output[4]
     }
-    # result_parts = result.split("\n\n")  # 각 태스크의 결과는 빈 줄로 구분되어 있다고 가정
 
-    # price_prediction, confidence = extract_prediction(result_string)
-    # selected_strategy = extract_strategy(task_results['strategy_recommendation'])
-    # current_price = get_current_bitcoin_price()
     price_prediction, confidence = extract_prediction(result_string)
     selected_strategy = extract_strategy(result_string)
     current_price = get_current_bitcoin_price()
@@ -568,10 +340,11 @@ def perform_analysis():
     # 한글 요약 생성 (이 부분은 그대로 유지)
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
-        1. Hourly Analysis: {task_results['hourly_analysis']}
-        2. Daily Analysis: {task_results['daily_analysis']}
-        3. Price Prediction: {task_results['price_prediction']}
-        4. Strategy Recommendation: {task_results['strategy_recommendation']}
+        1. News Analysis: {task_results['bitcoin_news_analysis']}
+        2. Hourly Analysis: {task_results['hourly_analysis']}
+        3. Daily Analysis: {task_results['daily_analysis']}
+        4. Price Prediction: {task_results['price_prediction']}
+        5. Strategy Recommendation: {task_results['strategy_recommendation']}
 
         현재 가격: {current_price}
         가격 예측: {price_prediction}
