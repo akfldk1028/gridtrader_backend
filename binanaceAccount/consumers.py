@@ -43,19 +43,19 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         # 임의의 초기 데이터 생성
         mock_balance = {
             'asset': 'USDT',
-            'balance': '10000.00',
-            'crossWalletBalance': '10000.00',
-            'availableBalance': '9000.00'
+            'balance': '132.10',
+            'crossWalletBalance': '133.08',
+            'availableBalance': '132.10'
         }
         mock_positions = [
             {
                 'symbol': 'BTCUSDT',
-                'positionAmt': '0.1',
-                'entryPrice': '50000',
-                'unrealizedProfit': '1000',
+                'positionAmt': '-0.006',
+                'entryPrice': '59138.32',
+                'unrealizedProfit': '-3.99',
                 'leverage': '20',
                 'markPrice': '55000',
-                'liquidationPrice': '45000'
+                'liquidationPrice': '70952.26'
             }
         ]
 
