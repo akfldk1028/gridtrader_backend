@@ -21,6 +21,7 @@ from typing import Dict, Set, List, Any
 from binance.client import Client
 import aiohttp
 MAX_RETRIES = 3
+from aiohttp import TCPConnector
 
 
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
@@ -53,8 +54,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         retries = 0
         while retries < MAX_RETRIES:
             try:
-                proxy_url = f'https://{self.ip_addresses[self.current_ip_index]}'
-                connector = ProxyConnector.from_url(proxy_url)
+                connector = TCPConnector()
                 session_params = {
                     'connector': connector,
                     'trust_env': True,
@@ -65,23 +65,20 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     requests_params={'timeout': 10},
                     session_params=session_params
                 )
-                print(f"Successfully initialized client with IP {self.ip_addresses[self.current_ip_index]}")
+                print("Successfully initialized client with direct connection")
                 return
             except ClientConnectorError as e:
-                print(f"Network error with IP {self.ip_addresses[self.current_ip_index]}: {e}")
+                print(f"Network error: {e}")
             except BinanceAPIException as e:
-                if e.code == -1003:  # IP 밴 에러 코드
-                    print(f"IP {self.ip_addresses[self.current_ip_index]} is banned: {e}")
-                else:
-                    print(f"Binance API error: {e}")
+                print(f"Binance API error: {e}")
             except Exception as e:
                 print(f"Unexpected error: {e}")
 
-            await self.rotate_ip()
             retries += 1
             await asyncio.sleep(1)
 
         raise Exception("Failed to initialize client after maximum retries")
+
     async def rotate_ip(self):
         self.current_ip_index = (self.current_ip_index + 1) % len(self.ip_addresses)
         print(f"Rotating to IP: {self.ip_addresses[self.current_ip_index]}")
