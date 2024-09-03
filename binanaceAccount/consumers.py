@@ -51,18 +51,22 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             try:
                 proxy_url = f'http://{self.ip_addresses[self.current_ip_index]}'
                 connector = ProxyConnector.from_url(proxy_url)
-                session = aiohttp.ClientSession(connector=connector)
+                session_params = {
+                    'connector': connector,
+                    'trust_env': True,  # 환경 변수에서 프록시 설정을 가져올 수 있게 함
+                }
                 self.client = await AsyncClient.create(
                     api_key=settings.BINANCE_API_KEY,
                     api_secret=settings.BINANCE_API_SECRET,
                     requests_params={'timeout': 10},
-                    session_params={'session': session}
+                    session_params=session_params
                 )
                 break
             except Exception as e:
                 print(f"Error initializing client with IP {self.ip_addresses[self.current_ip_index]}: {e}")
                 await self.rotate_ip()
                 await asyncio.sleep(1)
+
     async def rotate_ip(self):
         self.current_ip_index = (self.current_ip_index + 1) % len(self.ip_addresses)
         print(f"Rotating to IP: {self.ip_addresses[self.current_ip_index]}")
@@ -72,8 +76,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             await self.user_socket.__aexit__(None, None, None)
         if self.mark_price_socket:
             await self.mark_price_socket.__aexit__(None, None, None)
-        if hasattr(self, 'client') and hasattr(self.client, 'session'):
-            await self.client.session.close()
+        if hasattr(self, 'client'):
+            await self.client.close_connection()
 
     async def start_user_data_stream(self):
         while True:
