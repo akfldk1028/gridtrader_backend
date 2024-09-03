@@ -54,7 +54,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         retries = 0
         while retries < MAX_RETRIES:
             try:
-                connector = TCPConnector()
+                current_ip = self.ip_addresses[self.current_ip_index]
+                connector = TCPConnector(local_addr=(current_ip, 0))
                 session_params = {
                     'connector': connector,
                     'trust_env': True,
@@ -65,15 +66,16 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     requests_params={'timeout': 10},
                     session_params=session_params
                 )
-                print("Successfully initialized client with direct connection")
+                print(f"Successfully initialized client with IP: {current_ip}")
                 return
             except ClientConnectorError as e:
-                print(f"Network error: {e}")
+                print(f"Network error with IP {current_ip}: {e}")
             except BinanceAPIException as e:
-                print(f"Binance API error: {e}")
+                print(f"Binance API error with IP {current_ip}: {e}")
             except Exception as e:
-                print(f"Unexpected error: {e}")
+                print(f"Unexpected error with IP {current_ip}: {e}")
 
+            await self.rotate_ip()
             retries += 1
             await asyncio.sleep(1)
 
