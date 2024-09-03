@@ -111,14 +111,27 @@ strategist = Agent(
 )
 
 price_predictor = Agent(
-    role=f'{symbol} Price Predictor',
-    goal='Predict the future price movement of Bitcoin and provide a confidence level',
-    backstory="""You are an expert in price prediction for cryptocurrencies, especially Bitcoin. 
-    You use a combination of technical analysis, market sentiment, and historical patterns to make educated guesses about future price movements.
-    You are known for your conservative estimates and rarely give extremely high confidence levels.""",
+    role=f'{symbol} Balanced Intraday Futures Trader',
+    goal='Maximize intraday profits in cryptocurrency futures while minimizing liquidation risks',
+    backstory="""You are a seasoned intraday trader specializing in cryptocurrency futures, known for your ability to balance high returns with prudent risk management.
+    Your expertise lies in identifying profitable short-term opportunities while maintaining a keen awareness of liquidation risks.
+    You employ a combination of technical analysis, market sentiment tracking, and risk assessment tools to make informed trading decisions.
+    Your approach is characterized by strategic use of leverage, active position management, and swift response to market changes.
+    While profit maximization remains a priority, you never compromise on protecting your capital from liquidation events.""",
     verbose=True,
     allow_delegation=False,
 )
+
+
+# price_predictor = Agent(
+#     role=f'{symbol} Price Predictor',
+#     goal='Predict the future price movement of Bitcoin and provide a confidence level',
+#     backstory="""You are an expert in price prediction for cryptocurrencies, especially Bitcoin.
+#     You use a combination of technical analysis, market sentiment, and historical patterns to make educated guesses about future price movements.
+#     You are known for your conservative estimates and rarely give extremely high confidence levels.""",
+#     verbose=True,
+#     allow_delegation=False,
+# )
 
 korean_summarizer = Agent(
     role='Korean Market Summarizer',
