@@ -29,11 +29,11 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         self.mark_price_socket = None
         self.last_sent_data = {'ACCOUNT_UPDATE': {'balance': None, 'positions': []}}
         self.mark_prices = {}
-        self.listen_key = None
+        # self.listen_key = None
         await self.request_account_update()  # 초기 데이터 로딩
         await self.start_user_data_stream()
         await self.start_mark_price_socket()
-        asyncio.create_task(self.keep_listen_key_alive())
+        # asyncio.create_task(self.keep_listen_key_alive())
 
     async def disconnect(self, close_code):
         if self.user_socket:
@@ -44,7 +44,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             await self.client.close_connection()
 
     async def start_user_data_stream(self):
-        self.listen_key = await self.client.futures_stream_get_listen_key()
+        # self.listen_key = await self.client.futures_stream_get_listen_key()
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
@@ -58,14 +58,14 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
         asyncio.create_task(self.mark_price_socket_listener())
 
-    async def keep_listen_key_alive(self):
-        while True:
-            await asyncio.sleep(30 * 60)  # 30 minutes
-            try:
-                await self.client.futures_stream_keepalive(self.listen_key)
-            except Exception as e:
-                print(f"Error keeping listen key alive: {e}")
-                await self.start_user_data_stream()
+    # async def keep_listen_key_alive(self):
+    #     while True:
+    #         await asyncio.sleep(30 * 60)  # 30 minutes
+    #         try:
+    #             await self.client.futures_stream_keepalive(self.listen_key)
+    #         except Exception as e:
+    #             print(f"Error keeping listen key alive: {e}")
+    #             await self.start_user_data_stream()
 
     async def user_socket_listener(self):
         async with self.user_socket as tscm:
