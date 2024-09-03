@@ -4,6 +4,8 @@ import time
 from decimal import Decimal, InvalidOperation
 from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
+from aiohttp_socks import ProxyConnector
+
 import json
 from threading import Thread
 import websocket
@@ -27,7 +29,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             '54.254.162.138'
         ]
         self.current_ip_index = 0
-
     async def connect(self):
         await self.accept()
         await self.initialize_client()
@@ -49,16 +50,13 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         while True:
             try:
                 proxy_url = f'http://{self.ip_addresses[self.current_ip_index]}'
+                connector = ProxyConnector.from_url(proxy_url)
+                session = aiohttp.ClientSession(connector=connector)
                 self.client = await AsyncClient.create(
                     api_key=settings.BINANCE_API_KEY,
                     api_secret=settings.BINANCE_API_SECRET,
                     requests_params={'timeout': 10},
-                    session_params={
-                        'proxies': {
-                            'http': proxy_url,
-                            'https': proxy_url
-                        }
-                    }
+                    session_params={'session': session}
                 )
                 break
             except Exception as e:
@@ -74,8 +72,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             await self.user_socket.__aexit__(None, None, None)
         if self.mark_price_socket:
             await self.mark_price_socket.__aexit__(None, None, None)
-        if hasattr(self, 'client'):
-            await self.client.close_connection()
+        if hasattr(self, 'client') and hasattr(self.client, 'session'):
+            await self.client.session.close()
 
     async def start_user_data_stream(self):
         while True:
