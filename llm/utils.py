@@ -302,10 +302,11 @@ def perform_analysis():
         description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction, and the news analysis,
         determine the most suitable grid trading strategy among regular grid, short grid, and long grid. 
         Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
-        Use the following guidelines, but also consider the overall market analysis:
-        - If the price prediction is 'Up' with confidence over 70% or 70%, consider 'LongGrid'.
-        - If the price prediction is 'Down' with confidence over 70% or 70%, consider 'ShortGrid'.
-        Otherwise, consider 'RegularGrid'.
+        Use the following strict guidelines:
+        - If the price prediction is 'Up' with confidence 70% or higher, use 'LongGrid'.
+        - If the price prediction is 'Down' with confidence 70% or higher, use 'ShortGrid'.
+        - For any other scenario (including confidence levels below 70%), use 'RegularGrid'.
+        Ensure you adhere strictly to these confidence thresholds.
         End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         expected_output="Recommended grid trading strategy with justification and final selection",
         agent=strategist
