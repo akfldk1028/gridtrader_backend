@@ -5,6 +5,8 @@ from decimal import Decimal, InvalidOperation
 from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
 from aiohttp_socks import ProxyConnector
+from binance.exceptions import BinanceAPIException
+from aiohttp import ClientConnectorError
 
 import json
 from threading import Thread
@@ -18,6 +20,7 @@ from binance.exceptions import BinanceAPIException
 from typing import Dict, Set, List, Any
 from binance.client import Client
 import aiohttp
+MAX_RETRIES = 3
 
 
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
@@ -47,13 +50,14 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         asyncio.create_task(self.keep_listen_key_alive())
 
     async def initialize_client(self):
-        while True:
+        retries = 0
+        while retries < MAX_RETRIES:
             try:
-                proxy_url = f'http://{self.ip_addresses[self.current_ip_index]}'
+                proxy_url = f'https://{self.ip_addresses[self.current_ip_index]}'
                 connector = ProxyConnector.from_url(proxy_url)
                 session_params = {
                     'connector': connector,
-                    'trust_env': True,  # 환경 변수에서 프록시 설정을 가져올 수 있게 함
+                    'trust_env': True,
                 }
                 self.client = await AsyncClient.create(
                     api_key=settings.BINANCE_API_KEY,
@@ -61,12 +65,23 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     requests_params={'timeout': 10},
                     session_params=session_params
                 )
-                break
+                print(f"Successfully initialized client with IP {self.ip_addresses[self.current_ip_index]}")
+                return
+            except ClientConnectorError as e:
+                print(f"Network error with IP {self.ip_addresses[self.current_ip_index]}: {e}")
+            except BinanceAPIException as e:
+                if e.code == -1003:  # IP 밴 에러 코드
+                    print(f"IP {self.ip_addresses[self.current_ip_index]} is banned: {e}")
+                else:
+                    print(f"Binance API error: {e}")
             except Exception as e:
-                print(f"Error initializing client with IP {self.ip_addresses[self.current_ip_index]}: {e}")
-                await self.rotate_ip()
-                await asyncio.sleep(1)
+                print(f"Unexpected error: {e}")
 
+            await self.rotate_ip()
+            retries += 1
+            await asyncio.sleep(1)
+
+        raise Exception("Failed to initialize client after maximum retries")
     async def rotate_ip(self):
         self.current_ip_index = (self.current_ip_index + 1) % len(self.ip_addresses)
         print(f"Rotating to IP: {self.ip_addresses[self.current_ip_index]}")
