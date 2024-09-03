@@ -4,10 +4,6 @@ import time
 from decimal import Decimal, InvalidOperation
 from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from channels.generic.websocket import AsyncWebsocketConsumer
-from aiohttp_socks import ProxyConnector
-from binance.exceptions import BinanceAPIException
-from aiohttp import ClientConnectorError
-
 import json
 from threading import Thread
 import websocket
@@ -18,26 +14,15 @@ import hashlib
 import requests
 from binance.exceptions import BinanceAPIException
 from typing import Dict, Set, List, Any
-from binance.client import Client
-import aiohttp
-MAX_RETRIES = 3
-from aiohttp import TCPConnector
+
+
+
 
 
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.ip_addresses = [
-            '13.228.225.19',
-            '18.142.128.26',
-            '54.254.162.138'
-        ]
-        self.current_ip_index = 0
     async def connect(self):
         await self.accept()
-        await self.initialize_client()
-
-        # self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
+        self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
 
         self.user_socket = None
@@ -50,41 +35,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         await self.start_mark_price_socket()
         asyncio.create_task(self.keep_listen_key_alive())
 
-    async def initialize_client(self):
-        retries = 0
-        while retries < MAX_RETRIES:
-            try:
-                current_ip = self.ip_addresses[self.current_ip_index]
-                connector = TCPConnector(local_addr=(current_ip, 0))
-                session_params = {
-                    'connector': connector,
-                    'trust_env': True,
-                }
-                self.client = await AsyncClient.create(
-                    api_key=settings.BINANCE_API_KEY,
-                    api_secret=settings.BINANCE_API_SECRET,
-                    requests_params={'timeout': 10},
-                    session_params=session_params
-                )
-                print(f"Successfully initialized client with IP: {current_ip}")
-                return
-            except ClientConnectorError as e:
-                print(f"Network error with IP {current_ip}: {e}")
-            except BinanceAPIException as e:
-                print(f"Binance API error with IP {current_ip}: {e}")
-            except Exception as e:
-                print(f"Unexpected error with IP {current_ip}: {e}")
-
-            await self.rotate_ip()
-            retries += 1
-            await asyncio.sleep(1)
-
-        raise Exception("Failed to initialize client after maximum retries")
-
-    async def rotate_ip(self):
-        self.current_ip_index = (self.current_ip_index + 1) % len(self.ip_addresses)
-        print(f"Rotating to IP: {self.ip_addresses[self.current_ip_index]}")
-
     async def disconnect(self, close_code):
         if self.user_socket:
             await self.user_socket.__aexit__(None, None, None)
@@ -94,17 +44,9 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             await self.client.close_connection()
 
     async def start_user_data_stream(self):
-        while True:
-            try:
-                self.listen_key = await self.client.futures_stream_get_listen_key()
-                self.user_socket = self.bm.futures_user_socket()
-                asyncio.create_task(self.user_socket_listener())
-                break
-            except Exception as e:
-                print(f"Error starting user data stream: {e}")
-                await self.rotate_ip()
-                await self.initialize_client()
-                await asyncio.sleep(1)
+        self.listen_key = await self.client.futures_stream_get_listen_key()
+        self.user_socket = self.bm.futures_user_socket()
+        asyncio.create_task(self.user_socket_listener())
 
     async def start_mark_price_socket(self):
 
@@ -113,16 +55,8 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         #      'i': '59186.34893617', 'r': '0.00001643', 'T': 1725091200000},
         #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'ETHUSDT', 'p': '2523.44000000', 'P': '2525.39100082',
         #      'i': '2524.47886364', 'r': '0.00006360', 'T': 1725091200000},
-        while True:
-            try:
-                self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
-                asyncio.create_task(self.mark_price_socket_listener())
-                break
-            except Exception as e:
-                print(f"Error starting mark price socket: {e}")
-                await self.rotate_ip()
-                await self.initialize_client()
-                await asyncio.sleep(1)
+        self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
+        asyncio.create_task(self.mark_price_socket_listener())
 
     async def keep_listen_key_alive(self):
         while True:
@@ -131,8 +65,6 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                 await self.client.futures_stream_keepalive(self.listen_key)
             except Exception as e:
                 print(f"Error keeping listen key alive: {e}")
-                await self.rotate_ip()
-                await self.initialize_client()
                 await self.start_user_data_stream()
 
     async def user_socket_listener(self):
@@ -318,17 +250,12 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             })
 
         except Exception as e:
-            if "APIError(code=-1003)" in str(e):
-                print(f"Error requesting account update: {str(e)}")
-                await self.rotate_ip()
-                await self.initialize_client()
-                await asyncio.sleep(1)
-            else:
-                print(f"Unexpected error requesting account update: {str(e)}")
-                await self.send(text_data=json.dumps({
-                    'type': 'error',
-                    'message': f"Error requesting account update: {str(e)}"
-                }))
+            print(f"Error requesting account update: {str(e)}")
+            # print(f"Account info: {account_info}")  # 디버깅을 위해 전체 응답 출력
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Error requesting account update: {str(e)}"
+            }))
 
     async def send_if_changed(self, data_type, data):
         key = data_type
@@ -360,3 +287,4 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             return float(profit_percentage.quantize(Decimal('0.01')))
         except (InvalidOperation, ZeroDivisionError):
             return 0
+
