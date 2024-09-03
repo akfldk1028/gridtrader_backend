@@ -244,6 +244,9 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     position_data['profit_percentage'] = self.calculate_profit_percentage(position_data)
                     positions_data.append(position_data)
 
+            print(balance_data)
+            print("-------------------------------------")
+            print(positions_data)
             await self.send_if_changed('ACCOUNT_UPDATE', {
                 'balance': balance_data,
                 'positions': positions_data
