@@ -44,6 +44,8 @@ ALLOWED_HOSTS = [
     '107.167.190.163:8000',
     '10.140.0.2:8000',
     'gridtrade.one',
+    'www.gridtrade.one',
+    '35.206.238.121'
 ]
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -189,8 +191,6 @@ CORS_ALLOWED_ORIGINS = ['http://107.167.190.163:8000',
                         'https://gridtrade.one',
                         ]
 
-
-
 CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163:8000',
                         'https://107.167.190.163:8000',
                         'http://10.140.0.2:8000',
@@ -213,8 +213,7 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_DOMAIN = None  # 또는 '.yourdomain.com'과 같이 설정
 CORS_ALLOW_CREDENTIALS = True
 
-
-#도메인 사야한데 ssl/tls 인증서받고
+# 도메인 사야한데 ssl/tls 인증서받고
 # SESSION_COOKIE_SECURE = True
 # SESSION_COOKIE_HTTPONLY = False
 #
