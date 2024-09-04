@@ -206,20 +206,22 @@ CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163:8000',
                         ]
 
 # 개발 환경에서는 이 값들을 False로 설정할 수 있습니다
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
-
-# 쿠키 도메인 설정 (필요한 경우)
-CSRF_COOKIE_DOMAIN = None  # 또는 '.yourdomain.com'과 같이 설정
-CORS_ALLOW_CREDENTIALS = True
+# CSRF_COOKIE_SECURE = False
+# SESSION_COOKIE_SECURE = False
+#
+# # 쿠키 도메인 설정 (필요한 경우)
+# CSRF_COOKIE_DOMAIN = None  # 또는 '.yourdomain.com'과 같이 설정
+# CORS_ALLOW_CREDENTIALS = True
 
 # 도메인 사야한데 ssl/tls 인증서받고
-# SESSION_COOKIE_SECURE = True
-# SESSION_COOKIE_HTTPONLY = False
-#
-# CSRF_COOKIE_SECURE = True
-# CORS_ALLOW_CREDENTIALS = True
-# CSRF_USE_SESSIONS = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+CORS_ALLOW_CREDENTIALS = True
+CSRF_USE_SESSIONS = True
 
 
 # Database
