@@ -196,26 +196,25 @@ CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163',
                         'https://gridtrader-frontend.onrender.com']
 
 # 개발 환경에서는 이 값들을 False로 설정할 수 있습니다
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
-
-# 쿠키 도메인 설정 (필요한 경우)
-CSRF_COOKIE_DOMAIN = None  # 또는 '.yourdomain.com'과 같이 설정
-
-# SameSite 설정
-CSRF_COOKIE_SAMESITE = 'Lax'  # 또는 'None' (주의: 'None'을 사용할 경우 CSRF_COOKIE_SECURE = True 필요)
-
-# CSRF 쿠키 이름 (기본값은 'csrftoken')
-CSRF_COOKIE_NAME = 'csrftoken'
-
-
-# SESSION_COOKIE_SECURE = True
-# SESSION_COOKIE_HTTPONLY = False
+# CSRF_COOKIE_SECURE = False
+# SESSION_COOKIE_SECURE = False
 #
-# CSRF_COOKIE_SECURE = True
-# CORS_ALLOW_CREDENTIALS = True
-# CSRF_COOKIE_HTTPONLY = False
-# CSRF_USE_SESSIONS = True
+# # 쿠키 도메인 설정 (필요한 경우)
+# CSRF_COOKIE_DOMAIN = None  # 또는 '.yourdomain.com'과 같이 설정
+#
+# # SameSite 설정
+# CSRF_COOKIE_SAMESITE = 'Lax'  # 또는 'None' (주의: 'None'을 사용할 경우 CSRF_COOKIE_SECURE = True 필요)
+#
+# # CSRF 쿠키 이름 (기본값은 'csrftoken')
+# CSRF_COOKIE_NAME = 'csrftoken'
+
+
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = False
+
+CSRF_COOKIE_SECURE = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_USE_SESSIONS = True
 
 
 # Database
