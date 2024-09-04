@@ -34,6 +34,7 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ["localhost",
                  "127.0.0.1",
+                 "107.167.190.163",
                  'red-cr6199bv2p9s73akv6g0',
                  'gridtrader-backend.onrender.com',
                  '34.143.221.217',
