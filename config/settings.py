@@ -43,6 +43,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1:8000',
     '107.167.190.163:8000',
     '10.140.0.2:8000',
+    'gridtrade.one',
 ]
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -184,7 +185,9 @@ CORS_ALLOWED_ORIGINS = ['http://107.167.190.163:8000',
                         'https://35.247.191.93:5000',
                         'http://35.247.191.93:5000',
                         'http://34.143.221.217',
-                        'https://gridtrader-frontend.onrender.com']
+                        'https://gridtrader-frontend.onrender.com',
+                        'gridtrade.one',
+                        ]
 
 
 
@@ -198,7 +201,9 @@ CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163:8000',
                         'https://35.247.191.93:5000',
                         'http://35.247.191.93:5000',
                         'http://34.143.221.217',
-                        'https://gridtrader-frontend.onrender.com']
+                        'https://gridtrader-frontend.onrender.com',
+                        'gridtrade.one',
+                        ]
 
 # 개발 환경에서는 이 값들을 False로 설정할 수 있습니다
 CSRF_COOKIE_SECURE = False
