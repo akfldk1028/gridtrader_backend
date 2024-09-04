@@ -198,6 +198,18 @@ def get_strategy_config(strategy_name='240824'):
         print(f"Unexpected error in get_strategy_config: {str(e)}")
 
 
+def get_bitcoin_data_from_api(symbol):
+    # url = f"{settings.MAIN_SERVER_URL}/api/v1/binanceData/llm-bitcoin-data/{symbol}/"
+    url = f"https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/{symbol}/"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"API 호출 실패: {response.status_code}")
+        return None
+
+
+
 # 기존 get_current_bitcoin_price 함수 내용...
 
 def perform_analysis():
@@ -211,7 +223,8 @@ def perform_analysis():
 
     print(f"Current grid_strategy: {grid_strategy}")
 
-    bitcoin_data = get_bitcoin_data(vt_symbol)
+    # bitcoin_data = get_bitcoin_data(vt_symbol)
+    bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
     if not bitcoin_data:
         print("Failed to fetch bitcoin data.")
         return None

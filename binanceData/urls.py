@@ -4,4 +4,6 @@ from . import views
 
 urlpatterns = [
     path('<str:symbol>/<str:interval>/', views.BinanceChartDataAPIView.as_view()),
+    path('llm-bitcoin-data/<str:symbol>/',  views.BinanceLLMChartDataAPIView.as_view(),),
+
 ]

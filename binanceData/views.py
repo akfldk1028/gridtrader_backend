@@ -6,8 +6,14 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 import requests
 import pandas as pd
-
-
+from binance.exceptions import BinanceAPIException
+from decimal import Decimal
+from binance.client import Client
+from django.conf import settings
+import time
+from datetime import datetime, timedelta
+from .analysis.StochasticRSI import StochasticRSI
+from .analysis.rsi import RSIAnalyzer
 class BinanceChartDataAPIView(APIView):
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def get(self, request, symbol, interval):
@@ -65,9 +71,67 @@ class BinanceChartDataAPIView(APIView):
         return Response(response_data)
 
 
-# class BinanceChartLLMDataAPIView(APIView):
-#     def get(self, request, symbol, interval):
+class BinanceAPIView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.client = Client(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
 
+    def sync_server_time(self):
+        try:
+            server_time = self.client.get_server_time()
+            self.client.timestamp_offset = server_time['serverTime'] - int(time.time() * 1000)
+            print(f"Synced server time. Offset: {self.client.timestamp_offset}ms")
+        except BinanceAPIException as e:
+            print(f"Error syncing server time: {e}")
+            raise
+
+class BinanceLLMChartDataAPIView(BinanceAPIView):
+    def get(self, request, symbol):
+        try:
+            data = self.get_bitcoin_data(symbol)
+            if data is None:
+                return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get_bitcoin_data(self, symbol):
+        try:
+            end_date = datetime.now()
+            start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
+            start_date_daily = end_date - timedelta(days=500)  # 500일
+
+            # 1시간 및 1일 간격의 데이터 가져오기
+            hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start_date_hourly.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
+            daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, start_date_daily.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
+
+            def process_candles(candles):
+                df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+                                                    'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
+                                                    'taker_buy_quote_asset_volume', 'ignore'])
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+
+                for ma in [5, 10, 20, 24, 50, 100, 200]:
+                    df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
+                period = 20
+                multiplier = 2.0
+                df["MA"] = df["close"].rolling(window=period).mean()
+                df["STD"] = df["close"].rolling(window=period).std()
+                df["Upper"] = df["MA"] + (df["STD"] * multiplier)
+                df["Lower"] = df["MA"] - (df["STD"] * multiplier)
+                StochasticRSI(df)
+                RSIAnalyzer(df)
+                return df.to_dict(orient='records')
+
+            return {
+                'hourly': process_candles(hourly_candles),
+                'daily': process_candles(daily_candles)
+            }
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
 
 
 
