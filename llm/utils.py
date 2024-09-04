@@ -328,7 +328,7 @@ def perform_analysis():
     # Crew 인스턴스화
     crew = Crew(
         agents=[hourly_analyst, daily_analyst, price_predictor, strategist],
-        tasks=[task_news, task1, task2, task3, task4],
+        tasks=[task1, task2, task3, task4],
         verbose=True,
         process=Process.sequential
     )
