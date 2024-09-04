@@ -65,6 +65,13 @@ class BinanceChartDataAPIView(APIView):
         return Response(response_data)
 
 
+# class BinanceChartLLMDataAPIView(APIView):
+#     def get(self, request, symbol, interval):
+
+
+
+
+
 # class BinanceChartDataAPIView(APIView):
 #     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
 #     def get(self, request, symbol, interval):
