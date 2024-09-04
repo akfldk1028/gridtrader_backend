@@ -30,15 +30,20 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # DEBUG = 'RENDER' not in os.environ
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ["localhost",
-                 "127.0.0.1",
-                 "107.167.190.163",
-                 '10.140.0.2',
-                 'red-cr6199bv2p9s73akv6g0',
-                 'gridtrader-backend.onrender.com',
-                 '34.143.221.217',
-                 'gridtrader-frontend.onrender.com',
-                 ]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "107.167.190.163",
+    '10.140.0.2',
+    'red-cr6199bv2p9s73akv6g0',
+    'gridtrader-backend.onrender.com',
+    '34.143.221.217',
+    'gridtrader-frontend.onrender.com',
+    'localhost:8000',
+    '127.0.0.1:8000',
+    '107.167.190.163:8000',
+    '10.140.0.2:8000',
+]
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 
