@@ -74,7 +74,7 @@ news_analyst = Agent(
     goal='Analyze recent cryptocurrency news to predict short-term and long-term Bitcoin price trends',
     backstory="""You are a seasoned crypto news analyst with an exceptional ability to predict market trends. 
     Your expertise lies in quickly digesting news information and translating it into actionable trend forecasts for Bitcoin. 
-    You have a proven track record of accurately predicting both short-term (24-48 hours) and long-term (1-2 weeks) price movements based on news sentiment and market-moving events.""",
+    You have a proven track record of accurately predicting both short-term (12-24 hours) and long-term (1-2 days) price movements based on news sentiment and market-moving events.""",
     verbose=True,
     allow_delegation=False
 )
@@ -259,7 +259,8 @@ def perform_analysis():
            - Double tops/bottoms
            - Flags and pennants
         Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe based on the most recent data.
-        Consider both bullish and bearish scenarios in your analysis, with emphasis on the current market conditions.""",
+        Consider both bullish and bearish scenarios in your analysis, with emphasis on the current market conditions.
+        Conclude with an overall market outlook for the short-term (6-12 hours) and long-term (12-24 hours) based on this analysis, with particular attention to the most recent market developments.""",
         expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe, focusing on the most recent market conditions",
         agent=hourly_analyst
     )
@@ -275,24 +276,23 @@ def perform_analysis():
         2. Volume patterns and significant volume spikes (focus on recent volume activity)
         3. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
         4. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
-        5. Moving Averages (MA) - analyze current trends using various MA periods (e.g., 50-day, 100-day)
-        6. Support and resistance levels - identify key levels based on recent price action and MA
-        7. Technical patterns - look for and analyze recent formations of patterns such as:
+        5. Support and resistance levels - identify key levels based on recent price action and MA
+        6. Technical patterns - look for and analyze recent formations of patterns such as:
            - Triangle patterns (ascending, descending, symmetrical)
            - Head and shoulders
            - Double tops/bottoms
            - Flags and pennants
-        8. Overall market sentiment based on the above indicators and patterns, with emphasis on the current market state
+        7. Overall market sentiment based on the above indicators and patterns, with emphasis on the current market state
 
         Provide a balanced analysis considering both bullish and bearish scenarios, focusing on the present market conditions. 
         Highlight any significant recent divergences between price action and indicators.
-        Conclude with an overall market outlook for the short-term (1-2 weeks) and medium-term (1-3 months) based on this analysis, with particular attention to the most recent market developments.""",
+        Conclude with an overall market outlook for the short-term (12-24 hours) and long-term (1-3 days) based on this analysis, with particular attention to the most recent market developments.""",
         expected_output="Detailed Bitcoin market analysis report for the most recent 90 days (1-day timeframe), including technical patterns and market outlook, with emphasis on current market conditions",
         agent=daily_analyst
     )
 
     task3 = Task(
-        description="""Predict future Bitcoin price scenarios for the next 4-8 hours (short-term) and 12-24 hours (medium-term):
+        description="""Predict future Bitcoin price scenarios for the next 6-24 hours (short-term) and 1-3 days (long-term):
 
         1. Describe one bullish and one bearish scenario for each timeframe
         2. Include specific price targets or ranges for each scenario
@@ -302,17 +302,17 @@ def perform_analysis():
 
         Focus on forecasting immediate future developments, emphasizing short-term trading perspectives. Consider:
         - Rapid market sentiment shifts
+        - RSI overbought, oversold and stochastic oscillator crossover points and Technical patterns
         - Immediate changes in trading patterns and volume
-        - Any imminent events or news that could impact Bitcoin price in the next 24 hours
-
-        Based on your analysis, provide a single most likely direction for the next 8 hours.
+        
+        Based on your analysis, provide a single most likely direction for the next 6-24 hours.
         End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'.""",
         expected_output="Concise short-term future scenario analysis for Bitcoin with a single directional prediction and confidence level",
         agent=price_predictor
     )
 
     task4 = Task(
-        description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction, and the news analysis,
+        description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction,
         determine the most suitable grid trading strategy among regular grid, short grid, and long grid. 
         Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
         Use the following strict guidelines:
@@ -327,7 +327,7 @@ def perform_analysis():
 
     # Crew 인스턴스화
     crew = Crew(
-        agents=[news_analyst, hourly_analyst, daily_analyst, price_predictor, strategist],
+        agents=[hourly_analyst, daily_analyst, price_predictor, strategist],
         tasks=[task_news, task1, task2, task3, task4],
         verbose=True,
         process=Process.sequential
@@ -347,11 +347,10 @@ def perform_analysis():
     print("-----------------------------------------------------")
 
     task_results = {
-        'bitcoin_news_analysis': results.tasks_output[0],
-        'hourly_analysis': results.tasks_output[1],
-        'daily_analysis': results.tasks_output[2],
-        'price_prediction': results.tasks_output[3],
-        'strategy_recommendation': results.tasks_output[4]
+        'hourly_analysis': results.tasks_output[0],
+        'daily_analysis': results.tasks_output[1],
+        'price_prediction': results.tasks_output[2],
+        'strategy_recommendation': results.tasks_output[3]
     }
 
     price_prediction, confidence = extract_prediction(result_string)
@@ -361,11 +360,10 @@ def perform_analysis():
     # 한글 요약 생성 (이 부분은 그대로 유지)
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
-        1. News Analysis: {task_results['bitcoin_news_analysis']}
-        2. Hourly Analysis: {task_results['hourly_analysis']}
-        3. Daily Analysis: {task_results['daily_analysis']}
-        4. Price Prediction: {task_results['price_prediction']}
-        5. Strategy Recommendation: {task_results['strategy_recommendation']}
+        1. Hourly Analysis: {task_results['hourly_analysis']}
+        2. Daily Analysis: {task_results['daily_analysis']}
+        3. Price Prediction: {task_results['price_prediction']}
+        4. Strategy Recommendation: {task_results['strategy_recommendation']}
 
         현재 가격: {current_price}
         가격 예측: {price_prediction}

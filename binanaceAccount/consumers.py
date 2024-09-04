@@ -14,22 +14,37 @@ import hashlib
 import requests
 from binance.exceptions import BinanceAPIException
 from typing import Dict, Set, List, Any
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from django.apps import apps
+from asgiref.sync import sync_to_async
+from datetime import datetime
 
 
 class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
-        self.client = await AsyncClient.create()
+        self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
         self.bm = BinanceSocketManager(self.client)
 
         self.user_socket = None
         self.mark_price_socket = None
         self.last_sent_data = {'ACCOUNT_UPDATE': {'balance': None, 'positions': []}}
         self.mark_prices = {}
-
-        await self.load_mock_data()  # 임의의 초기 데이터 로드
+        # self.listen_key = None
+        await self.request_account_update()  # 초기 데이터 로딩
         await self.start_user_data_stream()
         await self.start_mark_price_socket()
+        # asyncio.create_task(self.keep_listen_key_alive())
+
+        # 스케줄러 설정 (1시간마다 실행)
+        self.scheduler = AsyncIOScheduler()
+        self.scheduler.add_job(
+            self.hourly_account_snapshot,
+            IntervalTrigger(hours=1)
+        )
+        self.scheduler.start()
+
 
     async def disconnect(self, close_code):
         if self.user_socket:
@@ -38,48 +53,33 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             await self.mark_price_socket.__aexit__(None, None, None)
         if hasattr(self, 'client'):
             await self.client.close_connection()
-
-    async def load_mock_data(self):
-        # 임의의 초기 데이터 생성
-        mock_balance = {
-            'asset': 'USDT',
-            'balance': '132.10',
-            'crossWalletBalance': '133.08',
-            'availableBalance': '132.10'
-        }
-        mock_positions = [
-            {
-                'symbol': 'BTCUSDT',
-                'positionAmt': '-0.006',
-                'entryPrice': '59138.32',
-                'unrealizedProfit': '-3.99',
-                'leverage': '20',
-                'markPrice': '55000',
-                'liquidationPrice': '70952.26'
-            }
-        ]
-
-        for position in mock_positions:
-            position['profit_percentage'] = self.calculate_profit_percentage(position)
-            self.mark_prices[position['symbol']] = position['markPrice']
-
-        self.last_sent_data['ACCOUNT_UPDATE'] = {
-            'balance': mock_balance,
-            'positions': mock_positions
-        }
-
-        await self.send(text_data=json.dumps({
-            'type': 'ACCOUNT_UPDATE',
-            'data': self.last_sent_data['ACCOUNT_UPDATE']
-        }))
+        self.scheduler.shutdown()
+        print("WebSocket connection closed and streams stopped.")
 
     async def start_user_data_stream(self):
+        # self.listen_key = await self.client.futures_stream_get_listen_key()
         self.user_socket = self.bm.futures_user_socket()
         asyncio.create_task(self.user_socket_listener())
 
     async def start_mark_price_socket(self):
+
+        # {'stream': '!markPrice@arr@1s', 'data': [
+        #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'BTCUSDT', 'p': '59160.00000000', 'P': '59227.68354352',
+        #      'i': '59186.34893617', 'r': '0.00001643', 'T': 1725091200000},
+        #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'ETHUSDT', 'p': '2523.44000000', 'P': '2525.39100082',
+        #      'i': '2524.47886364', 'r': '0.00006360', 'T': 1725091200000},
         self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
         asyncio.create_task(self.mark_price_socket_listener())
+        print("Mark price socket started.")
+
+    # async def keep_listen_key_alive(self):
+    #     while True:
+    #         await asyncio.sleep(30 * 60)  # 30 minutes
+    #         try:
+    #             await self.client.futures_stream_keepalive(self.listen_key)
+    #         except Exception as e:
+    #             print(f"Error keeping listen key alive: {e}")
+    #             await self.start_user_data_stream()
 
     async def user_socket_listener(self):
         async with self.user_socket as tscm:
@@ -97,6 +97,28 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
                     await asyncio.sleep(5)
                     await self.start_user_data_stream()
                     break
+
+    @sync_to_async
+    def save_hourly_balance(self, balance_data, positions_data):
+        HourlyBalance = apps.get_model('binanaceAccount', 'HourlyBalance')
+        new_balance = HourlyBalance.objects.create(
+            futures_balance=balance_data,
+            futures_positions=positions_data
+        )
+        return new_balance
+
+
+    async def hourly_account_snapshot(self):
+        try:
+            current_data = self.last_sent_data['ACCOUNT_UPDATE']
+            balance_data = current_data['balance']
+            positions_data = current_data['positions']
+
+            await self.save_hourly_balance(balance_data, positions_data)
+            print(f"Hourly account snapshot saved at {datetime.now().isoformat()}")
+        except Exception as e:
+            print(f"Error saving hourly account snapshot: {str(e)}")
+
 
     async def mark_price_socket_listener(self):
         async with self.mark_price_socket as mps:
@@ -306,21 +328,43 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
             return 0
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 #     async def connect(self):
 #         await self.accept()
-#         self.client = await AsyncClient.create(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
+#         self.client = await AsyncClient.create()
 #         self.bm = BinanceSocketManager(self.client)
 #
 #         self.user_socket = None
 #         self.mark_price_socket = None
 #         self.last_sent_data = {'ACCOUNT_UPDATE': {'balance': None, 'positions': []}}
 #         self.mark_prices = {}
-#         # self.listen_key = None
-#         await self.request_account_update()  # 초기 데이터 로딩
+#
+#         await self.load_mock_data()  # 임의의 초기 데이터 로드
 #         await self.start_user_data_stream()
 #         await self.start_mark_price_socket()
-#         # asyncio.create_task(self.keep_listen_key_alive())
 #
 #     async def disconnect(self, close_code):
 #         if self.user_socket:
@@ -330,29 +374,47 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 #         if hasattr(self, 'client'):
 #             await self.client.close_connection()
 #
+#     async def load_mock_data(self):
+#         # 임의의 초기 데이터 생성
+#         mock_balance = {
+#             'asset': 'USDT',
+#             'balance': '132.10',
+#             'crossWalletBalance': '133.08',
+#             'availableBalance': '132.10'
+#         }
+#         mock_positions = [
+#             {
+#                 'symbol': 'BTCUSDT',
+#                 'positionAmt': '-0.006',
+#                 'entryPrice': '59138.32',
+#                 'unrealizedProfit': '-3.99',
+#                 'leverage': '20',
+#                 'markPrice': '55000',
+#                 'liquidationPrice': '70952.26'
+#             }
+#         ]
+#
+#         for position in mock_positions:
+#             position['profit_percentage'] = self.calculate_profit_percentage(position)
+#             self.mark_prices[position['symbol']] = position['markPrice']
+#
+#         self.last_sent_data['ACCOUNT_UPDATE'] = {
+#             'balance': mock_balance,
+#             'positions': mock_positions
+#         }
+#
+#         await self.send(text_data=json.dumps({
+#             'type': 'ACCOUNT_UPDATE',
+#             'data': self.last_sent_data['ACCOUNT_UPDATE']
+#         }))
+#
 #     async def start_user_data_stream(self):
-#         # self.listen_key = await self.client.futures_stream_get_listen_key()
 #         self.user_socket = self.bm.futures_user_socket()
 #         asyncio.create_task(self.user_socket_listener())
 #
 #     async def start_mark_price_socket(self):
-#
-#         # {'stream': '!markPrice@arr@1s', 'data': [
-#         #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'BTCUSDT', 'p': '59160.00000000', 'P': '59227.68354352',
-#         #      'i': '59186.34893617', 'r': '0.00001643', 'T': 1725091200000},
-#         #     {'e': 'markPriceUpdate', 'E': 1725086955001, 's': 'ETHUSDT', 'p': '2523.44000000', 'P': '2525.39100082',
-#         #      'i': '2524.47886364', 'r': '0.00006360', 'T': 1725091200000},
 #         self.mark_price_socket = self.bm.futures_multiplex_socket(['!markPrice@arr@1s'])
 #         asyncio.create_task(self.mark_price_socket_listener())
-#
-#     # async def keep_listen_key_alive(self):
-#     #     while True:
-#     #         await asyncio.sleep(30 * 60)  # 30 minutes
-#     #         try:
-#     #             await self.client.futures_stream_keepalive(self.listen_key)
-#     #         except Exception as e:
-#     #             print(f"Error keeping listen key alive: {e}")
-#     #             await self.start_user_data_stream()
 #
 #     async def user_socket_listener(self):
 #         async with self.user_socket as tscm:
@@ -577,4 +639,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 #             return float(profit_percentage.quantize(Decimal('0.01')))
 #         except (InvalidOperation, ZeroDivisionError):
 #             return 0
+
+
+
 
