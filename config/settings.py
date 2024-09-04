@@ -170,21 +170,21 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 if DEBUG:
-    CORS_ALLOWED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163', "http://localhost:3000",
+    CORS_ALLOWED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163', 'http://10.140.0.2', 'https://10.140.0.2', "http://localhost:3000",
                             "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'http://127.0.0.1:8000', 'https://35.247.191.93:5000', 'http://35.247.191.93:5000',
                             'http://34.143.221.217', 'https://gridtrader-frontend.onrender.com']
-    CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163', "http://localhost:3000",
+    CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163', 'http://10.140.0.2', 'https://10.140.0.2', "http://localhost:3000",
                             "http://127.0.0.1:3000", "http://127.0.0.1:5000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217',
                             'https://gridtrader-frontend.onrender.com']
 
 else:
-    CORS_ALLOWED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163',
+    CORS_ALLOWED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163', 'http://10.140.0.2', 'https://10.140.0.2',
                             "https://gridtrader-backend.onrender.com", "http://localhost:3000", "http://127.0.0.1:3000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217',
                             'https://gridtrader-frontend.onrender.com']
-    CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163',
+    CSRF_TRUSTED_ORIGINS = ['http://107.167.190.163', 'https://107.167.190.163', 'http://10.140.0.2', 'https://10.140.0.2',
                             "https://gridtrader-backend.onrender.com", "http://localhost:3000", "http://127.0.0.1:3000",
                             'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217',
                             'https://gridtrader-frontend.onrender.com']
