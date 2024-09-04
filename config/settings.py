@@ -30,11 +30,10 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # DEBUG = 'RENDER' not in os.environ
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-
-
 ALLOWED_HOSTS = ["localhost",
                  "127.0.0.1",
                  "107.167.190.163",
+                 '10.140.0.2',
                  'red-cr6199bv2p9s73akv6g0',
                  'gridtrader-backend.onrender.com',
                  '34.143.221.217',
@@ -175,13 +174,16 @@ if DEBUG:
                             'http://127.0.0.1:8000', 'https://35.247.191.93:5000', 'http://35.247.191.93:5000',
                             'http://34.143.221.217', 'https://gridtrader-frontend.onrender.com']
     CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5000",
-                            'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217', 'https://gridtrader-frontend.onrender.com']
+                            'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217',
+                            'https://gridtrader-frontend.onrender.com']
 
 else:
     CORS_ALLOWED_ORIGINS = ["https://gridtrader-backend.onrender.com", "http://localhost:3000", "http://127.0.0.1:3000",
-                            'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217', 'https://gridtrader-frontend.onrender.com']
+                            'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217',
+                            'https://gridtrader-frontend.onrender.com']
     CSRF_TRUSTED_ORIGINS = ["https://gridtrader-backend.onrender.com", "http://localhost:3000", "http://127.0.0.1:3000",
-                            'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217', 'https://gridtrader-frontend.onrender.com']
+                            'https://35.247.191.93:5000', 'http://35.247.191.93:5000', 'http://34.143.221.217',
+                            'https://gridtrader-frontend.onrender.com']
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
