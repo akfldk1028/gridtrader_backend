@@ -198,15 +198,19 @@ def get_strategy_config(strategy_name='240824'):
         print(f"Unexpected error in get_strategy_config: {str(e)}")
 
 
-def get_bitcoin_data_from_api(symbol):
+async def get_bitcoin_data_from_api(symbol):
+    import aiohttp
+    import asyncio
     # url = f"{settings.MAIN_SERVER_URL}/api/v1/binanceData/llm-bitcoin-data/{symbol}/"
     url = f"https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/{symbol}/"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"API 호출 실패: {response.status_code}")
-        return None
+    async with aiohttp.ClientSession() as session:
+        while True:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    print(f"API 호출 실패: {response.status}")
+                    await asyncio.sleep(1)  # 1초 대기 후 재시도
 
 
 
@@ -224,7 +228,7 @@ def perform_analysis():
     print(f"Current grid_strategy: {grid_strategy}")
 
     # bitcoin_data = get_bitcoin_data(vt_symbol)
-    bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
+    bitcoin_data = await get_bitcoin_data_from_api(vt_symbol)
     if not bitcoin_data:
         print("Failed to fetch bitcoin data.")
         return None
