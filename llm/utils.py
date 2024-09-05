@@ -216,7 +216,7 @@ async def get_bitcoin_data_from_api(symbol):
 
 # 기존 get_current_bitcoin_price 함수 내용...
 
-def perform_analysis():
+async def perform_analysis():
     config = get_strategy_config()
     if not config:
         print("Strategy configuration is invalid.")
