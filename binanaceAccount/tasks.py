@@ -17,6 +17,7 @@ import websockets
 import json
 import asyncio
 from django.apps import apps
+import requests
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 60 * 3  # 10 minutes in seconds
@@ -74,27 +75,37 @@ def setup_update_account_info_task():
         print(f"스케줄 설정 중 오류 발생: {str(e)}")
 
 
+def get_future_account(viewName, max_retries=5, retry_delay=1):
+    import time
+
+    base_url = f"https://gridtrade.one/api/v1/binanaceAccount/{viewName}"
+
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(base_url, timeout=60)
+            response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                print(f"최대 재시도 횟수 초과. API 호출 실패: {base_url}")
+                raise
+
+    return None  # 이 줄은 실행되지 않지만, 함수의 모든 경로에서 반환값이 있음을 보장합니다.
+
+
 def trigger_save_daily_balance():
     print("Starting update_account_info task")
-    factory = APIRequestFactory()
-    request = factory.get('/')
-
     try:
-        futures_balance_view = FuturesBalanceView()
-        futures_balance_response = futures_balance_view.get(request)
-        futures_usdt_balance = futures_balance_response.data
+        futures_usdt_balance = get_future_account("get-future-balance")
+        futures_positions = get_future_account("get-future-position")
 
-
-        futures_Position_view = FuturesPositionView()
-        futures_Position_response = futures_Position_view.get(request)
-        filtered_positions = futures_Position_response.data
-
-        DailyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
-
-        # DailyBalance 모델에 저장
         new_balance = DailyBalance.objects.create(
                 futures_balance=futures_usdt_balance,
-                futures_positions=filtered_positions
+                futures_positions=futures_positions
             )
         print(
             f"Successfully created DailyBalance record with id {new_balance.id} at {new_balance.created_at}")
