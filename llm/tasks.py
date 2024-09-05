@@ -96,7 +96,11 @@ def run_bitcoin_analysis():
     print("Starting Bitcoin analysis task")
     try:
         print("Calling perform_analysis function")
-        result = perform_analysis()
+        # result = perform_analysis()
+        result = asyncio.run(perform_analysis())
+        if result is None:
+            print("Analysis failed▣▣▣▣▣▣▣▣▣▣▣")
+
         print("Creating AnalysisResult object")
         analysis_result = AnalysisResult.objects.create(
             symbol=result['symbol'],
