@@ -86,6 +86,7 @@ class BinanceAPIView(APIView):
             print(f"Error syncing server time: {e}")
             raise
 
+
 class BinanceLLMChartDataAPIView(BinanceAPIView):
     def get(self, request):
         try:
@@ -105,18 +106,24 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             end_date = datetime.now()
             start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
             start_date_daily = end_date - timedelta(days=500)  # 500일
-            print("시발왜안돌아가")
-            # 1시간 및 1일 간격의 데이터 가져오기
-            hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start_date_hourly.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
-            daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, start_date_daily.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
-            print(hourly_candles)
+            print("Fetching data...")
+
+            hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
+                                                               start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
+                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
+            daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
+                                                              start_date_daily.strftime("%d %b %Y %H:%M:%S"),
+                                                              end_date.strftime("%d %b %Y %H:%M:%S"))
+
             def process_candles(candles):
                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                    'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
+                                                    'quote_asset_volume', 'number_of_trades',
+                                                    'taker_buy_base_asset_volume',
                                                     'taker_buy_quote_asset_volume', 'ignore'])
                 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
                 df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
+                    float)
 
                 for ma in [5, 10, 20, 24, 50, 100, 200]:
                     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
@@ -128,7 +135,21 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 df["Lower"] = df["MA"] - (df["STD"] * multiplier)
                 StochasticRSI(df)
                 RSIAnalyzer(df)
-                return df.to_dict(orient='records')
+                import numpy as np
+                # NaN 값을 None으로 변환
+                df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
+
+                # timestamp를 ISO 형식 문자열로 변환
+                df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
+
+                # DataFrame을 딕셔너리 리스트로 변환하고 NaN 값 추가 처리
+                records = df.to_dict(orient='records')
+                for record in records:
+                    for key, value in record.items():
+                        if pd.isna(value) or value in [np.inf, -np.inf]:
+                            record[key] = None
+
+                return records
 
             return {
                 'hourly': process_candles(hourly_candles),

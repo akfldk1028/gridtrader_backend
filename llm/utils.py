@@ -208,53 +208,53 @@ def get_strategy_config(strategy_name='240824'):
     except Exception as e:
         print(f"Unexpected error in get_strategy_config: {str(e)}")
 
-def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
-    # APIRequestFactory 사용
-    factory = APIRequestFactory()
-    request = factory.get('/', {'symbol': symbol})
-    try:
-        # 뷰 클래스의 인스턴스 생성
-        LLMChartData = BinanceLLMChartDataAPIView()
-        response = LLMChartData.get(request)
-
-        # Response 객체 확인
-        if isinstance(response, Response):
-            # DRF Response 객체인 경우
-            if response.status_code == 200:
-                return response.data
-            else:
-                raise Exception(f"Error: {response.status_code}, {response.data}")
-        else:
-            # 일반 Django HttpResponse 객체인 경우 (드문 경우)
-            if response.status_code == 200:
-                import json
-                return json.loads(response.content)
-            else:
-                raise Exception(f"Error: {response.status_code}, {response.content}")
-
-    except Exception as e:
-        print(f"Error occurred while fetching Binance chart data: {e}")
-        return None
-
 # def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
-#     import time
-#     base_url = "https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/"
-#     params = {'symbol': symbol}
+#     # APIRequestFactory 사용
+#     factory = APIRequestFactory()
+#     request = factory.get('/', {'symbol': symbol})
+#     try:
+#         # 뷰 클래스의 인스턴스 생성
+#         LLMChartData = BinanceLLMChartDataAPIView()
+#         response = LLMChartData.get(request)
 #
-#     for attempt in range(max_retries):
-#         try:
-#             response = requests.get(base_url, params=params, timeout=60)
-#             response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
-#             return response.json()
-#         except requests.exceptions.RequestException as e:
-#             print(f"API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
-#             if attempt < max_retries - 1:
-#                 time.sleep(retry_delay)
+#         # Response 객체 확인
+#         if isinstance(response, Response):
+#             # DRF Response 객체인 경우
+#             if response.status_code == 200:
+#                 return response.data
 #             else:
-#                 print(f"최대 재시도 횟수 초과. API 호출 실패: {base_url}")
-#                 raise
+#                 raise Exception(f"Error: {response.status_code}, {response.data}")
+#         else:
+#             # 일반 Django HttpResponse 객체인 경우 (드문 경우)
+#             if response.status_code == 200:
+#                 import json
+#                 return json.loads(response.content)
+#             else:
+#                 raise Exception(f"Error: {response.status_code}, {response.content}")
 #
-#     return None  # 이 줄은 실행되지 않지만, 함수의 모든 경로에서 반환값이 있음을 보장합니다.
+#     except Exception as e:
+#         print(f"Error occurred while fetching Binance chart data: {e}")
+#         return None
+
+def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
+    import time
+    base_url = "https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/"
+    params = {'symbol': symbol}
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(base_url, params=params, timeout=60)
+            response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                print(f"최대 재시도 횟수 초과. API 호출 실패: {base_url}")
+                raise
+
+    return None  # 이 줄은 실행되지 않지만, 함수의 모든 경로에서 반환값이 있음을 보장합니다.
 
 
 
