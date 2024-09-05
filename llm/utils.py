@@ -1,4 +1,3 @@
-
 import os
 from crewai import Agent, Task, Crew, Process
 from binance.client import Client
@@ -28,12 +27,12 @@ binance_api_secret = settings.BINANCE_API_SECRET
 client = Client(binance_api_key, binance_api_secret)
 cryptocompare_api_key = "400daae3cf09044e5d78b3fc744b107731547031372de5573431166b96d16db7"
 
+
 def get_crypto_news():
     url = f"https://min-api.cryptocompare.com/data/v2/news/?lang=EN&api_key={cryptocompare_api_key}"
     response = requests.get(url)
     news_data = response.json()['Data']
     return news_data[:30]  # 최근 10개의 뉴스만 반환
-
 
 
 news_analyst = Agent(
@@ -45,7 +44,6 @@ news_analyst = Agent(
     verbose=True,
     allow_delegation=False
 )
-
 
 hourly_analyst = Agent(
     role=f'Hourly {symbol} Market Analyst',
@@ -91,7 +89,6 @@ price_predictor = Agent(
     verbose=True,
     allow_delegation=False,
 )
-
 
 # price_predictor = Agent(
 #     role=f'{symbol} Price Predictor',
@@ -162,9 +159,6 @@ def get_current_bitcoin_price(vt_symbol):
         return None
 
 
-
-
-
 def get_strategy_config(strategy_name='240824'):
     try:
         strategy_config = StrategyConfig.objects.get(name=strategy_name)
@@ -186,6 +180,7 @@ def get_strategy_config(strategy_name='240824'):
         print(f"Invalid configuration for {strategy_name}: {str(e)}")
     except Exception as e:
         print(f"Unexpected error in get_strategy_config: {str(e)}")
+
 
 # def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
 #     # APIRequestFactory 사용
@@ -279,7 +274,6 @@ def perform_analysis():
         agent=news_analyst
     )
 
-
     # 태스크 생성
     task1 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 120 hours of hourly data:
@@ -332,22 +326,24 @@ def perform_analysis():
     )
 
     task3 = Task(
-        description="""Predict future Bitcoin price scenarios for the next 6-24 hours (short-term) and 1-3 days (long-term):
+        description="""Based on the detailed hourly and daily analyses provided, predict future Bitcoin price scenarios for the next 6-24 hours (short-term) and 1-3 days (long-term):
 
         1. Describe one bullish and one bearish scenario for each timeframe
         2. Include specific price targets or ranges for each scenario
-        3. Identify immediate potential triggers or catalysts for each scenario
+        3. Identify immediate potential triggers or catalysts for each scenario, referencing the technical analysis from the hourly and daily analyses
         4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe)
-        5. Highlight key technical levels to watch in the very near term
-
-        Focus on forecasting immediate future developments, emphasizing short-term trading perspectives. Consider:
-        - Rapid market sentiment shifts
-        - RSI overbought, oversold and stochastic oscillator crossover points and Technical patterns
-        - Immediate changes in trading patterns and volume
+        5. Highlight key technical levels to watch in the very near term, as identified in the previous analyses
+    
+       IMPORTANT: Focus on synthesizing the information from the hourly and daily analyses to forecast immediate future developments, emphasizing short-term trading perspectives. Consider:
+        - The most significant technical indicators and patterns identified in the hourly and daily analyses
+        - Potential rapid market sentiment shifts based on the analyzed trends
+        - Immediate changes in trading patterns and volume as highlighted in the previous analyses
         
-        Based on your analysis, provide a single most likely direction for the next 6-48 hours.
-        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'.""",
-        expected_output="Concise short-term future scenario analysis for Bitcoin with a single directional prediction and confidence level",
+        Based on your synthesis of the previous analyses, provide a single most likely direction for the next 6-48 hours.
+        
+        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'. 
+        Ensure that your confidence level reflects the strength and consistency of the indicators across both timeframes.""",
+        expected_output="Concise short-term future scenario analysis for Bitcoin with a single directional prediction and confidence level, based on the synthesis of hourly and daily technical analyses",
         agent=price_predictor
     )
 
@@ -394,7 +390,7 @@ def perform_analysis():
     }
 
     selected_strategy = extract_strategy(result_string)
-    price_prediction, confidence = extract_prediction(selected_strategy , result_string)
+    price_prediction, confidence = extract_prediction(selected_strategy, result_string)
     current_price = get_current_bitcoin_price(vt_symbol)
 
     # 한글 요약 생성 (이 부분은 그대로 유지)
