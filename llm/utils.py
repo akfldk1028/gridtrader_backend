@@ -166,14 +166,25 @@ def extract_strategy(text):
     return None
 
 
-def get_current_bitcoin_price(vt_symbol):
+# def get_current_bitcoin_price(vt_symbol):
+#     try:
+#         ticker = client.get_symbol_ticker(symbol=vt_symbol)
+#         return float(ticker['price'])
+#     except BinanceAPIException as e:
+#         print(f"Error fetching current Bitcoin price: {e}")
+#         return None
+async def get_current_bitcoin_price(vt_symbol):
+    from aiohttp import ClientSession
+
     try:
-        ticker = client.get_symbol_ticker(symbol=vt_symbol)
-        return float(ticker['price'])
-    except BinanceAPIException as e:
+        async with ClientSession() as session:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={vt_symbol}"
+            async with session.get(url) as response:
+                data = await response.json()
+                return float(data['price'])
+    except Exception as e:
         print(f"Error fetching current Bitcoin price: {e}")
         return None
-
 
 def get_strategy_config(strategy_name='240824'):
     try:
@@ -372,7 +383,8 @@ async def perform_analysis():
 
     price_prediction, confidence = extract_prediction(result_string)
     selected_strategy = extract_strategy(result_string)
-    current_price = get_current_bitcoin_price(vt_symbol)
+    # current_price = get_current_bitcoin_price(vt_symbol)
+    current_price = await get_current_bitcoin_price(vt_symbol)
 
     # 한글 요약 생성 (이 부분은 그대로 유지)
     korean_summary_task = Task(

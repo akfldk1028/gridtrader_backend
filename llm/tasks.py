@@ -6,6 +6,7 @@ from datetime import time, datetime, timedelta
 from TradeStrategy.models import StrategyConfig
 from .utils import perform_analysis  # 여기에 기존 분석 로직을 넣습니다.
 from asgiref.sync import sync_to_async
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ async def update_strategy_config():
         logger.error(f"Error updating StrategyConfig: {str(e)}")
 
 
-async def run_bitcoin_analysis():
+async def run_bitcoin_analysis_async():
     print("Starting Bitcoin analysis task")
     try:
         print("Calling perform_analysis function")
@@ -88,6 +89,9 @@ async def run_bitcoin_analysis():
     except Exception as e:
         print(f"Error in run_bitcoin_analysis task: {str(e)}")
         raise
+
+def run_bitcoin_analysis():
+    return asyncio.run(run_bitcoin_analysis_async())
 
 # def run_bitcoin_analysis():
 #     print("Starting Bitcoin analysis task")
