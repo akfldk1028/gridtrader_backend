@@ -102,11 +102,11 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             end_date = datetime.now()
             start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
             start_date_daily = end_date - timedelta(days=500)  # 500일
-
+            print("시발왜안돌아가")
             # 1시간 및 1일 간격의 데이터 가져오기
             hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start_date_hourly.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
             daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, start_date_daily.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
-
+            print(hourly_candles)
             def process_candles(candles):
                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
                                                     'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
