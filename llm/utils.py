@@ -21,7 +21,7 @@ from binanceData.views import BinanceLLMChartDataAPIView
 from rest_framework.response import Response
 
 # Binance 클라이언트 초기화
-symbol = "BNBUSDT"
+symbol = "BTCUSDT"
 
 binance_api_key = settings.BINANCE_API_KEY
 binance_api_secret = settings.BINANCE_API_SECRET
@@ -34,43 +34,7 @@ def get_crypto_news():
     news_data = response.json()['Data']
     return news_data[:30]  # 최근 10개의 뉴스만 반환
 
-def get_bitcoin_data(symbol):
-    try:
-        end_date = datetime.now()
-        start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
-        start_date_daily = end_date - timedelta(days=500)  # 500일
 
-        # 1시간 및 1일 간격의 데이터 가져오기
-        hourly_candles = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start_date_hourly.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
-        daily_candles = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, start_date_daily.strftime("%d %b %Y %H:%M:%S"), end_date.strftime("%d %b %Y %H:%M:%S"))
-
-        def process_candles(candles):
-            df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
-                                                'taker_buy_quote_asset_volume', 'ignore'])
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-            df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
-
-            for ma in [5, 10, 20, 24, 50, 100, 200]:
-                df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
-            period = 20
-            multiplier = 2.0
-            df["MA"] = df["close"].rolling(window=period).mean()
-            df["STD"] = df["close"].rolling(window=period).std()
-            df["Upper"] = df["MA"] + (df["STD"] * multiplier)
-            df["Lower"] = df["MA"] - (df["STD"] * multiplier)
-            StochasticRSI(df)
-            RSIAnalyzer(df)
-            return df.to_dict(orient='records')
-
-        return {
-            'hourly': process_candles(hourly_candles),
-            'daily': process_candles(daily_candles)
-        }
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
 
 news_analyst = Agent(
     role='Crypto News Trend Analyst',
@@ -120,7 +84,10 @@ price_predictor = Agent(
     Your expertise lies in identifying profitable short-term opportunities while maintaining a keen awareness of liquidation risks.
     You employ a combination of technical analysis, market sentiment tracking, and risk assessment tools to make informed trading decisions.
     Your approach is characterized by strategic use of leverage, active position management, and swift response to market changes.
-    While profit maximization remains a priority, you never compromise on protecting your capital from liquidation events.""",
+    You pay close attention to market trends, recognizing their significant impact on short-term price movements and adjusting your strategies accordingly.
+    Your trend analysis includes identifying key support and resistance levels, recognizing trend reversals, and adapting to different market phases (trending, ranging, or volatile).
+    While profit maximization remains a priority, you never compromise on protecting your capital from liquidation events.
+    Your ability to align your trades with the prevailing market trend while remaining vigilant to potential trend shifts sets you apart as a trader.""",
     verbose=True,
     allow_delegation=False,
 )
@@ -185,6 +152,10 @@ def get_current_bitcoin_price(vt_symbol):
     except Exception as e:
         print(f"Error fetching current Bitcoin price: {e}")
         return None
+
+
+
+
 
 def get_strategy_config(strategy_name='240824'):
     try:
@@ -257,7 +228,7 @@ def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
     return None  # 이 줄은 실행되지 않지만, 함수의 모든 경로에서 반환값이 있음을 보장합니다.
 
 
-
+# TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
 # 기존 get_current_bitcoin_price 함수 내용...
 
 def perform_analysis():
