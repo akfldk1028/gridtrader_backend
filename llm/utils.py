@@ -114,18 +114,26 @@ korean_summarizer = Agent(
 )
 
 
-def extract_prediction(text):
-    # Look for the specific format: "Up X%" or "Down X%"
-    match = re.search(r'(Up|Down)\s+(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
-    if match:
-        return match.group(1), match.group(2)
+def extract_prediction(selected_strategy, result_string):
+    # Determine direction based on selected_strategy
+    if 'shortgrid' in selected_strategy.lower():
+        direction = 'Down'
+    elif 'longgrid' in selected_strategy.lower():
+        direction = 'Up'
+    elif 'regulargrid' in selected_strategy.lower():
+        direction = 'Normal'
+    else:
+        direction = None
 
-    percentage_match = re.search(r'(\d+(?:\.\d+)?)%', text, re.IGNORECASE)
+    # Extract percentage from result_string
+    percentage_match = re.search(r'(\d+(?:\.\d+)?)%', result_string, re.IGNORECASE)
 
     if percentage_match:
-        return "Down", percentage_match.group(1)
+        percentage = percentage_match.group(1)
+    else:
+        percentage = "0"
 
-    return None, None
+    return direction, percentage
 
 
 def extract_strategy(text):
@@ -385,8 +393,8 @@ def perform_analysis():
         'strategy_recommendation': results.tasks_output[3]
     }
 
-    price_prediction, confidence = extract_prediction(result_string)
     selected_strategy = extract_strategy(result_string)
+    price_prediction, confidence = extract_prediction(selected_strategy , result_string)
     current_price = get_current_bitcoin_price(vt_symbol)
 
     # 한글 요약 생성 (이 부분은 그대로 유지)
@@ -402,7 +410,9 @@ def perform_analysis():
         Price Prediction: {price_prediction}
         Confidence: {confidence}%
 
-        Provide a concise summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
+        Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
+        The hourly analysis and daily analysis must be analyzed and presented separately in detail.
+    
         Translate the final conclusion and selected strategy as follows:
 
         ★ Final Conclusion: {result_string}
