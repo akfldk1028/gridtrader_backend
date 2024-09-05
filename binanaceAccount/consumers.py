@@ -100,7 +100,7 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def save_hourly_balance(self, balance_data, positions_data):
-        HourlyBalance = apps.get_model('binanaceAccount', 'HourlyBalance')
+        HourlyBalance = apps.get_model('binanaceAccount', 'DailyBalance')
         new_balance = HourlyBalance.objects.create(
             futures_balance=balance_data,
             futures_positions=positions_data
