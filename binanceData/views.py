@@ -87,8 +87,11 @@ class BinanceAPIView(APIView):
             raise
 
 class BinanceLLMChartDataAPIView(BinanceAPIView):
-    def get(self, request, symbol):
+    def get(self, request):
         try:
+            print("Processing request...")
+            symbol = request.GET.get('symbol', '')
+            print(symbol)
             data = self.get_bitcoin_data(symbol)
             if data is None:
                 return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -207,11 +207,13 @@ def get_strategy_config(strategy_name='240824'):
 
 
 def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
-    url = f"https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/{symbol}/"
     import time
+    base_url = "https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/"
+    params = {'symbol': symbol}
+
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, timeout=10)  # 10초 타임아웃 설정
+            response = requests.get(base_url, params=params, timeout=60)
             response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -219,11 +221,10 @@ def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
             else:
-                print(f"최대 재시도 횟수 초과. API 호출 실패: {url}")
+                print(f"최대 재시도 횟수 초과. API 호출 실패: {base_url}")
                 raise
 
     return None  # 이 줄은 실행되지 않지만, 함수의 모든 경로에서 반환값이 있음을 보장합니다.
-
 # 기존 get_current_bitcoin_price 함수 내용...
 
 def perform_analysis():
