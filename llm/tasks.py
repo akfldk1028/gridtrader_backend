@@ -39,7 +39,7 @@ def setup_bitcoin_analysis_task():
 
 
 
-async def update_strategy_config():
+def update_strategy_config():
     try:
         # 가장 최근의 AnalysisResult 가져오기
         latest_analysis = AnalysisResult.objects.latest('created_at')
@@ -69,37 +69,13 @@ async def update_strategy_config():
         logger.error(f"Error updating StrategyConfig: {str(e)}")
 
 
-async def run_bitcoin_analysis_async():
-    print("Starting Bitcoin analysis task")
-    try:
-        print("Calling perform_analysis function")
-        result = await perform_analysis()
-        print("Creating AnalysisResult object")
-        analysis_result = await sync_to_async(AnalysisResult.objects.create)(
-            symbol=result['symbol'],
-            result_string=result['result_string'],
-            current_price=result['current_price'],
-            price_prediction=result['price_prediction'],
-            confidence=float(result['confidence']) if result['confidence'] else None,
-            selected_strategy=result['selected_strategy'],
-            korean_summary = result['korean_summary'] if 'korean_summary' in result else ""
-        )
-        await sync_to_async(update_strategy_config)()
-        return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
-    except Exception as e:
-        print(f"Error in run_bitcoin_analysis task: {str(e)}")
-        raise
-
-def run_bitcoin_analysis():
-    return asyncio.run(run_bitcoin_analysis_async())
-
-# def run_bitcoin_analysis():
+# async def run_bitcoin_analysis_async():
 #     print("Starting Bitcoin analysis task")
 #     try:
 #         print("Calling perform_analysis function")
-#         result = perform_analysis()
+#         result = await perform_analysis()
 #         print("Creating AnalysisResult object")
-#         analysis_result = AnalysisResult.objects.create(
+#         analysis_result = await sync_to_async(AnalysisResult.objects.create)(
 #             symbol=result['symbol'],
 #             result_string=result['result_string'],
 #             current_price=result['current_price'],
@@ -108,8 +84,31 @@ def run_bitcoin_analysis():
 #             selected_strategy=result['selected_strategy'],
 #             korean_summary = result['korean_summary'] if 'korean_summary' in result else ""
 #         )
-#         update_strategy_config()
+#         await sync_to_async(update_strategy_config)()
 #         return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
 #     except Exception as e:
 #         print(f"Error in run_bitcoin_analysis task: {str(e)}")
 #         raise
+
+
+
+def run_bitcoin_analysis():
+    print("Starting Bitcoin analysis task")
+    try:
+        print("Calling perform_analysis function")
+        result = perform_analysis()
+        print("Creating AnalysisResult object")
+        analysis_result = AnalysisResult.objects.create(
+            symbol=result['symbol'],
+            result_string=result['result_string'],
+            current_price=result['current_price'],
+            price_prediction=result['price_prediction'],
+            confidence=float(result['confidence']) if result['confidence'] else None,
+            selected_strategy=result['selected_strategy'],
+            korean_summary = result['korean_summary'] if 'korean_summary' in result else ""
+        )
+        update_strategy_config()
+        return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
+    except Exception as e:
+        print(f"Error in run_bitcoin_analysis task: {str(e)}")
+        raise
