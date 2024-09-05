@@ -361,23 +361,36 @@ class DailyBalanceView(BinanceAPIView):
         daily_data = {}
         for balance in balances:
             date = balance.created_at.astimezone(kst).date()
-            if date not in daily_data or balance.created_at.astimezone(kst) < daily_data[date]['timestamp']:
-                daily_data[date] = {
-                    'timestamp': balance.created_at.astimezone(kst),
-                    'balance': self.get_balance(balance.futures_balance)
-                }
+            balance_value = self.get_balance(balance.futures_balance)
+            if date not in daily_data:
+                daily_data[date] = {'first': balance_value, 'last': balance_value, 'timestamp': balance.created_at.astimezone(kst)}
+            else:
+                if balance.created_at.astimezone(kst) < daily_data[date]['timestamp']:
+                    daily_data[date]['first'] = balance_value
+                    daily_data[date]['timestamp'] = balance.created_at.astimezone(kst)
+                daily_data[date]['last'] = balance_value
 
         daily_profits = []
         sorted_dates = sorted(daily_data.keys())
+        latest_balance = self.get_latest_balance()
 
-        for date in sorted_dates:
+        for i, date in enumerate(sorted_dates):
+            if i < len(sorted_dates) - 1:
+                next_date = sorted_dates[i + 1]
+                end_balance = daily_data[next_date]['first']
+            else:
+                end_balance = latest_balance if latest_balance is not None else daily_data[date]['last']
+
+            profit_rate = self.calculate_profit_rate(daily_data[date]['first'], end_balance)
+
             daily_profits.append({
                 'date': date.strftime('%Y-%m-%d'),
                 'timestamp': daily_data[date]['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
-                'balance': daily_data[date]['balance'],
+                'balance': daily_data[date]['first'],
+                'profit_rate': profit_rate
             })
 
-        return daily_profits
+        return daily_profits, latest_balance
 
     def find_closest_date(self, daily_profits, target_date):
         return min(daily_profits, key=lambda x: abs(date.fromisoformat(x['date']) - target_date))
@@ -420,20 +433,14 @@ class DailyBalanceView(BinanceAPIView):
 
     def get(self, request):
         try:
-            daily_profits = self.get_daily_profits()
-            latest_balance = self.get_latest_balance()
+            daily_profits, latest_balance = self.get_daily_profits()
 
             if latest_balance is None:
                 return Response({"error": "Unable to fetch latest balance"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
             profit_summary = self.get_profit_summary(daily_profits, latest_balance)
 
-            # Calculate profit rates for each day
-            for i in range(1, len(daily_profits)):
-                daily_profits[i]['profit_rate'] = self.calculate_profit_rate(daily_profits[i - 1]['balance'],
-                                                                             daily_profits[i]['balance'])
-
-            # Add today's profit rate if not already present
+            # Add today's data if not already present
             kst = pytz.timezone('Asia/Seoul')
             today = timezone.now().astimezone(kst).date()
             if daily_profits and date.fromisoformat(daily_profits[-1]['date']) < today:
