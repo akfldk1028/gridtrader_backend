@@ -419,6 +419,7 @@ def perform_analysis():
     current_price = get_current_bitcoin_price(vt_symbol)
 
     # 한글 요약 생성 (이 부분은 그대로 유지)
+    # Korean summary generation (keep this part as is)
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
         1. Hourly Analysis: {task_results['hourly_analysis']}
@@ -426,14 +427,16 @@ def perform_analysis():
         3. Price Prediction: {task_results['price_prediction']}
         4. Strategy Recommendation: {task_results['strategy_recommendation']}
 
-        현재 가격: {current_price}
-        가격 예측: {price_prediction}
-        신뢰도: {confidence}%
-        ★ 최종 결론 : {result_string}
-        ★ 선택된 전략 : {selected_strategy}
-        Provide a concise summary in Korean, highlighting the key points from each analysis and the final recommendations.
-        Use natural Korean language and explain any technical terms if necessary.""",
-        expected_output="A concise Korean summary of the Bitcoin market analysis and predictions",
+        Current Price: {current_price}
+        Price Prediction: {price_prediction}
+        Confidence: {confidence}%
+
+        Provide a concise summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
+        Translate the final conclusion and selected strategy as follows:
+
+        ★ Final Conclusion: {result_string}
+        ★ Selected Strategy: {selected_strategy}""",
+        expected_output="A concise Korean summary of the Bitcoin market analysis and predictions, with translated final conclusion and selected strategy",
         agent=korean_summarizer
     )
 
