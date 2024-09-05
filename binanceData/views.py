@@ -75,6 +75,7 @@ class BinanceAPIView(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.client = Client(settings.BINANCE_API_KEY, settings.BINANCE_API_SECRET)
+        self.sync_server_time()
 
     def sync_server_time(self):
         try:
@@ -93,6 +94,7 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response(data)
         except Exception as e:
+            print(f"Error processing request for symbol {symbol}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get_bitcoin_data(self, symbol):
