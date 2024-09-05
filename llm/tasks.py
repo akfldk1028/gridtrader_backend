@@ -26,13 +26,22 @@ def setup_bitcoin_analysis_task():
 
 
     # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
+    # schedule(
+    #     'llm.tasks.run_bitcoin_analysis',
+    #     schedule_type=Schedule.CRON,
+    #     cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
+    #     next_run=next_hour,
+    #     repeats=-1  # 무한 반복
+    # )
+
     schedule(
         'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
+        cron="0 3,8,13,17,22 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
         next_run=next_hour,
         repeats=-1  # 무한 반복
     )
+
     # async_task('llm.tasks.run_bitcoin_analysis')
     print('시시시시ㅣ발')
     print(f"비트코인 분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")

@@ -14,6 +14,7 @@ class BinanaceaccountConfig(AppConfig):
     def on_post_migrate(self, sender, **kwargs):
         # 데이터베이스 연결 확인
         # Django-Q 스케줄 설정
+
         try:
             from .tasks import setup_update_account_info_task
             setup_update_account_info_task()
