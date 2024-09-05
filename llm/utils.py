@@ -429,8 +429,8 @@ def perform_analysis():
         현재 가격: {current_price}
         가격 예측: {price_prediction}
         신뢰도: {confidence}%
-        선택된 전략 : {selected_strategy}
-        최종 결론 : {result_string}
+        ★ 최종 결론 : {result_string}
+        ★ 선택된 전략 : {selected_strategy}
         Provide a concise summary in Korean, highlighting the key points from each analysis and the final recommendations.
         Use natural Korean language and explain any technical terms if necessary.""",
         expected_output="A concise Korean summary of the Bitcoin market analysis and predictions",
