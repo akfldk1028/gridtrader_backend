@@ -61,7 +61,7 @@ def setup_update_account_info_task():
             schedule(
                 'binanaceAccount.tasks.trigger_save_daily_balance',
                 schedule_type=Schedule.CRON,
-                cron='0 9,21 * * *',  # 매일 오전 9시와 오후 9시에 실행
+                cron='0 9,0 * * *',  # 매일 오전 9시와 오후 9시에 실행
                 next_run=next_run,
                 repeats=-1  # 무한 반복
             )

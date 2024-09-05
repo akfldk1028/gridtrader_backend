@@ -282,12 +282,12 @@ def perform_analysis():
 
     # 태스크 생성
     task1 = Task(
-        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 72 hours of hourly data:
-        {bitcoin_data['hourly'][-72:]}
+        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 120 hours of hourly data:
+        {bitcoin_data['hourly'][-120:]}
 
         IMPORTANT: Start your analysis from the most recent data point (the last entry in the provided dataset) and work backwards.
 
-        Focus on the most recent 72 hours, examining:
+        Focus on the most recent 120 hours, examining:
         1. Recent price trends (start from the latest price)
         2. Volume changes (compare recent volumes to earlier ones)
         3. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
@@ -345,7 +345,7 @@ def perform_analysis():
         - RSI overbought, oversold and stochastic oscillator crossover points and Technical patterns
         - Immediate changes in trading patterns and volume
         
-        Based on your analysis, provide a single most likely direction for the next 6-24 hours.
+        Based on your analysis, provide a single most likely direction for the next 6-48 hours.
         End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'.""",
         expected_output="Concise short-term future scenario analysis for Bitcoin with a single directional prediction and confidence level",
         agent=price_predictor
