@@ -1,19 +1,22 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import BinanceOrder, BinanceSymbolSettings
+from .models import BinanceOrder, BinanceSymbolSettings,DailyBalance
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from decimal import Decimal
 from binance.client import Client
 from django.conf import settings
-from .serializers import BinanceOrderSerializer, BinanceSymbolSettingsSerializer
+from .serializers import BinanceOrderSerializer, BinanceSymbolSettingsSerializer, DailyBalanceSerializer
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 import time
 from typing import List, Dict, Any
-
+import json
+from datetime import date
+from collections import defaultdict
+import pytz
 
 class BinanceAPIView(APIView):
     def __init__(self, **kwargs):
@@ -320,7 +323,134 @@ class CloseOrderView(BinanceAPIView):
         except BinanceAPIException as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+# class DailyBalanceView(BinanceAPIView):
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+#         self.sync_server_time()
 
+class DailyBalanceView(BinanceAPIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sync_server_time()
 
+    def get_balance(self, balance_data):
+        balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
+        return float(balance_dict.get('balance', 0))
 
+    def calculate_profit_rate(self, start_balance, end_balance):
+        if start_balance == 0:
+            return 0
+        return ((end_balance - start_balance) / start_balance) * 100
 
+    def get_latest_balance(self):
+        try:
+            futures_balances = self.client.futures_account_balance()
+            futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
+            return float(futures_usdt_balance['balance'])
+        except Exception as e:
+            print(f"Error fetching latest balance: {str(e)}")
+            return None
+
+    def get_daily_profits(self, days=30):
+        kst = pytz.timezone('Asia/Seoul')
+        end_date = timezone.now().astimezone(kst).date()
+        start_date = end_date - timedelta(days=days)
+
+        balances = DailyBalance.objects.filter(created_at__date__gte=start_date).order_by('created_at')
+
+        daily_data = {}
+        for balance in balances:
+            date = balance.created_at.astimezone(kst).date()
+            if date not in daily_data or balance.created_at.astimezone(kst) < daily_data[date]['timestamp']:
+                daily_data[date] = {
+                    'timestamp': balance.created_at.astimezone(kst),
+                    'balance': self.get_balance(balance.futures_balance)
+                }
+
+        daily_profits = []
+        sorted_dates = sorted(daily_data.keys())
+
+        for date in sorted_dates:
+            daily_profits.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'timestamp': daily_data[date]['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+                'balance': daily_data[date]['balance'],
+            })
+
+        return daily_profits
+
+    def find_closest_date(self, daily_profits, target_date):
+        return min(daily_profits, key=lambda x: abs(date.fromisoformat(x['date']) - target_date))
+
+    def get_profit_summary(self, daily_profits, latest_balance):
+        if not daily_profits:
+            return {
+                '1_day': {'profit_rate': 0, 'balance': 0},
+                '7_days': {'profit_rate': 0, 'balance': 0},
+                '30_days': {'profit_rate': 0, 'balance': 0},
+                'total': {'profit_rate': 0, 'balance': 0}
+            }
+
+        kst = pytz.timezone('Asia/Seoul')
+        today = timezone.now().astimezone(kst).date()
+
+        # 1일 수익률 (오늘)
+        today_earliest = next((p for p in daily_profits if date.fromisoformat(p['date']) == today), None)
+        one_day_profit = self.calculate_profit_rate(today_earliest['balance'], latest_balance) if today_earliest else 0
+
+        # 7일 수익률
+        seven_days_ago = today - timedelta(days=7)
+        seven_day_start = self.find_closest_date(daily_profits, seven_days_ago)
+        seven_day_profit = self.calculate_profit_rate(seven_day_start['balance'], latest_balance)
+
+        # 30일 수익률
+        thirty_days_ago = today - timedelta(days=30)
+        thirty_day_start = self.find_closest_date(daily_profits, thirty_days_ago)
+        thirty_day_profit = self.calculate_profit_rate(thirty_day_start['balance'], latest_balance)
+
+        # 총 수익률
+        total_profit = self.calculate_profit_rate(daily_profits[0]['balance'], latest_balance)
+
+        return {
+            '1_day': {'profit_rate': one_day_profit, 'balance': today_earliest['balance'] if today_earliest else 0},
+            '7_days': {'profit_rate': seven_day_profit, 'balance': seven_day_start['balance']},
+            '30_days': {'profit_rate': thirty_day_profit, 'balance': thirty_day_start['balance']},
+            'total': {'profit_rate': total_profit, 'balance': daily_profits[0]['balance']}
+        }
+
+    def get(self, request):
+        try:
+            daily_profits = self.get_daily_profits()
+            latest_balance = self.get_latest_balance()
+
+            if latest_balance is None:
+                return Response({"error": "Unable to fetch latest balance"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+            profit_summary = self.get_profit_summary(daily_profits, latest_balance)
+
+            # Calculate profit rates for each day
+            for i in range(1, len(daily_profits)):
+                daily_profits[i]['profit_rate'] = self.calculate_profit_rate(daily_profits[i - 1]['balance'],
+                                                                             daily_profits[i]['balance'])
+
+            # Add today's profit rate if not already present
+            kst = pytz.timezone('Asia/Seoul')
+            today = timezone.now().astimezone(kst).date()
+            if daily_profits and date.fromisoformat(daily_profits[-1]['date']) < today:
+                today_profit_rate = self.calculate_profit_rate(daily_profits[-1]['balance'], latest_balance)
+                daily_profits.append({
+                    'date': today.strftime('%Y-%m-%d'),
+                    'timestamp': timezone.now().astimezone(kst).strftime('%Y-%m-%d %H:%M:%S'),
+                    'balance': latest_balance,
+                    'profit_rate': today_profit_rate
+                })
+
+            data = {
+                'daily_profits': daily_profits,
+                'profit_summary': profit_summary,
+                'latest_balance': latest_balance
+            }
+
+            return Response(data)
+        except DailyBalance.DoesNotExist:
+            return Response({"error": "No DailyBalance found"}, status=status.HTTP_404_NOT_FOUND)

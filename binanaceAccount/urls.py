@@ -13,5 +13,6 @@ urlpatterns = [
     path('get-future-balance', views.FuturesBalanceView.as_view(), ),
     path('get-future-position', views.FuturesPositionView.as_view(), ),
     path('get-server-time', views.ServerTimeView.as_view(), ),
+    path('daily-balance', views.DailyBalanceView.as_view(), ),
 
 ]
