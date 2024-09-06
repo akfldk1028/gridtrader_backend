@@ -410,12 +410,23 @@ def perform_analysis():
 
         Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
         The hourly analysis and daily analysis must be analyzed and presented separately in detail.
-    
+
         Translate the final conclusion and selected strategy as follows:
 
         ★ Final Conclusion: {result_string}
-        ★ Selected Strategy: {selected_strategy}""",
-        expected_output="A concise Korean summary of the Bitcoin market analysis and predictions, with translated final conclusion and selected strategy",
+        ★ Selected Strategy: {selected_strategy}
+
+        IMPORTANT: Structure your response clearly and elegantly using the following format:
+
+        1. Use Markdown headers (##) for each main section: 시간별 분석, 일별 분석, 가격 예측, 전략 추천, 주요 지표, 최종 결론, 선택된 전략.
+        2. Use bullet points or numbered lists for key points within each section.
+        3. Highlight important information using bold text or symbols.
+        4. Present the 주요 지표 (Key Indicators) section as a list with clear labels.
+        5. Use the ★ symbol before the Final Conclusion and Selected Strategy.
+        6. Add a horizontal rule (---) after each section to clearly separate them.
+
+        Ensure that your summary is easy to read at a glance, with clear separation between sections and emphasis on crucial information.""",
+        expected_output="A well-structured, clear, and concise Korean summary of the Bitcoin market analysis and predictions, with translated final conclusion and selected strategy, formatted for easy readability and clear section separation",
         agent=korean_summarizer
     )
 
