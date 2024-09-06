@@ -334,11 +334,11 @@ def perform_analysis():
         4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe)
         5. Highlight key technical levels to watch in the very near term, as identified in the previous analyses
     
-       IMPORTANT: Focus on synthesizing the information from the hourly and daily analyses to forecast immediate future developments, emphasizing short-term trading perspectives. Consider:
-        - The most significant technical indicators and patterns identified in the hourly and daily analyses
-        - Potential rapid market sentiment shifts based on the analyzed trends
-        - Immediate changes in trading patterns and volume as highlighted in the previous analyses
-        
+        IMPORTANT: Focus on synthesizing the information from the hourly and daily analyses to forecast immediate future developments, emphasizing short-term trading perspectives. Consider the following points, providing probabilities for each and explaining your reasoning:
+        The most significant technical indicators and patterns identified in the hourly and daily analyses (Probability: X%, Reason: ...)
+        Potential rapid market sentiment shifts based on the analyzed and CURRENT Trends (Probability: Y%, Reason: ...)
+        Immediate changes in trading patterns and volume as highlighted in the previous analyses (Probability: Z%, Reason: ...)
+                
         Based on your synthesis of the previous analyses, provide a single most likely direction for the next 6-48 hours.
         
         End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'. 
