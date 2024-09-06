@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 def setup_bitcoin_analysis_task():
+    #TODO 장기적관점엣 보는거 뭐 하루에한번하는걸로 한번 만들어야할듯? 뉴스만? 기술 1일 3일 결론도출해서 내 메인 AI에 음.. 한번씩만넣어야하나 ? 퍼센트를 나눠서?TASK
+    # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
+
     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
     now = datetime.now()
     next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
@@ -33,11 +36,12 @@ def setup_bitcoin_analysis_task():
     #     next_run=next_hour,
     #     repeats=-1  # 무한 반복
     # )
-
+    #     cron="0 3,8,11,15,19,22 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+    # 10분정도에 걸어놔야할듯?
     schedule(
         'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron="0 3,8,11,17,22 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+        cron="0 3,8,11,15,19,22 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
         next_run=next_hour,
         repeats=-1  # 무한 반복
     )
