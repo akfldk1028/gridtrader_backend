@@ -1,6 +1,5 @@
 import os
 from crewai import Agent, Task, Crew, Process
-from binance.client import Client
 from binance.exceptions import BinanceAPIException
 import pandas as pd
 import numpy as np
@@ -22,9 +21,9 @@ from rest_framework.response import Response
 # Binance 클라이언트 초기화
 symbol = "BTCUSDT"
 
-binance_api_key = settings.BINANCE_API_KEY
-binance_api_secret = settings.BINANCE_API_SECRET
-client = Client(binance_api_key, binance_api_secret)
+# binance_api_key = settings.BINANCE_API_KEY
+# binance_api_secret = settings.BINANCE_API_SECRET
+# client = Client(binance_api_key, binance_api_secret)
 cryptocompare_api_key = "400daae3cf09044e5d78b3fc744b107731547031372de5573431166b96d16db7"
 
 
