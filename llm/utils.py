@@ -35,12 +35,12 @@ def get_crypto_news():
     return news_data[:30]  # 최근 10개의 뉴스만 반환
 
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 custom_llm = ChatOpenAI(
     model="gpt-4o-mini",  # 또는 원하는 다른 모델
     temperature=0.7,
-    max_tokens=20000,
+    max_tokens=16000,
 )
 
 news_analyst = Agent(
