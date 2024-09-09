@@ -11,8 +11,6 @@ from TradeStrategy.models import StrategyConfig
 # from common.models import CommonModel
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-
-from main import current_price
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
 from datetime import datetime, timedelta
