@@ -11,6 +11,8 @@ from TradeStrategy.models import StrategyConfig
 # from common.models import CommonModel
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+
+from main import current_price
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
 from datetime import datetime, timedelta
@@ -35,14 +37,14 @@ def get_crypto_news():
     return news_data[:30]  # 최근 10개의 뉴스만 반환
 
 
-from langchain.chat_models import ChatOpenAI
-# from langchain_openai import ChatOpenAI
-# 파이썬버젼이 딸려서
-custom_llm = ChatOpenAI(
-    model="gpt-4o-mini",  # 또는 원하는 다른 모델
-    temperature=0.7,
-    max_tokens=16000,
-)
+# from langchain.chat_models import ChatOpenAI
+# # from langchain_openai import ChatOpenAI
+# # 파이썬버젼이 딸려서
+# custom_llm = ChatOpenAI(
+#     model="gpt-4o-mini",  # 또는 원하는 다른 모델
+#     temperature=0.7,
+#     max_tokens=16000,
+# )
 
 news_analyst = Agent(
     role='Crypto News Trend Analyst',
@@ -52,7 +54,6 @@ news_analyst = Agent(
     You have a proven track record of accurately predicting both short-term (12-24 hours) and long-term (1-2 days) price movements based on news sentiment and market-moving events.""",
     verbose=True,
     allow_delegation=False,
-    llm=custom_llm
 
 )
 
@@ -64,7 +65,6 @@ hourly_analyst = Agent(
     You are known for your balanced and objective analysis, considering both bullish and bearish scenarios.""",
     verbose=True,
     allow_delegation=False,
-    llm=custom_llm
 
 )
 
@@ -76,7 +76,6 @@ daily_analyst = Agent(
     You are known for your cautious approach, always considering multiple market scenarios.""",
     verbose=True,
     allow_delegation=False,
-    llm=custom_llm
 
 )
 
@@ -88,7 +87,6 @@ strategist = Agent(
     You are known for your adaptive approach, often recommending a mix of strategies or regular grid trading in uncertain markets.""",
     verbose=True,
     allow_delegation=False,
-    llm=custom_llm
 
 )
 
@@ -105,7 +103,6 @@ price_predictor = Agent(
     Your ability to align your trades with the prevailing market trend while remaining vigilant to potential trend shifts sets you apart as a trader.""",
     verbose=True,
     allow_delegation=False,
-    llm=custom_llm
 
 )
 
@@ -127,7 +124,6 @@ korean_summarizer = Agent(
     You are known for your ability to make technical analysis accessible to Korean-speaking audiences.""",
     verbose=True,
     allow_delegation=False,
-    llm=custom_llm
 
 )
 
@@ -421,32 +417,29 @@ def perform_analysis():
     # print(type(results.tasks_output))
     # <class 'list'>
     print("-----------------------------------------------------")
-    # result_lines = results.split('\n')
-    #
-    # task_results = {
-    #     'hourly_analysis': '',
-    #     'daily_analysis': '',
-    #     'price_prediction': '',
-    #     'strategy_recommendation': ''
-    # }
 
-    # task_results = {
-    #     'hourly_analysis': results.tasks_output[0],
-    #     'daily_analysis': results.tasks_output[1],
-    #     'price_prediction': results.tasks_output[2],
-    #     'strategy_recommendation': results.tasks_output[3]
-    # }
+
+    task_results = {
+        'hourly_analysis': results.tasks_output[0],
+        'daily_analysis': results.tasks_output[1],
+        'price_prediction': results.tasks_output[2],
+        'strategy_recommendation': results.tasks_output[3]
+    }
 
     selected_strategy = extract_strategy(result_string)
     price_prediction, confidence = extract_prediction(selected_strategy, result_string)
-    current_price = get_current_bitcoin_price(vt_symbol)
-
+    # current_price = get_current_bitcoin_price(vt_symbol)
+    current_price = 0
     # 한글 요약 생성 (이 부분은 그대로 유지)
     # Korean summary generation (keep this part as is)
+
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
-        {results}
-        Current Price: {current_price}
+        1. Hourly Analysis: {task_results['hourly_analysis']}
+        2. Daily Analysis: {task_results['daily_analysis']}
+        3. Price Prediction: {task_results['price_prediction']}
+        4. Strategy Recommendation: {task_results['strategy_recommendation']}
+
         Price Prediction: {price_prediction}
         Confidence: {confidence}%
 
@@ -471,38 +464,6 @@ def perform_analysis():
         expected_output="A well-structured, clear, and concise Korean summary of the Bitcoin market analysis and predictions, with translated final conclusion and selected strategy, formatted for easy readability and clear section separation",
         agent=korean_summarizer
     )
-    # korean_summary_task = Task(
-    #     description=f"""Summarize the following Bitcoin market analysis in Korean:
-    #     1. Hourly Analysis: {task_results['hourly_analysis']}
-    #     2. Daily Analysis: {task_results['daily_analysis']}
-    #     3. Price Prediction: {task_results['price_prediction']}
-    #     4. Strategy Recommendation: {task_results['strategy_recommendation']}
-    #
-    #     Current Price: {current_price}
-    #     Price Prediction: {price_prediction}
-    #     Confidence: {confidence}%
-    #
-    #     Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
-    #     The hourly analysis, daily analysis, Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
-    #
-    #     Translate the final conclusion and selected strategy as follows:
-    #
-    #     ★ Final Conclusion: {result_string}
-    #     ★ Selected Strategy: {selected_strategy}
-    #
-    #    IMPORTANT: Structure your response clearly and elegantly using the following format:
-    #
-    #     1. Use Markdown headers (##) for each main section: 시간별 분석, 일별 분석, 가격 예측, 확률 평가, 전략 추천, 주요 지표, 최종 결론, 선택된 전략.
-    #     2. Use bullet points or numbered lists for key points within each section.
-    #     3. Highlight important information using bold text or symbols.
-    #     4. Present the 주요 지표 (Key Indicators) section as a list with clear labels.
-    #     5. Use the ★ symbol before the Final Conclusion and Selected Strategy.
-    #     6. Add a horizontal rule (---) after each section to clearly separate them.
-    #
-    #     Ensure that your summary is easy to read at a glance, with clear separation between sections and emphasis on crucial information.""",
-    #     expected_output="A well-structured, clear, and concise Korean summary of the Bitcoin market analysis and predictions, with translated final conclusion and selected strategy, formatted for easy readability and clear section separation",
-    #     agent=korean_summarizer
-    # )
 
     # 한글 요약을 위한 새로운 Crew 생성 및 실행
     korean_summary_crew = Crew(
