@@ -421,14 +421,14 @@ def perform_analysis():
     # print(type(results.tasks_output))
     # <class 'list'>
     print("-----------------------------------------------------")
-    result_lines = results.split('\n')
-
-    task_results = {
-        'hourly_analysis': '',
-        'daily_analysis': '',
-        'price_prediction': '',
-        'strategy_recommendation': ''
-    }
+    # result_lines = results.split('\n')
+    #
+    # task_results = {
+    #     'hourly_analysis': '',
+    #     'daily_analysis': '',
+    #     'price_prediction': '',
+    #     'strategy_recommendation': ''
+    # }
 
     # task_results = {
     #     'hourly_analysis': results.tasks_output[0],
