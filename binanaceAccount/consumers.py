@@ -173,6 +173,47 @@ class BinanceWebSocketConsumer(AsyncWebsocketConsumer):
         })
 
     async def handle_order_update(self, data):
+        # {
+        #     "e": "ORDER_TRADE_UPDATE",
+        #     "T": 1725612509523,
+        #     "E": 1725612509523,
+        #     "o": {
+        #         "s": "BTCUSDT",
+        #         "c": "x-cLbi5uMH240905084314000087",
+        #         "S": "SELL",
+        #         "o": "LIMIT",
+        #         "f": "GTC",
+        #         "q": "0.002",
+        #         "p": "57350",
+        #         "ap": "0",
+        #         "sp": "0",
+        #         "x": "CANCELED",
+        #         "X": "CANCELED",
+        #         "i": 414013813089,
+        #         "l": "0",
+        #         "z": "0",
+        #         "L": "0",
+        #         "n": "0",
+        #         "N": "USDT",
+        #         "T": 1725612509523,
+        #         "t": 0,
+        #         "b": "436.67200",
+        #         "a": "565.78600",
+        #         "m": false,
+        #         "R": false,
+        #         "wt": "CONTRACT_PRICE",
+        #         "ot": "LIMIT",
+        #         "ps": "BOTH",
+        #         "cp": false,
+        #         "rp": "0",
+        #         "pP": false,
+        #         "si": 0,
+        #         "ss": 0,
+        #         "V": "NONE",
+        #         "pm": "NONE",
+        #         "gtd": 0
+        #     }
+        # }
         await self.send(text_data=json.dumps({
             'type': 'ORDER_TRADE_UPDATE',
             'data': data

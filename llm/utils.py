@@ -353,13 +353,30 @@ def perform_analysis():
         description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction,
         determine the most suitable grid trading strategy among regular grid, short grid, and long grid. 
         Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
-        Use the following strict guidelines:
-        - If the price prediction is 'Up' with confidence 70% or higher, use 'LongGrid'.
-        - If the price prediction is 'Down' with confidence 70% or higher, use 'ShortGrid'.
-        - For any other scenario (including confidence levels below 70%), use 'RegularGrid'.
-        Ensure you adhere strictly to these confidence thresholds.
+        Use the following guidelines:
+
+        1. Analyze market trend:
+           - Examine both short-term (1-hour) and long-term (1-day) trends.
+           - If both trends align strongly (either upward or downward), proceed to step 2.
+           - If trends are conflicting or unclear, lean towards 'RegularGrid'.
+
+        2. Evaluate confidence level and technical indicators:
+           - If the price prediction is 'Up' with confidence 70% or higher, and technical indicators support an uptrend, consider 'LongGrid'.
+           - If the price prediction is 'Down' with confidence 70% or higher, and technical indicators support a downtrend, consider 'ShortGrid'.
+           - If confidence is below 70% or technical indicators are mixed, use 'RegularGrid'.
+
+        3. Consider market momentum and volume:
+           - Strong upward momentum with increasing volume supports 'LongGrid'.
+           - Strong downward momentum with increasing volume supports 'ShortGrid'.
+           - Weak momentum or inconsistent volume suggests 'RegularGrid'.
+
+        4. Final decision:
+           - Choose 'LongGrid' or 'ShortGrid' if market trend, confidence level, technical indicators, and momentum all align strongly.
+           - Choose 'RegularGrid' if there's any significant contradiction among these factors or if the market direction is uncertain.
+
+        Provide a brief explanation for your choice, referencing the above criteria.
         End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
-        expected_output="Recommended grid trading strategy with justification and final selection",
+        expected_output="Recommended grid trading strategy with justification and final selection, balancing trend analysis and technical indicators while maintaining the 70% confidence threshold",
         agent=strategist
     )
 
