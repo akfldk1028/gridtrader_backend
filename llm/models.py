@@ -7,7 +7,7 @@ class AnalysisResult(CommonModel):
     symbol = models.CharField(max_length=20 , null=True, blank=True)
     korean_summary = models.TextField(null=True, blank=True)
     result_string = models.TextField(null=True, blank=True)
-    current_price = models.FloatField(null=True, blank=True)
+    current_price = models.FloatField(default=0, null=True, blank=True)
     price_prediction = models.CharField(max_length=10, null=True, blank=True)
     confidence = models.FloatField(null=True, blank=True)
     selected_strategy = models.CharField(max_length=20)
