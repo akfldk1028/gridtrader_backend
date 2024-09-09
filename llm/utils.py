@@ -35,6 +35,14 @@ def get_crypto_news():
     return news_data[:30]  # 최근 10개의 뉴스만 반환
 
 
+from langchain.chat_models import ChatOpenAI
+
+custom_llm = ChatOpenAI(
+    model="gpt-4o-mini",  # 또는 원하는 다른 모델
+    temperature=0.7,
+    max_tokens=20000,
+)
+
 news_analyst = Agent(
     role='Crypto News Trend Analyst',
     goal='Analyze recent cryptocurrency news to predict short-term and long-term Bitcoin price trends',
@@ -42,7 +50,9 @@ news_analyst = Agent(
     Your expertise lies in quickly digesting news information and translating it into actionable trend forecasts for Bitcoin. 
     You have a proven track record of accurately predicting both short-term (12-24 hours) and long-term (1-2 days) price movements based on news sentiment and market-moving events.""",
     verbose=True,
-    allow_delegation=False
+    allow_delegation=False,
+    llm=custom_llm
+
 )
 
 hourly_analyst = Agent(
@@ -53,6 +63,8 @@ hourly_analyst = Agent(
     You are known for your balanced and objective analysis, considering both bullish and bearish scenarios.""",
     verbose=True,
     allow_delegation=False,
+    llm=custom_llm
+
 )
 
 daily_analyst = Agent(
@@ -63,6 +75,8 @@ daily_analyst = Agent(
     You are known for your cautious approach, always considering multiple market scenarios.""",
     verbose=True,
     allow_delegation=False,
+    llm=custom_llm
+
 )
 
 strategist = Agent(
@@ -73,6 +87,8 @@ strategist = Agent(
     You are known for your adaptive approach, often recommending a mix of strategies or regular grid trading in uncertain markets.""",
     verbose=True,
     allow_delegation=False,
+    llm=custom_llm
+
 )
 
 price_predictor = Agent(
@@ -88,6 +104,8 @@ price_predictor = Agent(
     Your ability to align your trades with the prevailing market trend while remaining vigilant to potential trend shifts sets you apart as a trader.""",
     verbose=True,
     allow_delegation=False,
+    llm=custom_llm
+
 )
 
 # price_predictor = Agent(
@@ -108,6 +126,8 @@ korean_summarizer = Agent(
     You are known for your ability to make technical analysis accessible to Korean-speaking audiences.""",
     verbose=True,
     allow_delegation=False,
+    llm=custom_llm
+
 )
 
 
