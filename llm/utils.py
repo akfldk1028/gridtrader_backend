@@ -494,8 +494,8 @@ def perform_analysis():
         Confidence: {confidence}%
 
         Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
-        The hourly analysis, daily analysis, Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
-
+        The 30-minute, hourly, and daily analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
+        
         Translate the final conclusion and selected strategy as follows:
 
         ★ Final Conclusion: {result_string}
@@ -503,7 +503,7 @@ def perform_analysis():
 
        IMPORTANT: Structure your response clearly and elegantly using the following format:
 
-        1. Use Markdown headers (##) for each main section: 시간별 분석, 일별 분석, 가격 예측, 확률 평가, 전략 추천, 주요 지표, 최종 결론, 선택된 전략.
+        1. Use Markdown headers (##) for each main section: 30분 분석, 시간별 분석, 일별 분석, 가격 예측, 확률 평가, 전략 추천, 주요 지표, 최종 결론, 선택된 전략.
         2. Use bullet points or numbered lists for key points within each section.
         3. Highlight important information using bold text or symbols.
         4. Present the 주요 지표 (Key Indicators) section as a list with clear labels.
