@@ -54,6 +54,28 @@ news_analyst = Agent(
 
 )
 
+fifteen_min_analyst = Agent(
+    role=f'15-Minute {symbol} Market Analyst',
+    goal='Analyze Bitcoin market trends and patterns in 15-minute timeframe',
+    backstory="""You are an experienced cryptocurrency market analyst specializing in very short-term Bitcoin analysis.
+    Your expertise lies in technical analysis and identifying market trends in 15-minute charts.
+    You are known for your quick analysis and ability to spot rapid market changes.""",
+    verbose=True,
+    allow_delegation=False,
+)
+
+thirty_min_analyst = Agent(
+    role=f'30-Minute Market Analyst',
+    goal='Analyze Bitcoin market trends and patterns in 30-minute timeframe',
+    backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
+    Your expertise lies in technical analysis and identifying market trends in 30-minute charts.
+    You are known for your balanced approach, considering both very short-term and hourly trends.""",
+    verbose=True,
+    allow_delegation=False,
+)
+
+
+
 hourly_analyst = Agent(
     role=f'Hourly {symbol} Market Analyst',
     goal='Analyze Bitcoin market trends and patterns in 1-hour timeframe',
@@ -288,6 +310,27 @@ def perform_analysis():
         agent=news_analyst
     )
 
+
+    task_30min = Task(
+        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 30-minute data:
+        {bitcoin_data['30min'][-96:]}  # Last 48 hours of 30-minute data
+
+        IMPORTANT: Start your analysis from the most recent data point and work backwards.
+
+        Focus on the most recent 48 hours, examining:
+        1. Recent price trends and potential trend formations
+        2. Volume patterns and their correlation with price movements
+        3. RSI divergences and potential overbought/oversold conditions
+        4. MACD crossovers and histogram patterns
+        5. Key support and resistance levels forming in the short term
+
+        Compare the 30-minute trends with the 15-minute analysis to identify any confirmations or divergences.
+        Conclude with an overall market outlook for the next 4-8 hours based on this analysis.""",
+        expected_output="Detailed Bitcoin market analysis report for 30-minute timeframe, focusing on recent market conditions and short to medium-term predictions",
+        agent=thirty_min_analyst
+    )
+
+
     # 태스크 생성
     task1 = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 120 hours of hourly data:
@@ -340,26 +383,34 @@ def perform_analysis():
     )
 
     task3 = Task(
-        description="""Based on the detailed hourly and daily analyses provided, predict future Bitcoin price scenarios for the next 6-24 hours (short-term) and 1-3 days (long-term):
+        description="""Based on the detailed 30-minute, hourly, and daily analyses provided, predict future Bitcoin price scenarios for the next 1-4 hours (very short-term), 4-24 hours (short-term), and 1-3 days (medium-term):
 
         1. Describe one bullish and one bearish scenario for each timeframe
         2. Include specific price targets or ranges for each scenario
-        3. Identify immediate potential triggers or catalysts for each scenario, referencing the technical analysis from the hourly and daily analyses
+        3. Identify immediate potential triggers or catalysts for each scenario, referencing the technical analysis from all timeframes
         4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe)
         5. Highlight key technical levels to watch in the very near term, as identified in the previous analyses
-    
-        IMPORTANT: Focus on synthesizing the information from the hourly and daily analyses to forecast immediate future developments, emphasizing short-term trading perspectives. Carefully consider the following points, then provide probabilities for each scenario and explain your reasoning in detail:
-        The most significant technical indicators and patterns identified in the hourly and daily analyses (After consideration, Probability: X%, Reason: ...)
-        Potential rapid market sentiment shifts based on the analyzed trends (After consideration, Probability: Y%, Reason: ...)
-        Immediate changes in trading patterns and volume as highlighted in the previous analyses (After consideration, Probability: Z%, Reason: ...)
-        
-        IMPORTANT: Ensure that your probability assessments and explanations reflect a thorough consideration of all available information from both the hourly and daily analyses.
-                
-        Based on your synthesis of the previous analyses, provide a single most likely direction for the next 6-48 hours.
-        
-        End your response with either 'Up' or 'Down' followed by the confidence percentage, e.g., 'Up 80%', 'Down 85%', 'Up 70%' or 'Down 65%'. 
-        Ensure that your confidence level reflects the strength and consistency of the indicators across both timeframes.""",
-        expected_output="Concise short-term future scenario analysis for Bitcoin with a single directional prediction and confidence level, based on the synthesis of hourly and daily technical analyses",
+
+        IMPORTANT: Focus on synthesizing the information from all timeframe analyses to forecast immediate and future developments. Carefully consider the following points, then provide probabilities for each scenario and explain your reasoning in detail:
+        - The most significant technical indicators and patterns identified in the 15-minute and 30-minute analyses (After consideration, Probability: W%, Reason: ...)
+        - Potential rapid market sentiment shifts based on the very short-term trends (After consideration, Probability: X%, Reason: ...)
+        - The most significant technical indicators and patterns identified in the hourly and daily analyses (After consideration, Probability: Y%, Reason: ...)
+        - Immediate and short-term changes in trading patterns and volume as highlighted in all previous analyses (After consideration, Probability: Z%, Reason: ...)
+
+        IMPORTANT: Ensure that your probability assessments and explanations reflect a thorough consideration of all available information from all timeframe analyses. Pay special attention to how shorter timeframe trends might be indicating imminent changes that are not yet visible in longer timeframes.
+
+        Based on your synthesis of all previous analyses, provide a single most likely direction for:
+        1. The next 1-4 hours
+        2. The next 4-24 hours
+        3. The next 1-3 days
+
+        End your response with three lines:
+        "1-4 hours: [Up/Down] [Confidence]%"
+        "4-24 hours: [Up/Down] [Confidence]%"
+        "1-3 days: [Up/Down] [Confidence]%"
+
+        Ensure that your confidence levels reflect the strength and consistency of the indicators across all timeframes.""",
+        expected_output="Concise multi-timeframe future scenario analysis for Bitcoin with directional predictions and confidence levels for very short-term, short-term, and medium-term, based on the synthesis of 15-minute, 30-minute, hourly, and daily technical analyses",
         agent=price_predictor
     )
 
@@ -397,7 +448,7 @@ def perform_analysis():
     # Crew 인스턴스화
     crew = Crew(
         agents=[hourly_analyst, daily_analyst, price_predictor, strategist],
-        tasks=[task1, task2, task3, task4],
+        tasks=[task_30min, task1, task2, task3, task4],
         verbose=True,
         process=Process.sequential
     )
@@ -417,10 +468,11 @@ def perform_analysis():
 
 
     task_results = {
-        'hourly_analysis': results.tasks_output[0],
-        'daily_analysis': results.tasks_output[1],
-        'price_prediction': results.tasks_output[2],
-        'strategy_recommendation': results.tasks_output[3]
+        '30min_analysis': results.tasks_output[0],
+        'hourly_analysis': results.tasks_output[1],
+        'daily_analysis': results.tasks_output[2],
+        'price_prediction': results.tasks_output[3],
+        'strategy_recommendation': results.tasks_output[4]
     }
 
     selected_strategy = extract_strategy(result_string)
@@ -432,11 +484,12 @@ def perform_analysis():
 
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
-        1. Hourly Analysis: {task_results['hourly_analysis']}
-        2. Daily Analysis: {task_results['daily_analysis']}
-        3. Price Prediction: {task_results['price_prediction']}
-        4. Strategy Recommendation: {task_results['strategy_recommendation']}
-
+        1. 30-Minute Analysis: {task_results['30min_analysis']}
+        2. Hourly Analysis: {task_results['hourly_analysis']}
+        3. Daily Analysis: {task_results['daily_analysis']}
+        4. Price Prediction: {task_results['price_prediction']}
+        5. Strategy Recommendation: {task_results['strategy_recommendation']}
+        
         Price Prediction: {price_prediction}
         Confidence: {confidence}%
 

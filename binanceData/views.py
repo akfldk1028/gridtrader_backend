@@ -104,13 +104,25 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
     def get_bitcoin_data(self, symbol):
         try:
             end_date = datetime.now()
-            start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
-            start_date_daily = end_date - timedelta(days=500)  # 500일
+            start_date_15min = end_date - timedelta(days=7)  # Last 7 days
+            start_date_30min = end_date - timedelta(days=14)  # Last 14 days
+            start_date_hourly = end_date - timedelta(days=30)  # Last 30 days
+            start_date_daily = end_date - timedelta(days=365)  # Last 365 days
+
             print("Fetching data...")
+
+            fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,
+                                                                    start_date_15min.strftime("%d %b %Y %H:%M:%S"),
+                                                                    end_date.strftime("%d %b %Y %H:%M:%S"))
+
+            thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
+                                                                   start_date_30min.strftime("%d %b %Y %H:%M:%S"),
+                                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
 
             hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
                                                                start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
                                                                end_date.strftime("%d %b %Y %H:%M:%S"))
+
             daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
                                                               start_date_daily.strftime("%d %b %Y %H:%M:%S"),
                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
@@ -125,24 +137,32 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
                     float)
 
-                for ma in [5, 10, 20, 24, 50, 100, 200]:
+                # Calculate additional technical indicators
+                for ma in [5, 10, 20, 50, 100, 200]:
                     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
+
+                # Bollinger Bands
                 period = 20
                 multiplier = 2.0
                 df["MA"] = df["close"].rolling(window=period).mean()
                 df["STD"] = df["close"].rolling(window=period).std()
                 df["Upper"] = df["MA"] + (df["STD"] * multiplier)
                 df["Lower"] = df["MA"] - (df["STD"] * multiplier)
+
+                # MACD
+                exp1 = df['close'].ewm(span=12, adjust=False).mean()
+                exp2 = df['close'].ewm(span=26, adjust=False).mean()
+                df['MACD'] = exp1 - exp2
+                df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+
+                # Stochastic RSI and RSI are already calculated, so we don't need to add them here
                 StochasticRSI(df)
                 RSIAnalyzer(df)
-                import numpy as np
-                # NaN 값을 None으로 변환
-                df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
 
-                # timestamp를 ISO 형식 문자열로 변환
+                import numpy as np
+                df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
                 df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
-                # DataFrame을 딕셔너리 리스트로 변환하고 NaN 값 추가 처리
                 records = df.to_dict(orient='records')
                 for record in records:
                     for key, value in record.items():
@@ -152,57 +172,90 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return records
 
             return {
+                '15min': process_candles(fifteen_min_candles),
+                '30min': process_candles(thirty_min_candles),
                 'hourly': process_candles(hourly_candles),
                 'daily': process_candles(daily_candles)
             }
+
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
 
 
 
-
-# class BinanceChartDataAPIView(APIView):
-#     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
-#     def get(self, request, symbol, interval):
-#         binance_api_url = "https://api.binance.com/api/v3/klines"
-#         params = {
-#             'symbol': symbol,
-#             'interval': interval,
-#             'limit': 500  # Binance 최대 제한
-#         }
-#         # end_time = int(time.time() * 1000)  # 현재 시간을 밀리초로 계산
-#         # start_time = end_time - 10 * 24 * 60 * 60 * 1000  # 10일 전 시간을 밀리초로 계산
-#         # params = {
-#         #     "symbol": symbol,
-#         #     "interval": "3m",  # 5분 간격으로 변경
-#         #     "startTime": start_time,
-#         #     "endTime": end_time,
-#         # }
+# class BinanceLLMChartDataAPIView(BinanceAPIView):
+#     def get(self, request):
 #         try:
-#             response = requests.get(binance_api_url, params=params)
-#             response.raise_for_status()  # Raises an HTTPError for bad responses
-#             data = response.json()
+#             print("Processing request...")
+#             symbol = request.GET.get('symbol', '')
+#             print(symbol)
+#             data = self.get_bitcoin_data(symbol)
+#             if data is None:
+#                 return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             return Response(data)
+#         except Exception as e:
+#             print(f"Error processing request for symbol {symbol}: {str(e)}")
+#             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 #
-#             # DataFrame으로 변환
-#             columns = [
-#                 "Open Time", "Open", "High", "Low", "Close", "Volume",
-#                 "Close Time", "Quote Asset Volume", "Number of Trades",
-#                 "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
-#             ]
-#             df = pd.DataFrame(data, columns=columns)
+#     def get_bitcoin_data(self, symbol):
+#         try:
+#             end_date = datetime.now()
+#             start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
+#             start_date_daily = end_date - timedelta(days=500)  # 500일
+#             print("Fetching data...")
 #
-#             # 데이터 타입 변환
-#             df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms")
-#             df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms")
-#             for col in ["Open", "High", "Low", "Close", "Volume", "Quote Asset Volume",
-#                         "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume"]:
-#                 df[col] = pd.to_numeric(df[col])
-#             df["Number of Trades"] = df["Number of Trades"].astype(int)
+#             hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
+#                                                                start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
+#                                                                end_date.strftime("%d %b %Y %H:%M:%S"))
+#             daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
+#                                                               start_date_daily.strftime("%d %b %Y %H:%M:%S"),
+#                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
 #
-#             # JSON 응답 생성
-#             response_data = df.to_dict('records')
-#             return Response(response_data)
+#             def process_candles(candles):
+#                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+#                                                     'quote_asset_volume', 'number_of_trades',
+#                                                     'taker_buy_base_asset_volume',
+#                                                     'taker_buy_quote_asset_volume', 'ignore'])
+#                 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+#                 df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+#                 df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
+#                     float)
 #
-#         except requests.RequestException as e:
-#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#                 for ma in [5, 10, 20, 24, 50, 100, 200]:
+#                     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
+#                 period = 20
+#                 multiplier = 2.0
+#                 df["MA"] = df["close"].rolling(window=period).mean()
+#                 df["STD"] = df["close"].rolling(window=period).std()
+#                 df["Upper"] = df["MA"] + (df["STD"] * multiplier)
+#                 df["Lower"] = df["MA"] - (df["STD"] * multiplier)
+#                 StochasticRSI(df)
+#                 RSIAnalyzer(df)
+#                 import numpy as np
+#                 # NaN 값을 None으로 변환
+#                 df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
+#
+#                 # timestamp를 ISO 형식 문자열로 변환
+#                 df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
+#
+#                 # DataFrame을 딕셔너리 리스트로 변환하고 NaN 값 추가 처리
+#                 records = df.to_dict(orient='records')
+#                 for record in records:
+#                     for key, value in record.items():
+#                         if pd.isna(value) or value in [np.inf, -np.inf]:
+#                             record[key] = None
+#
+#                 return records
+#
+#             return {
+#                 'hourly': process_candles(hourly_candles),
+#                 'daily': process_candles(daily_candles)
+#             }
+#         except Exception as e:
+#             print(f"An error occurred: {e}")
+#             return None
+
+
+
+
