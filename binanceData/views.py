@@ -196,7 +196,6 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return records
 
             return {
-                '15min': process_candles(fifteen_min_candles, '15min'),
                 '30min': process_candles(thirty_min_candles, '30min'),
                 'hourly': process_candles(hourly_candles, 'hourly'),
                 'daily': process_candles(daily_candles, 'daily')
