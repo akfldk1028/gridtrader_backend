@@ -66,25 +66,24 @@ fifteen_min_analyst = Agent(
 
 thirty_min_analyst = Agent(
     role=f'30-Minute Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 30-minute timeframe',
+    goal='Analyze Bitcoin market trends and patterns in 30-minute timeframe, with emphasis on Ichimoku Cloud indicators',
     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in 30-minute charts.
-    You are known for your balanced approach, considering both very short-term and hourly trends.""",
+    You are particularly skilled in interpreting Ichimoku Cloud indicators to predict market movements.
+   You are known for your quick analysis and ability to spot rapid market changes.""",
     verbose=True,
     allow_delegation=False,
 )
 
-
-
 hourly_analyst = Agent(
     role=f'Hourly {symbol} Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 1-hour timeframe',
+    goal='Analyze Bitcoin market trends and patterns in 1-hour timeframe, with emphasis on Ichimoku Cloud indicators',
     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in hourly charts.
+    You are particularly skilled in interpreting Ichimoku Cloud indicators to predict market movements.
     You are known for your balanced and objective analysis, considering both bullish and bearish scenarios.""",
     verbose=True,
     allow_delegation=False,
-
 )
 
 daily_analyst = Agent(
@@ -287,29 +286,28 @@ def perform_analysis():
         print("Failed to fetch bitcoin data.")
         return None
 
-    task_news = Task(
-        description=f"""Analyze the following recent cryptocurrency news items and determine their potential impact on Bitcoin's price trend:
-        {[{
-            'title': news['title'],
-            'content': news['body'],
-        } for news in get_crypto_news()]}
-
-        1. Quickly review all news items, focusing on their potential impact on Bitcoin's price.
-        2. Identify key themes or events that could significantly influence Bitcoin's price.
-        3. Based on the overall sentiment of the news, determine:
-           a) The likely short-term trend (next 24-48 hours): Bullish, Bearish, or Neutral
-           b) The potential long-term trend (next 1-2 weeks): Bullish, Bearish, or Neutral
-
-        Provide a concise summary (3-5 sentences) explaining your trend predictions, referencing the most impactful news items.
-
-        End your analysis with two lines:
-        "NEWS_Short-term trend: [Bullish/Bearish/Neutral]"
-        "NEWS_Long-term trend: [Bullish/Bearish/Neutral]"
-        """,
-        expected_output="Concise analysis of Bitcoin's likely price trends based on recent news, with clear short-term and long-term trend predictions.",
-        agent=news_analyst
-    )
-
+    # task_news = Task(
+    #     description=f"""Analyze the following recent cryptocurrency news items and determine their potential impact on Bitcoin's price trend:
+    #     {[{
+    #         'title': news['title'],
+    #         'content': news['body'],
+    #     } for news in get_crypto_news()]}
+    #
+    #     1. Quickly review all news items, focusing on their potential impact on Bitcoin's price.
+    #     2. Identify key themes or events that could significantly influence Bitcoin's price.
+    #     3. Based on the overall sentiment of the news, determine:
+    #        a) The likely short-term trend (next 24-48 hours): Bullish, Bearish, or Neutral
+    #        b) The potential long-term trend (next 1-2 weeks): Bullish, Bearish, or Neutral
+    #
+    #     Provide a concise summary (3-5 sentences) explaining your trend predictions, referencing the most impactful news items.
+    #
+    #     End your analysis with two lines:
+    #     "NEWS_Short-term trend: [Bullish/Bearish/Neutral]"
+    #     "NEWS_Long-term trend: [Bullish/Bearish/Neutral]"
+    #     """,
+    #     expected_output="Concise analysis of Bitcoin's likely price trends based on recent news, with clear short-term and long-term trend predictions.",
+    #     agent=news_analyst
+    # )
 
     task_30min = Task(
         description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 30-minute data:
@@ -320,16 +318,19 @@ def perform_analysis():
         Focus on the most recent 48 hours, examining:
         1. Recent price trends and potential trend formations
         2. Volume patterns and their correlation with price movements
-        3. RSI divergences and potential overbought/oversold conditions
-        4. MACD crossovers and histogram patterns
-        5. Key support and resistance levels forming in the short term
+        3. **Ichimoku Cloud Indicators:**
+           - **Tenkan-sen and Kijun-sen crossovers**
+           - **Price interaction with Senkou Span A and B**
+           - **Chikou Span positioning relative to price**
+        4. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
+        5. RSI divergences and potential overbought/oversold conditions
+
 
         Compare the 30-minute trends with the 15-minute analysis to identify any confirmations or divergences.
         Conclude with an overall market outlook for the next 4-8 hours based on this analysis.""",
         expected_output="Detailed Bitcoin market analysis report for 30-minute timeframe, focusing on recent market conditions and short to medium-term predictions",
         agent=thirty_min_analyst
     )
-
 
     # 태스크 생성
     task1 = Task(
@@ -341,8 +342,11 @@ def perform_analysis():
         Focus on the most recent 120 hours, examining:
         1. Recent price trends (start from the latest price)
         2. Volume changes (compare recent volumes to earlier ones)
-        3. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
-        4. Bollinger Bands (using the 'Upper', 'Lower', and 'MA' columns) - analyze recent price positions relative to the bands
+        3. **Ichimoku Cloud Indicators:**
+            - **Kumo (Cloud) Breakouts**
+            - **Tenkan-sen and Kijun-sen crossovers**
+            - **Chikou Span confirmation**
+        4. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
         5. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
         6. Technical patterns - look for and analyze recent formations of patterns such as:
            - Triangle patterns (ascending, descending, symmetrical)
@@ -364,16 +368,20 @@ def perform_analysis():
 
         Focus on the most recent 90 days, examining:
         1. Price trends and key price levels (start from the latest price)
-        2. Volume patterns and significant volume spikes (focus on recent volume activity)
-        3. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
-        4. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
-        5. Support and resistance levels - identify key levels based on recent price action and MA
-        6. Technical patterns - look for and analyze recent formations of patterns such as:
+        2. Volume patterns and significant volume spikes (focus on recent volume activity)\
+        3. **Ichimoku Cloud Indicators:**
+           - **Price interaction with Kumo**
+           - **Tenkan-sen and Kijun-sen crossovers**
+           - **Chikou Span positioning relative to price**
+        4. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
+        5. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
+        6. Support and resistance levels - identify key levels based on recent price action and MA
+        7. Technical patterns - look for and analyze recent formations of patterns such as:
            - Triangle patterns (ascending, descending, symmetrical)
            - Head and shoulders
            - Double tops/bottoms
            - Flags and pennants
-        7. Overall market sentiment based on the above indicators and patterns, with emphasis on the current market state
+        8. Overall market sentiment based on the above indicators and patterns, with emphasis on the current market state
 
         Provide a balanced analysis considering both bullish and bearish scenarios, focusing on the present market conditions. 
         Highlight any significant recent divergences between price action and indicators.
@@ -383,23 +391,17 @@ def perform_analysis():
     )
 
     task3 = Task(
-        description="""Based on the detailed 30-minute, hourly, and daily analyses provided, predict future Bitcoin price scenarios for the next 1-4 hours (very short-term), 4-24 hours (short-term), and 1-3 days (medium-term):
+        description="""Based on the detailed 30-minute, hourly, and daily analyses provided, including the Ichimoku Cloud interpretations, predict future Bitcoin price scenarios for the next 1-4 hours (very short-term), 4-24 hours (short-term), and 1-3 days (medium-term):
 
-        1. Describe one bullish and one bearish scenario for each timeframe
-        2. Include specific price targets or ranges for each scenario
-        3. Identify immediate potential triggers or catalysts for each scenario, referencing the technical analysis from all timeframes
-        4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe)
-        5. Highlight key technical levels to watch in the very near term, as identified in the previous analyses
+        1. Describe one bullish and one bearish scenario for each timeframe, referencing Ichimoku Cloud signals such as Kumo breakouts, Tenkan/Kijun crosses, and Chikou Span positions.
+        2. Include specific price targets or ranges for each scenario.
+        3. Identify immediate potential triggers or catalysts for each scenario, referencing the technical analysis from all timeframes.
+        4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe).
+        5. Highlight key technical levels to watch in the very near term, as identified in the previous analyses.
 
-        IMPORTANT: Focus on synthesizing the information from all timeframe analyses to forecast immediate and future developments. Carefully consider the following points, then provide probabilities for each scenario and explain your reasoning in detail:
-        - The most significant technical indicators and patterns identified in the 15-minute and 30-minute analyses (After consideration, Probability: W%, Reason: ...)
-        - Potential rapid market sentiment shifts based on the very short-term trends (After consideration, Probability: X%, Reason: ...)
-        - The most significant technical indicators and patterns identified in the hourly and daily analyses (After consideration, Probability: Y%, Reason: ...)
-        - Immediate and short-term changes in trading patterns and volume as highlighted in all previous analyses (After consideration, Probability: Z%, Reason: ...)
+        IMPORTANT: Focus on synthesizing the information from all timeframe analyses, with special emphasis on Ichimoku Cloud signals, to forecast immediate and future developments.
 
-        IMPORTANT: Ensure that your probability assessments and explanations reflect a thorough consideration of all available information from all timeframe analyses. Pay special attention to how shorter timeframe trends might be indicating imminent changes that are not yet visible in longer timeframes.
-
-        Based on your synthesis of all previous analyses, provide a single most likely direction for:
+        Based on your synthesis, provide a single most likely direction for:
         1. The next 1-4 hours
         2. The next 4-24 hours
         3. The next 1-3 days
@@ -409,45 +411,50 @@ def perform_analysis():
         "4-24 hours: [Up/Down] [Confidence]%"
         "1-3 days: [Up/Down] [Confidence]%"
 
-        Ensure that your confidence levels reflect the strength and consistency of the indicators across all timeframes.""",
-        expected_output="Concise multi-timeframe future scenario analysis for Bitcoin with directional predictions and confidence levels for very short-term, short-term, and medium-term, based on the synthesis of 15-minute, 30-minute, hourly, and daily technical analyses",
+        Ensure that your confidence levels reflect the strength and consistency of the indicators across all timeframes, with particular attention to Ichimoku Cloud signals.""",
+        expected_output="Concise multi-timeframe future scenario analysis for Bitcoin with directional predictions and confidence levels for very short-term, short-term, and medium-term, based on the synthesis of 15-minute, 30-minute, hourly, and daily technical analyses including Ichimoku Cloud interpretations",
         agent=price_predictor
     )
 
     task4 = Task(
-        description="""Based on the market analyses provided for both 1-hour and 1-day timeframes, and considering the price prediction,
-        determine the most suitable grid trading strategy among regular grid, short grid, and long grid. 
-        Provide a clear rationale for your choice, considering both short-term and long-term market conditions.
-        Use the following guidelines:
+        description="""Based on the market analyses provided for 30-minute, 1-hour, and 1-day timeframes, including Ichimoku Cloud interpretations, and considering the price prediction, determine the most suitable grid trading strategy among regular grid, short grid, and long grid.
 
-        1. Analyze market trend:
-           - Examine both short-term (1-hour) and long-term (1-day) trends.
-           - If both trends align strongly (either upward or downward), proceed to step 2.
+        Provide a clear rationale for your choice, considering the following:
+
+        1. **Ichimoku Cloud Signals:**
+           - Identify whether the price is above or below the cloud.
+           - Note any Tenkan-sen and Kijun-sen crossovers.
+           - Observe the Chikou Span's position relative to price.
+
+        2. **Market Trend Alignment:**
+           - Examine both short-term (1-hour) and long-term (1-day) trends based on Ichimoku Cloud and other indicators.
+           - If trends align strongly (either upward or downward), proceed accordingly.
            - If trends are conflicting or unclear, lean towards 'RegularGrid'.
 
-        2. Evaluate confidence level and technical indicators:
-           - If the price prediction is 'Up' with confidence 70% or higher, and technical indicators support an uptrend, consider 'LongGrid'.
-           - If the price prediction is 'Down' with confidence 70% or higher, and technical indicators support a downtrend, consider 'ShortGrid'.
+        3. **Confidence Level and Technical Indicators:**
+           - If the price prediction is 'Up' with confidence 70% or higher, and Ichimoku Cloud signals support an uptrend, consider 'LongGrid'.
+           - If the price prediction is 'Down' with confidence 70% or higher, and Ichimoku Cloud signals support a downtrend, consider 'ShortGrid'.
            - If confidence is below 70% or technical indicators are mixed, use 'RegularGrid'.
 
-        3. Consider market momentum and volume:
+        4. **Market Momentum and Volume:**
            - Strong upward momentum with increasing volume supports 'LongGrid'.
            - Strong downward momentum with increasing volume supports 'ShortGrid'.
            - Weak momentum or inconsistent volume suggests 'RegularGrid'.
 
-        4. Final decision:
-           - Choose 'LongGrid' or 'ShortGrid' if market trend, confidence level, technical indicators, and momentum all align strongly.
+        5. **Final Decision:**
+           - Choose 'LongGrid' or 'ShortGrid' if Ichimoku Cloud signals, market trend, confidence level, technical indicators, and momentum all align strongly.
            - Choose 'RegularGrid' if there's any significant contradiction among these factors or if the market direction is uncertain.
 
-        Provide a brief explanation for your choice, referencing the above criteria.
+        Provide a brief explanation for your choice, referencing the above criteria and specifically citing Ichimoku Cloud signals.
+
         End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
-        expected_output="Recommended grid trading strategy with justification and final selection, balancing trend analysis and technical indicators while maintaining the 70% confidence threshold",
+        expected_output="Recommended grid trading strategy with justification, balancing trend analysis, Ichimoku Cloud signals, and technical indicators while maintaining the 70% confidence threshold",
         agent=strategist
     )
 
     # Crew 인스턴스화
     crew = Crew(
-        agents=[hourly_analyst, daily_analyst, price_predictor, strategist],
+        agents=[thirty_min_analyst, hourly_analyst, daily_analyst, price_predictor, strategist],
         tasks=[task_30min, task1, task2, task3, task4],
         verbose=True,
         process=Process.sequential
@@ -465,7 +472,6 @@ def perform_analysis():
     # print(type(results.tasks_output))
     # <class 'list'>
     print("-----------------------------------------------------")
-
 
     task_results = {
         '30min_analysis': results.tasks_output[0],
@@ -489,13 +495,15 @@ def perform_analysis():
         3. Daily Analysis: {task_results['daily_analysis']}
         4. Price Prediction: {task_results['price_prediction']}
         5. Strategy Recommendation: {task_results['strategy_recommendation']}
-        
+
         Price Prediction: {price_prediction}
         Confidence: {confidence}%
 
         Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
         The 30-minute, hourly, and daily analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
-        
+
+        **Additionally, include a summary of the Ichimoku Cloud analysis based on the data from the 30-minute, hourly, and daily analyses.**
+
         Translate the final conclusion and selected strategy as follows:
 
         ★ Final Conclusion: {result_string}
@@ -503,7 +511,17 @@ def perform_analysis():
 
        IMPORTANT: Structure your response clearly and elegantly using the following format:
 
-        1. Use Markdown headers (##) for each main section: 30분 분석, 시간별 분석, 일별 분석, 가격 예측, 확률 평가, 전략 추천, 주요 지표, 최종 결론, 선택된 전략.
+        1. Use Markdown headers (##) for each main section:
+           - 30분 분석
+           - 시간별 분석
+           - 일별 분석
+           - 가격 예측
+           - 확률 평가
+           - 전략 추천
+           - **일목균형표 분석**
+           - 주요 지표
+           - 최종 결론
+           - 선택된 전략
         2. Use bullet points or numbered lists for key points within each section.
         3. Highlight important information using bold text or symbols.
         4. Present the 주요 지표 (Key Indicators) section as a list with clear labels.
@@ -511,7 +529,7 @@ def perform_analysis():
         6. Add a horizontal rule (---) after each section to clearly separate them.
 
         Ensure that your summary is easy to read at a glance, with clear separation between sections and emphasis on crucial information.""",
-        expected_output="A well-structured, clear, and concise Korean summary of the Bitcoin market analysis and predictions, with translated final conclusion and selected strategy, formatted for easy readability and clear section separation",
+        expected_output="A well-structured, clear, and concise Korean summary of the Bitcoin market analysis and predictions, including a summary of Ichimoku Cloud analysis, with translated final conclusion and selected strategy, formatted for easy readability and clear section separation",
         agent=korean_summarizer
     )
 

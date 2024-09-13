@@ -14,6 +14,7 @@ import time
 from datetime import datetime, timedelta
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
+from .analysis.IchimokuIndicator import IchimokuIndicator
 class BinanceChartDataAPIView(APIView):
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def get(self, request, symbol, interval):
@@ -127,7 +128,7 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                                                               start_date_daily.strftime("%d %b %Y %H:%M:%S"),
                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
 
-            def process_candles(candles):
+            def process_candles(candles, timeframe):
                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
                                                     'quote_asset_volume', 'number_of_trades',
                                                     'taker_buy_base_asset_volume',
@@ -155,9 +156,26 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 df['MACD'] = exp1 - exp2
                 df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
 
-                # Stochastic RSI and RSI are already calculated, so we don't need to add them here
                 StochasticRSI(df)
                 RSIAnalyzer(df)
+                # 시간 프레임별 일목균형표 설정값 정의
+                if timeframe == '15min':
+                    ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
+                elif timeframe == '30min':
+                    ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
+                elif timeframe == 'hourly':
+                    ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+                elif timeframe == 'daily':
+                    ichimoku_settings = {'tenkan': 20, 'kijun': 60, 'senkou_b': 120, 'displacement': 30}
+                else:
+                    # 기본 설정값
+                    ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+
+                # Stochastic RSI and RSI are already calculated, so we don't need to add them here
+
+                ichimoku = IchimokuIndicator(df, **ichimoku_settings)
+                ichimoku_df = ichimoku.get_ichimoku()
+                df = pd.merge(df, ichimoku_df, on='timestamp', how='left')
 
                 import numpy as np
                 df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
@@ -172,10 +190,10 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return records
 
             return {
-                '15min': process_candles(fifteen_min_candles),
-                '30min': process_candles(thirty_min_candles),
-                'hourly': process_candles(hourly_candles),
-                'daily': process_candles(daily_candles)
+                '15min': process_candles(fifteen_min_candles, '15min'),
+                '30min': process_candles(thirty_min_candles, '30min'),
+                'hourly': process_candles(hourly_candles, 'hourly'),
+                'daily': process_candles(daily_candles, 'daily')
             }
 
         except Exception as e:
