@@ -392,61 +392,65 @@ def perform_analysis():
     )
 
     task3 = Task(
-        description="""Based on the detailed 30-minute, hourly, and daily analyses provided, including the Ichimoku Cloud interpretations, predict future Bitcoin price scenarios for the next 1-4 hours (very short-term), 4-24 hours (short-term), and 1-3 days (medium-term):
+        description="""Based on the comprehensive analyses from the 30-minute, hourly, and daily timeframes, including Ichimoku Cloud interpretations, forecast Bitcoin price movements for the next:
 
-        1. Describe one bullish and one bearish scenario for each timeframe, referencing Ichimoku Cloud signals such as Kumo breakouts, Tenkan/Kijun crosses, and Chikou Span positions.
-        2. Include specific price targets or ranges for each scenario.
-        3. Identify immediate potential triggers or catalysts for each scenario, referencing the technical analysis from all timeframes.
-        4. Assign probabilities to each scenario (ensure they sum to 100% per timeframe).
-        5. Highlight key technical levels to watch in the very near term, as identified in the previous analyses.
+    1. **1-6 hours (Very Short-term)**
+    2. **6-24 hours (Short-term)**
+    3. **1-3 days (Medium-term)**
 
-        IMPORTANT: Focus on synthesizing the information from all timeframe analyses, with special emphasis on Ichimoku Cloud signals, to forecast immediate and future developments.
+    For each timeframe, provide:
 
-        Based on your synthesis, provide a single most likely direction for:
-        1. The next 1-4 hours
-        2. The next 4-24 hours
-        3. The next 1-3 days
+    1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) by prioritizing higher timeframe signals to ensure consistency.
+    2. **Confidence Level**: Assign a confidence percentage reflecting the strength and agreement of indicators across all timeframes.
+    3. **Key Technical Levels**: Highlight crucial support and resistance levels to watch.
 
-        End your response with three lines:
-        "1-4 hours: [Up/Down] [Confidence]%"
-        "4-24 hours: [Up/Down] [Confidence]%"
-        "1-3 days: [Up/Down] [Confidence]%"
+    **Guidelines:**
 
-        Ensure that your confidence levels reflect the strength and consistency of the indicators across all timeframes, with particular attention to Ichimoku Cloud signals.""",
-        expected_output="Concise multi-timeframe future scenario analysis for Bitcoin with directional predictions and confidence levels for very short-term, short-term, and medium-term, based on the synthesis of 15-minute, 30-minute, hourly, and daily technical analyses including Ichimoku Cloud interpretations",
+    - **Synthesize Indicators**: Integrate Ichimoku Cloud signals (Kumo position, Tenkan-sen & Kijun-sen crossovers, Chikou Span position) with RSI and Stochastic Oscillator data from all timeframes.
+    - **Ensure Consistency**: Prioritize stronger signals from higher timeframes (e.g., daily) to avoid contradictory predictions from lower timeframes.
+    - **Avoid Conflicting Signals**: If higher timeframes indicate a dominant trend, align short-term predictions accordingly, even if lower timeframes show mixed signals.
+
+    **Output Format:**
+
+    End your response with three lines indicating the predicted direction and confidence level for each timeframe:
+         "1-6 hours: [Up/Down] [Confidence]%"
+         "6-24 hours: [Up/Down] [Confidence]%"
+         "1-3 days: [Up/Down] [Confidence]%"
+    Ensure predictions are concise, impactful, and based on the overall alignment of indicators across all analyzed timeframes.""",
+        expected_output="Accurate and consistent multi-timeframe Bitcoin price predictions with directional outcomes and confidence levels for very short-term, short-term, and medium-term, ensuring alignment across 30-minute, hourly, and daily analyses including Ichimoku Cloud signals.",
         agent=price_predictor
     )
 
     task4 = Task(
-        description="""Based on the market analyses provided for 30-minute, 1-hour, and 1-day timeframes, including Ichimoku Cloud interpretations, and considering the price prediction, determine the most suitable grid trading strategy among regular grid, short grid, and long grid.
+        description="""Determine the most suitable grid trading strategy (RegularGrid, ShortGrid, LongGrid) for Bitcoin based on the analyses from 30-minute, 1-hour, and 1-day timeframes, including Ichimoku Cloud signals and price predictions.
 
-        Provide a clear rationale for your choice, considering the following:
-
-        1. **Ichimoku Cloud Signals:**
-           - Identify whether the price is above or below the cloud.
-           - Note any Tenkan-sen and Kijun-sen crossovers.
-           - Observe the Chikou Span's position relative to price.
-
-        2. **Market Trend Alignment:**
-           - Examine both short-term (1-hour) and long-term (1-day) trends based on Ichimoku Cloud and other indicators.
-           - If trends align strongly (either upward or downward), proceed accordingly.
-           - If trends are conflicting or unclear, lean towards 'RegularGrid'.
-
-        3. **Confidence Level and Technical Indicators:**
-           - If the price prediction is 'Up' with confidence 70% or higher, and Ichimoku Cloud signals support an uptrend, consider 'LongGrid'.
-           - If the price prediction is 'Down' with confidence 70% or higher, and Ichimoku Cloud signals support a downtrend, consider 'ShortGrid'.
-           - If confidence is below 70% or technical indicators are mixed, use 'RegularGrid'.
-
-        4. **Market Momentum and Volume:**
-           - Strong upward momentum with increasing volume supports 'LongGrid'.
-           - Strong downward momentum with increasing volume supports 'ShortGrid'.
-           - Weak momentum or inconsistent volume suggests 'RegularGrid'.
-
-        5. **Final Decision:**
-           - Choose 'LongGrid' or 'ShortGrid' if Ichimoku Cloud signals, market trend, confidence level, technical indicators, and momentum all align strongly.
-           - Choose 'RegularGrid' if there's any significant contradiction among these factors or if the market direction is uncertain.
-
-        Provide a brief explanation for your choice, referencing the above criteria and specifically citing Ichimoku Cloud signals.
+        **Guidelines:**
+        
+        1. **Overall Trend Alignment:**
+            - **Strong Uptrend:** If at least two out of three timeframes predict 'Up' with confidence ≥70%, select **LongGrid**.
+            - **Strong Downtrend:** If at least two out of three timeframes predict 'Down' with confidence ≥70%, select **ShortGrid**.
+            - **Mixed or Uncertain Trends:** If predictions are mixed or confidence levels are below 70%, select **RegularGrid**.
+        
+        2. **Confidence Level:**
+            - **High Confidence (≥70%):** Indicates strong agreement among indicators.
+            - **Medium Confidence (50-69%):** Indicates partial alignment or mixed signals.
+            - **Low Confidence (<50%):** Indicates weak or conflicting signals.
+        
+        3. **Avoid Conflicting Signals:**
+            - Prioritize higher timeframes (1-3 days) when determining the overall trend.
+            - Do not override higher timeframe signals with conflicting lower timeframe predictions.
+    
+        **Decision Rules:**
+        
+        - **LongGrid:** 
+            - If two or more timeframes predict 'Up' with confidence ≥70%.
+        - **ShortGrid:** 
+            - If two or more timeframes predict 'Down' with confidence ≥70%.
+        - **RegularGrid:** 
+            - If predictions are mixed or confidence levels are below 70%.
+            
+            
+        **Output Format:**
 
         End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         expected_output="Recommended grid trading strategy with justification, balancing trend analysis, Ichimoku Cloud signals, and technical indicators while maintaining the 70% confidence threshold",
