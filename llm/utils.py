@@ -310,83 +310,84 @@ def perform_analysis():
     # )
 
     task_30min = Task(
-        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 30-minute data:
-        {bitcoin_data['30min'][-96:]}  # Last 48 hours of 30-minute data
+        description=f"""Analyze the Bitcoin market using the latest 48 hours of 30-minute data:
+        {bitcoin_data['30min'][-96:]}
 
-        IMPORTANT: Start your analysis from the most recent data point and work backwards.
+        IMPORTANT: Start from the most recent data point and analyze backwards.
 
-        Focus on the most recent 48 hours, examining:
-        1. Recent price trends and potential trend formations
-        2. Volume patterns and their correlation with price movements
-        3. **Ichimoku Cloud Indicators:**
-           - **Tenkan-sen and Kijun-sen crossovers**
-           - **Price interaction with Senkou Span A and B**
-           - **Chikou Span positioning relative to price**
-        4. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
-        5. RSI divergences and potential overbought/oversold conditions
+        Focus on:
+        1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
+        2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
+        3. **Ichimoku Cloud Indicators**:
+            - **Tenkan-sen & Kijun-sen Crossovers**: Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
+            - **Price vs. Senkou Span A & B**: Determine if the price is above or below the cloud.
+            - **Chikou Span Position**: Check if Chikou Span is above or below the current price.
+        4. **Stochastic Oscillator**: Note %K and %D crossovers indicating potential trend reversals.
+        5. **RSI Divergences**: Highlight overbought (>70) or oversold (<30) conditions and any divergences.
 
+        Compare the 30-minute trends with the 15-minute analysis to identify confirmations or divergences.
 
-        Compare the 30-minute trends with the 15-minute analysis to identify any confirmations or divergences.
-        Conclude with an overall market outlook for the next 4-8 hours based on this analysis.""",
-        expected_output="Detailed Bitcoin market analysis report for 30-minute timeframe, focusing on recent market conditions and short to medium-term predictions",
+        Conclude with:
+        - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
+        - **Short-term Outlook**: 4-8 hours.
+
+        Ensure clarity and focus on key indicators to accurately determine market trends.""",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 30-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
         agent=thirty_min_analyst
     )
 
     # 태스크 생성
     task1 = Task(
-        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 120 hours of hourly data:
+        description=f"""Analyze the Bitcoin market using the latest 120 hours of hourly data:
         {bitcoin_data['hourly'][-120:]}
 
-        IMPORTANT: Start your analysis from the most recent data point (the last entry in the provided dataset) and work backwards.
+        IMPORTANT: Start from the most recent data point and analyze backwards.
 
-        Focus on the most recent 120 hours, examining:
-        1. Recent price trends (start from the latest price)
-        2. Volume changes (compare recent volumes to earlier ones)
-        3. **Ichimoku Cloud Indicators:**
-            - **Kumo (Cloud) Breakouts**
-            - **Tenkan-sen and Kijun-sen crossovers**
-            - **Chikou Span confirmation**
-        4. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
-        5. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
-        6. Technical patterns - look for and analyze recent formations of patterns such as:
-           - Triangle patterns (ascending, descending, symmetrical)
-           - Head and shoulders
-           - Double tops/bottoms
-           - Flags and pennants
-        Identify significant support and resistance levels, and overall market sentiment in the 1-hour timeframe based on the most recent data.
-        Consider both bullish and bearish scenarios in your analysis, with emphasis on the current market conditions.
-        Conclude with an overall market outlook for the short-term (6-12 hours) and long-term (12-24 hours) based on this analysis, with particular attention to the most recent market developments.""",
-        expected_output="Detailed Bitcoin market analysis report for 1-hour timeframe, focusing on the most recent market conditions",
+        Focus on:
+        1. **Price Trends**: Identify upward or downward trends starting from the latest price.
+        2. **Volume Changes**: Compare recent volumes with earlier ones to gauge market interest.
+        3. **Ichimoku Cloud Indicators**:
+            - **Kumo (Cloud) Position**: Is the price above or below the cloud?
+            - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals).
+            - **Chikou Span**: Position relative to the current price.
+        4. **RSI (Relative Strength Index)**: Highlight overbought (>70) or oversold (<30) conditions.
+        5. **Stochastic Oscillator**: Note %K and %D crossovers indicating potential trend reversals.
+        6. **Technical Patterns**: Detect formations like Head and Shoulders, Double Tops/Bottoms, etc.
+
+        Conclude with:
+        - **Market Sentiment**: Bullish, Bearish, or Neutral based on the above indicators.
+        - **Short-term Outlook**: 6-12 hours.
+        - **Long-term Outlook**: 12-24 hours.
+
+        Ensure clarity and focus on key indicators to accurately determine market trends.""",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 1-hour timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
         agent=hourly_analyst
     )
 
     task2 = Task(
-        description=f"""Conduct a comprehensive analysis of the Bitcoin market using the most recent 90 days of daily data:
+        description=f"""Analyze the Bitcoin market using the latest 90 days of daily data:
         {bitcoin_data['daily'][-90:]}
 
-        IMPORTANT: Begin your analysis with the most recent data point (the last entry in the dataset) and work backwards through time.
+        IMPORTANT: Start from the most recent data point and analyze backwards.
 
-        Focus on the most recent 90 days, examining:
-        1. Price trends and key price levels (start from the latest price)
-        2. Volume patterns and significant volume spikes (focus on recent volume activity)\
-        3. **Ichimoku Cloud Indicators:**
-           - **Price interaction with Kumo**
-           - **Tenkan-sen and Kijun-sen crossovers**
-           - **Chikou Span positioning relative to price**
-        4. RSI (Relative Strength Index) - Focus on the latest readings. Pay close attention to overbought (RSI > 70) and oversold (RSI < 30) conditions. These levels often indicate potential price reversals or consolidations.
-        5. Stochastic oscillator - Strongly emphasize that trend reversals occur when %K and %D lines cross each other. Pay special attention to these crossover points as they may indicate potential trend changes.
-        6. Support and resistance levels - identify key levels based on recent price action and MA
-        7. Technical patterns - look for and analyze recent formations of patterns such as:
-           - Triangle patterns (ascending, descending, symmetrical)
-           - Head and shoulders
-           - Double tops/bottoms
-           - Flags and pennants
-        8. Overall market sentiment based on the above indicators and patterns, with emphasis on the current market state
+        Focus on:
+        1. **Price Trends & Key Levels**: Identify upward or downward trends and significant support/resistance levels.
+        2. **Volume Patterns**: Detect significant volume spikes and their correlation with price movements.
+        3. **Ichimoku Cloud Indicators**:
+            - **Price vs. Kumo (Cloud)**: Determine if the price is above or below the cloud.
+            - **Tenkan-sen & Kijun-sen Crossovers**: Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
+            - **Chikou Span Position**: Check if Chikou Span is above or below the current price.
+        4. **RSI (Relative Strength Index)**: Highlight overbought (>70) or oversold (<30) conditions.
+        5. **Stochastic Oscillator**: Note %K and %D crossovers indicating potential trend reversals.
+        6. **Technical Patterns**: Identify formations like Head and Shoulders, Double Tops/Bottoms, Triangles, Flags, etc.
 
-        Provide a balanced analysis considering both bullish and bearish scenarios, focusing on the present market conditions. 
-        Highlight any significant recent divergences between price action and indicators.
-        Conclude with an overall market outlook for the short-term (12-24 hours) and long-term (1-3 days) based on this analysis, with particular attention to the most recent market developments.""",
-        expected_output="Detailed Bitcoin market analysis report for the most recent 90 days (1-day timeframe), including technical patterns and market outlook, with emphasis on current market conditions",
+        Conclude with:
+        - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
+        - **Short-term Outlook**: 12-24 hours.
+        - **Long-term Outlook**: 1-3 days.
+
+        Ensure clarity and focus on key indicators to accurately determine market trends.""",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 1-day timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
         agent=daily_analyst
     )
 
