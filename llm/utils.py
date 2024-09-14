@@ -308,11 +308,13 @@ def perform_analysis():
     # )
 
     task_30min = Task(
-        description=f"""Analyze the Bitcoin market using the latest 48 hours of 30-minute data:
-        {bitcoin_data['30min'][-96:]}
+        description=f"""Analyze the Bitcoin market using the latest 24 hours of 30-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['30min'][-48:]}
 
-        IMPORTANT: Start from the most recent data point and analyze backwards.
-
+        **Important:**
+        - The last data point is the most recent data.
+        - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
+        
         Focus on:
         1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
         2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
@@ -328,6 +330,7 @@ def perform_analysis():
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Short-term Outlook**: 4-8 hours.
+        - **Long-term Outlook**: 6-12 hours.
 
         Ensure clarity and focus on key indicators to accurately determine market trends.""",
         expected_output="Concise and accurate Bitcoin market analysis report for the 30-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
@@ -336,10 +339,12 @@ def perform_analysis():
 
     # 태스크 생성
     task1 = Task(
-        description=f"""Analyze the Bitcoin market using the latest 120 hours of hourly data:
-        {bitcoin_data['hourly'][-120:]}
+        description=f"""Use the latest 72 hours of hourly data to analyze the Bitcoin market. The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['hourly'][-72:]}
 
-        IMPORTANT: Start from the most recent data point and analyze backwards.
+        **Important:**
+        - The last data point is the most recent data.
+        - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
 
         Focus on:
         1. **Price Trends**: Identify upward or downward trends starting from the latest price.
@@ -363,10 +368,12 @@ def perform_analysis():
     )
 
     task2 = Task(
-        description=f"""Analyze the Bitcoin market using the latest 90 days of daily data:
-        {bitcoin_data['daily'][-90:]}
+        description=f"""Analyze the Bitcoin market using the latest 60 days of daily data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['daily'][-60:]}
 
-        IMPORTANT: Start from the most recent data point and analyze backwards.
+        **Important:**
+        - The last data point is the most recent data.
+        - When starting the analysis, begin with the last data point and proceed to analyze previous data points. 
 
         Focus on:
         1. **Price Trends & Key Levels**: Identify upward or downward trends and significant support/resistance levels.
