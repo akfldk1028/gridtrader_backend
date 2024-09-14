@@ -432,11 +432,11 @@ def perform_analysis():
     1. **Strategy Selection Criteria:**
 
        - **LongGrid**:
-            - Select if both the 30-minute and 1-hour predictions indicate 'Up' with a confidence level of **70% or higher**.
+            - Select if both the 30-minute and 1-hour predictions indicate 'Up' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Up' with a confidence level of **70% or higher**.
        - **ShortGrid**:
-            - Select if both the 30-minute and 1-hour predictions indicate 'Down' with a confidence level of **70% or higher**.
+            - Select if both the 30-minute and 1-hour predictions indicate 'Down' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Down' with a confidence level of **70% or higher**.
        - **RegularGrid**:
-            - Select if the predictions are mixed or the confidence levels are below 70%.
+            - Select if predictions are mixed, confidence levels are insufficient, or the daily timeframe's conflicting signal has higher confidence.
 
     2. **Handling Conflicting Signals:**
 
