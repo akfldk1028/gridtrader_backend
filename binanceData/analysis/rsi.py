@@ -26,8 +26,8 @@ class RSIAnalyzer:
         # Calculate the RSI based on SMA
         RS2 = roll_up2 / roll_down2
         RSI2 = 100.0 - (100.0 / (1.0 + RS2))
-        self.df["RSI_SMA"] = RSI2
-        # Calculate EMA of RSI
-        self.df["RSI_EMA"] = (
-            self.df["RSI"].ewm(span=self.ema_period, adjust=False).mean()
-        )
+        # self.df["RSI_SMA"] = RSI2
+        # # Calculate EMA of RSI
+        # self.df["RSI_EMA"] = (
+        #     self.df["RSI"].ewm(span=self.ema_period, adjust=False).mean()
+        # )

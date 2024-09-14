@@ -122,7 +122,10 @@ def run_bitcoin_analysis():
             price_prediction=result['price_prediction'],
             confidence=float(result['confidence']) if result['confidence'] else None,
             selected_strategy=result['selected_strategy'],
-            korean_summary = result['korean_summary'] if 'korean_summary' in result else ""
+            korean_summary = result['korean_summary'] if 'korean_summary' in result else "",
+            analysis_results_30m = result['analysis_results_30m'],
+            analysis_results_1hour = result['analysis_results_1hour'],
+            analysis_results_daily = result['analysis_results_daily'],
         )
         update_strategy_config()
         return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"

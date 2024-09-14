@@ -592,5 +592,8 @@ def perform_analysis():
         'confidence': confidence,
         'selected_strategy': selected_strategy,
         'current_price': current_price,
-        'korean_summary': korean_summary
+        'korean_summary': korean_summary,
+        'analysis_results_30m': analysis_results['30min'],
+        'analysis_results_1hour': analysis_results['1hour'],
+        'analysis_results_daily': analysis_results['daily']
     }
