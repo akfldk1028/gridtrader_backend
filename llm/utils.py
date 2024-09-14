@@ -392,7 +392,7 @@ def perform_analysis():
     )
 
     task3 = Task(
-        description="""Based on the comprehensive analyses from the 30-minute, hourly, and daily timeframes, including Ichimoku Cloud interpretations, forecast Bitcoin price movements for the next:
+        description="""Based on the analyses from the **30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
 
     1. **1-6 hours (Very Short-term)**
     2. **6-24 hours (Short-term)**
@@ -400,15 +400,18 @@ def perform_analysis():
 
     For each timeframe, provide:
 
-    1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) by prioritizing higher timeframe signals to ensure consistency.
-    2. **Confidence Level**: Assign a confidence percentage reflecting the strength and agreement of indicators across all timeframes.
-    3. **Key Technical Levels**: Highlight crucial support and resistance levels to watch.
+    1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 30-minute and 1-hour analyses.
+    2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators from these short-term timeframes, **adjusted slightly** by the overall trend from the daily timeframe.
+    3. **Key Technical Levels**: Highlight crucial support and resistance levels.
 
     **Guidelines:**
 
-    - **Synthesize Indicators**: Integrate Ichimoku Cloud signals (Kumo position, Tenkan-sen & Kijun-sen crossovers, Chikou Span position) with RSI and Stochastic Oscillator data from all timeframes.
-    - **Ensure Consistency**: Prioritize stronger signals from higher timeframes (e.g., daily) to avoid contradictory predictions from lower timeframes.
-    - **Avoid Conflicting Signals**: If higher timeframes indicate a dominant trend, align short-term predictions accordingly, even if lower timeframes show mixed signals.
+    - **Focus on Short-Term Timeframes**: Use the 30-minute and 1-hour analyses as the primary basis for all predictions.
+    - **Use Daily Timeframe for Confidence Adjustment Only**: Refer to the daily timeframe solely to adjust the confidence level, not to influence the prediction direction.
+        - **If the daily trend aligns with the short-term prediction**, slightly increase the confidence level.
+        - **If the daily trend opposes the short-term prediction**, slightly decrease the confidence level.
+    - **Do Not Base Predictions on Daily Timeframe**: Predictions should be made based on short-term analyses regardless of the daily trend.
+    - **Conciseness**: Keep predictions clear and to the point.
 
     **Output Format:**
 
@@ -416,44 +419,52 @@ def perform_analysis():
          "1-6 hours: [Up/Down] [Confidence]%"
          "6-24 hours: [Up/Down] [Confidence]%"
          "1-3 days: [Up/Down] [Confidence]%"
-    Ensure predictions are concise, impactful, and based on the overall alignment of indicators across all analyzed timeframes.""",
-        expected_output="Accurate and consistent multi-timeframe Bitcoin price predictions with directional outcomes and confidence levels for very short-term, short-term, and medium-term, ensuring alignment across 30-minute, hourly, and daily analyses including Ichimoku Cloud signals.",
+    """,
+        expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, based primarily on short-term timeframes, with confidence adjusted by the daily trend.",
         agent=price_predictor
     )
 
     task4 = Task(
-        description="""Determine the most suitable grid trading strategy (RegularGrid, ShortGrid, LongGrid) for Bitcoin based on the analyses from 30-minute, 1-hour, and 1-day timeframes, including Ichimoku Cloud signals and price predictions.
+        description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
 
-        **Guidelines:**
-        
-        1. **Overall Trend Alignment:**
-            - **Strong Uptrend:** If at least two out of three timeframes predict 'Up' with confidence ≥70%, select **LongGrid**.
-            - **Strong Downtrend:** If at least two out of three timeframes predict 'Down' with confidence ≥70%, select **ShortGrid**.
-            - **Mixed or Uncertain Trends:** If predictions are mixed or confidence levels are below 70%, select **RegularGrid**.
-        
-        2. **Confidence Level:**
-            - **High Confidence (≥70%):** Indicates strong agreement among indicators.
-            - **Medium Confidence (50-69%):** Indicates partial alignment or mixed signals.
-            - **Low Confidence (<50%):** Indicates weak or conflicting signals.
-        
-        3. **Avoid Conflicting Signals:**
-            - Prioritize higher timeframes (1-3 days) when determining the overall trend.
-            - Do not override higher timeframe signals with conflicting lower timeframe predictions.
-    
-        **Decision Rules:**
-        
-        - **LongGrid:** 
-            - If two or more timeframes predict 'Up' with confidence ≥70%.
-        - **ShortGrid:** 
-            - If two or more timeframes predict 'Down' with confidence ≥70%.
-        - **RegularGrid:** 
-            - If predictions are mixed or confidence levels are below 70%.
-            
-            
-        **Output Format:**
+    **Guidelines:**
 
-        End your response with a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
-        expected_output="Recommended grid trading strategy with justification, balancing trend analysis, Ichimoku Cloud signals, and technical indicators while maintaining the 70% confidence threshold",
+    1. **Strategy Selection Criteria:**
+
+       - **LongGrid**:
+            - Select if both the 30-minute and 1-hour predictions indicate 'Up' with a confidence level of **70% or higher**.
+       - **ShortGrid**:
+            - Select if both the 30-minute and 1-hour predictions indicate 'Down' with a confidence level of **70% or higher**.
+       - **RegularGrid**:
+            - Select if the predictions are mixed or the confidence levels are below 70%.
+
+    2. **Handling Conflicting Signals:**
+
+       - **Compare Confidence Levels**:
+         - When the daily timeframe conflicts with the short-term predictions, compare the confidence levels of both.
+       - **Adjust Confidence Levels**:
+         - Slightly adjust the overall confidence to reflect any uncertainty caused by conflicting signals.
+
+    3. **Maximize Profit:**
+
+       - Choose the strategy that best leverages the predictions with the higher confidence level to maximize profit.
+       - Be responsive to the market signals with the strongest indications.
+
+    4. **Conciseness:**
+
+       - Provide only the strategy name without additional explanation.
+
+    **Decision Rules:**
+
+    - **Select LongGrid** if the conditions favor an upward trend with higher confidence.
+    - **Select ShortGrid** if the conditions favor a downward trend with higher confidence.
+    - **Select RegularGrid** if predictions are mixed or confidence levels do not clearly favor one direction.
+
+    **Output Format:**
+
+    At the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
+    """,
+        expected_output="""Recommend a grid trading strategy based on the predictions with higher confidence levels, appropriately handling conflicting signals by comparing confidence levels between timeframes.""",
         agent=strategist
     )
 
