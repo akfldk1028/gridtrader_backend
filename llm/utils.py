@@ -509,9 +509,9 @@ def perform_analysis():
     print("-----------------------------------------------------")
 
     task_results = {
-        '30min_analysis': analysis_results.tasks_output[0],
-        'hourly_analysis': analysis_results.tasks_output[1],
-        'daily_analysis': analysis_results.tasks_output[2],
+        '30min_analysis':  analysis_results['30min'],
+        'hourly_analysis': analysis_results['1hour'],
+        'daily_analysis': analysis_results['daily'],
         'price_prediction': results.tasks_output[0],
         'strategy_recommendation': results.tasks_output[1]
     }
