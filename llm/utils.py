@@ -312,7 +312,7 @@ def perform_analysis():
         {bitcoin_data['30min'][-48:]}
 
         **Important:**
-        - The last data point is the most recent data.
+        - The **last row** of the data (`{bitcoin_data['30min'][-48:][-1]}`) is the **most recent data**.
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
         
         Focus on:
@@ -343,7 +343,7 @@ def perform_analysis():
         {bitcoin_data['hourly'][-72:]}
 
         **Important:**
-        - The last data point is the most recent data.
+        - The **last row** of the data (`{bitcoin_data['hourly'][-72:][-1]}`) is the **most recent data**.
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
 
         Focus on:
@@ -372,7 +372,7 @@ def perform_analysis():
         {bitcoin_data['daily'][-60:]}
 
         **Important:**
-        - The last data point is the most recent data.
+        - The **last row** of the data (`{bitcoin_data['daily'][-60:][-1]}`) is the **most recent data**.
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points. 
 
         Focus on:
