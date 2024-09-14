@@ -105,16 +105,16 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
     def get_bitcoin_data(self, symbol):
         try:
             # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
-            # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
-            # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, limit=500)
-            # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, limit=500)
+            thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
+            hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, limit=500)
+            daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, limit=500)
 
 
-            end_date = datetime.now()
+            # end_date = datetime.now()
             # start_date_15min = end_date - timedelta(days=7)  # Last 7 days
-            start_date_30min = end_date - timedelta(days=20)  # Last 14 days
-            start_date_hourly = end_date - timedelta(days=40)  # Last 30 days
-            start_date_daily = end_date - timedelta(days=730)  # Last 365 days
+            # start_date_30min = end_date - timedelta(days=20)  # Last 14 days
+            # start_date_hourly = end_date - timedelta(days=40)  # Last 30 days
+            # start_date_daily = end_date - timedelta(days=730)  # Last 365 days
             #
             # print("Fetching data...")
             #
@@ -122,17 +122,17 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             #                                                         start_date_15min.strftime("%d %b %Y %H:%M:%S"),
             #                                                         end_date.strftime("%d %b %Y %H:%M:%S"))
             #
-            thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
-                                                                   start_date_30min.strftime("%d %b %Y %H:%M:%S"),
-                                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
-
-            hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
-                                                               start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
-                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
-
-            daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
-                                                              start_date_daily.strftime("%d %b %Y %H:%M:%S"),
-                                                              end_date.strftime("%d %b %Y %H:%M:%S"))
+            # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
+            #                                                        start_date_30min.strftime("%d %b %Y %H:%M:%S"),
+            #                                                        end_date.strftime("%d %b %Y %H:%M:%S"))
+            #
+            # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
+            #                                                    start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
+            #                                                    end_date.strftime("%d %b %Y %H:%M:%S"))
+            #
+            # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
+            #                                                   start_date_daily.strftime("%d %b %Y %H:%M:%S"),
+            #                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
 
             def process_candles(candles, timeframe):
                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
