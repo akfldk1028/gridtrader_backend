@@ -397,10 +397,11 @@ def perform_analysis():
         verbose=True,
         process=Process.sequential
     )
-    analysis_results = bitcoin_analysis.kickoff()
-    analysis_results['30min'] = analysis_results.tasks_output[0]
-    analysis_results['1hour'] = analysis_results.tasks_output[1]
-    analysis_results['daily'] = analysis_results.tasks_output[2]
+    analysis_crew = bitcoin_analysis.kickoff()
+    analysis_results = {}
+    analysis_results['30min'] = analysis_crew.tasks_output[0]
+    analysis_results['1hour'] = analysis_crew.tasks_output[1]
+    analysis_results['daily'] = analysis_crew.tasks_output[2]
 
     task3 = Task(
         description=f"""Based on the analyses from the **30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
