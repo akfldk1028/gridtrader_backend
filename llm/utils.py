@@ -109,20 +109,18 @@ strategist = Agent(
 )
 
 price_predictor = Agent(
-    role=f'{symbol} Balanced Intraday Futures Trader',
-    goal='Maximize intraday profits in cryptocurrency futures while minimizing liquidation risks',
-    backstory="""You are a seasoned intraday trader specializing in cryptocurrency futures, known for your ability to balance high returns with prudent risk management.
-    Your expertise lies in identifying profitable short-term opportunities while maintaining a keen awareness of liquidation risks.
-    You employ a combination of technical analysis, market sentiment tracking, and risk assessment tools to make informed trading decisions.
-    Your approach is characterized by strategic use of leverage, active position management, and swift response to market changes.
-    You pay close attention to market trends, recognizing their significant impact on short-term price movements and adjusting your strategies accordingly.
-    Your trend analysis includes identifying key support and resistance levels, recognizing trend reversals, and adapting to different market phases (trending, ranging, or volatile).
-    While profit maximization remains a priority, you never compromise on protecting your capital from liquidation events.
-    Your ability to align your trades with the prevailing market trend while remaining vigilant to potential trend shifts sets you apart as a trader.""",
+    role=f'{symbol} Short-Term Futures Trader',
+    goal='Maximize intraday profits in cryptocurrency futures using 30-minute and 1-hour analyses while minimizing liquidation risks',
+    backstory="""You are a seasoned intraday trader specializing in cryptocurrency futures, focusing on 30-minute and 1-hour timeframes.
+    Your expertise lies in identifying profitable short-term opportunities using technical indicators specific to these timeframes.
+    You primarily utilize analyses from the 30-minute and 1-hour charts, such as Ichimoku Cloud positions, moving averages, and volume patterns, to predict market movements.
+    You adjust your confidence levels slightly based on the overall trend from the daily timeframe but always base your prediction direction on short-term analyses.
+    Risk management is crucial to you; you strive to maximize profits without exposing yourself to liquidation risks.
+    Your precise focus on short-term market data and disciplined approach to trading make you exceptionally effective in intraday futures trading.""",
     verbose=True,
     allow_delegation=False,
-
 )
+
 
 # price_predictor = Agent(
 #     role=f'{symbol} Price Predictor',
@@ -391,35 +389,57 @@ def perform_analysis():
         agent=daily_analyst
     )
 
+
+
+    bitcoin_analysis = Crew(
+        agents=[thirty_min_analyst, hourly_analyst, daily_analyst],
+        tasks=[task_30min, task1, task2],
+        verbose=True,
+        process=Process.sequential
+    )
+    analysis_results = bitcoin_analysis.kickoff()
+    analysis_results['30min'] = analysis_results.tasks_output[0]
+    analysis_results['1hour'] = analysis_results.tasks_output[1]
+    analysis_results['daily'] = analysis_results.tasks_output[2]
+
     task3 = Task(
-        description="""Based on the analyses from the **30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
+        description=f"""Based on the analyses from the **30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
 
-    1. **1-6 hours (Very Short-term)**
-    2. **6-24 hours (Short-term)**
-    3. **1-3 days (Medium-term)**
+        **30-minute Analysis**:
+        {analysis_results['30min']}
+        
+        **1-hour Analysis**:
+        {analysis_results['1hour']}
+        
+        **Daily Analysis (for confidence adjustment only)**:
+        {analysis_results['daily']}
 
-    For each timeframe, provide:
+        1. **1-6 hours (Very Short-term)**
+        2. **6-24 hours (Short-term)**
+        3. **1-3 days (Medium-term)**
 
-    1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 30-minute and 1-hour analyses.
-    2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators from these short-term timeframes, **adjusted slightly** by the overall trend from the daily timeframe.
-    3. **Key Technical Levels**: Highlight crucial support and resistance levels.
+        For each timeframe, provide:
 
-    **Guidelines:**
+        1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 30-minute and 1-hour analyses.
+        2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators from these short-term timeframes, **adjusted slightly** by the overall trend from the daily timeframe.
+        3. **Key Technical Levels**: Highlight crucial support and resistance levels.
 
-    - **Focus on Short-Term Timeframes**: Use the 30-minute and 1-hour analyses as the primary basis for all predictions.
-    - **Use Daily Timeframe for Confidence Adjustment Only**: Refer to the daily timeframe solely to adjust the confidence level, not to influence the prediction direction.
-        - **If the daily trend aligns with the short-term prediction**, slightly increase the confidence level.
-        - **If the daily trend opposes the short-term prediction**, slightly decrease the confidence level.
-    - **Do Not Base Predictions on Daily Timeframe**: Predictions should be made based on short-term analyses regardless of the daily trend.
-    - **Conciseness**: Keep predictions clear and to the point.
+        **Guidelines:**
 
-    **Output Format:**
+        - **Focus on Short-Term Timeframes**: Use the 30-minute and 1-hour analyses as the primary basis for all predictions.
+        - **Use Daily Timeframe for Confidence Adjustment Only**: Refer to the daily timeframe solely to adjust the confidence level, not to influence the prediction direction.
+            - **If the daily trend aligns with the short-term prediction**, slightly increase the confidence level.
+            - **If the daily trend opposes the short-term prediction**, slightly decrease the confidence level.
+        - **Do Not Base Predictions on Daily Timeframe**: Predictions should be made based on short-term analyses regardless of the daily trend.
+        - **Conciseness**: Keep predictions clear and to the point.
 
-    End your response with three lines indicating the predicted direction and confidence level for each timeframe:
-         "1-6 hours: [Up/Down] [Confidence]%"
-         "6-24 hours: [Up/Down] [Confidence]%"
-         "1-3 days: [Up/Down] [Confidence]%"
-    """,
+        **Output Format:**
+
+        End your response with three lines indicating the predicted direction and confidence level for each timeframe:
+             "1-6 hours: [Up/Down] [Confidence]%"
+             "6-24 hours: [Up/Down] [Confidence]%"
+             "1-3 days: [Up/Down] [Confidence]%"
+        """,
         expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, based primarily on short-term timeframes, with confidence adjusted by the daily trend.",
         agent=price_predictor
     )
@@ -467,11 +487,10 @@ def perform_analysis():
         expected_output="""Recommend a grid trading strategy based on the predictions with higher confidence levels, appropriately handling conflicting signals by comparing confidence levels between timeframes.""",
         agent=strategist
     )
-
     # Crew 인스턴스화
     crew = Crew(
-        agents=[thirty_min_analyst, hourly_analyst, daily_analyst, price_predictor, strategist],
-        tasks=[task_30min, task1, task2, task3, task4],
+        agents=[price_predictor, strategist],
+        tasks=[task3, task4],
         verbose=True,
         process=Process.sequential
     )
@@ -490,20 +509,17 @@ def perform_analysis():
     print("-----------------------------------------------------")
 
     task_results = {
-        '30min_analysis': results.tasks_output[0],
-        'hourly_analysis': results.tasks_output[1],
-        'daily_analysis': results.tasks_output[2],
-        'price_prediction': results.tasks_output[3],
-        'strategy_recommendation': results.tasks_output[4]
+        '30min_analysis': analysis_results.tasks_output[0],
+        'hourly_analysis': analysis_results.tasks_output[1],
+        'daily_analysis': analysis_results.tasks_output[2],
+        'price_prediction': results.tasks_output[0],
+        'strategy_recommendation': results.tasks_output[1]
     }
 
     selected_strategy = extract_strategy(result_string)
     price_prediction, confidence = extract_prediction(selected_strategy, result_string)
     # current_price = get_current_bitcoin_price(vt_symbol)
     current_price = 0
-    # 한글 요약 생성 (이 부분은 그대로 유지)
-    # Korean summary generation (keep this part as is)
-
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
         1. 30-Minute Analysis: {task_results['30min_analysis']}
