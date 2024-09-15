@@ -104,36 +104,29 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
 
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def get_extended_kline_data(self, symbol, interval, total_candles=2000):
         binance_api_url = "https://api.binance.com/api/v3/klines"
         limit = 500  # Binance API limit per request
-
         all_candles = []
 
         while len(all_candles) < total_candles:
             params = {
                 'symbol': symbol,
                 'interval': interval,
-                'limit': min(limit, total_candles - len(all_candles))
+                'limit': limit
             }
-
             if all_candles:
-                # If we already have some candles, use the oldest one's timestamp as endTime
                 params['endTime'] = all_candles[0][0] - 1
 
             try:
-                response = requests.get(binance_api_url, params=params)
+                response = requests.get(binance_api_url, params=params, timeout=10)
                 response.raise_for_status()
                 candles = response.json()
-
                 if not candles:
-                    break  # No more data available
-
+                    break
                 all_candles = candles + all_candles
-
             except requests.exceptions.RequestException as e:
-                print(f"Error fetching data: {e}")
+                print(f"Error fetching data for {symbol}, {interval}: {e}")
                 break
 
         return all_candles[:total_candles]
