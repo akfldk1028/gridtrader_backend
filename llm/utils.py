@@ -320,11 +320,13 @@ def perform_analysis():
         2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
         3. **Ichimoku Cloud Indicators**:
             - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['30min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['30min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
+            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
             - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['30min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}).
 
         4. **Stochastic Oscillator**: 
-           - Use '%K' ({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D' ({bitcoin_data['30min'][-48:][-1]['%D']}) fields. Note crossovers indicating potential trend reversals.
+           - Use '%K' ({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D' ({bitcoin_data['30min'][-48:][-1]['%D']}) fields. 
+           - Note crossovers indicating potential trend reversals.
            - Consider overbought (>80) or oversold (<20) conditions.
         5. **RSI Divergences**: 
            - Use the 'RSI' field ({bitcoin_data['30min'][-48:][-1]['RSI']}) to highlight overbought (>70) or oversold (<30) conditions.
@@ -354,6 +356,7 @@ def perform_analysis():
         2. **Volume Changes**: Compare recent volumes with earlier ones to gauge market interest.
         3. **Ichimoku Cloud Indicators**:
             - **Kumo (Cloud) Position**: Is the price ({bitcoin_data['hourly'][-1]['close']}) above or below the cloud (Senkou Span A: {bitcoin_data['hourly'][-1]['Senkou_Span_A']}, Senkou Span B: {bitcoin_data['hourly'][-1]['Senkou_Span_B']})?
+            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
             - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
         4. **RSI (Relative Strength Index)**: Highlight overbought (>70) or oversold (<30) conditions. Current RSI: {bitcoin_data['hourly'][-1]['RSI']}.
@@ -383,6 +386,7 @@ def perform_analysis():
         2. **Volume Patterns**: Detect significant volume spikes and their correlation with price movements.
         3. **Ichimoku Cloud Indicators**:
             - **Price vs. Kumo (Cloud)**: Determine if the price ({bitcoin_data['daily'][-1]['close']}) is above or below the cloud (Senkou Span A: {bitcoin_data['daily'][-1]['Senkou_Span_A']}, Senkou Span B: {bitcoin_data['daily'][-1]['Senkou_Span_B']}).
+            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['daily'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['daily'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen & Kijun-sen Crossovers**: Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals. Tenkan-sen: {bitcoin_data['daily'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['daily'][-1]['Kijun_sen']}.
             - **Chikou Span Position**: Check if Chikou Span ({bitcoin_data['daily'][-1]['Chikou_Span']}) is above or below the current price ({bitcoin_data['daily'][-1]['close']}).
         4. **RSI (Relative Strength Index)**: Highlight overbought (>70) or oversold (<30) conditions. Current RSI: {bitcoin_data['daily'][-1]['RSI']}.
