@@ -325,8 +325,7 @@ def perform_analysis():
         4. **Stochastic Oscillator**: Note %K and %D crossovers indicating potential trend reversals.
         5. **RSI Divergences**: Highlight overbought (>70) or oversold (<30) conditions and any divergences.
 
-        Compare the 30-minute trends with the 15-minute analysis to identify confirmations or divergences.
-
+\
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Short-term Outlook**: 4-8 hours.

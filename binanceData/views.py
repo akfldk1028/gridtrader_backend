@@ -102,19 +102,61 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             print(f"Error processing request for symbol {symbol}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    def get_extended_kline_data(self, symbol, interval, total_candles=2000):
+        binance_api_url = "https://api.binance.com/api/v3/klines"
+        limit = 500  # Binance API limit per request
+
+        all_candles = []
+
+        while len(all_candles) < total_candles:
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'limit': min(limit, total_candles - len(all_candles))
+            }
+
+            if all_candles:
+                # If we already have some candles, use the oldest one's timestamp as endTime
+                params['endTime'] = all_candles[0][0] - 1
+
+            try:
+                response = requests.get(binance_api_url, params=params)
+                response.raise_for_status()
+                candles = response.json()
+
+                if not candles:
+                    break  # No more data available
+
+                all_candles = candles + all_candles
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching data: {e}")
+                break
+
+        return all_candles[:total_candles]
+
+
     def get_bitcoin_data(self, symbol):
         try:
+            thirty_min_candles = self.get_extended_kline_data(symbol, '30m')
+            hourly_candles = self.get_extended_kline_data(symbol, '1h')
+            daily_candles = self.get_extended_kline_data(symbol, '1d')
+
+
             # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
             # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
             # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, limit=500)
             # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, limit=500)
 
 
-            end_date = datetime.now()
+            # end_date = datetime.now()
             # start_date_15min = end_date - timedelta(days=7)  # Last 7 days
-            start_date_30min = end_date - timedelta(days=15)  # Last 14 days
-            start_date_hourly = end_date - timedelta(days=30)  # Last 30 days
-            start_date_daily = end_date - timedelta(days=730)  # Last 365 days
+            # start_date_30min = end_date - timedelta(days=15)  # Last 14 days
+            # start_date_hourly = end_date - timedelta(days=30)  # Last 30 days
+            # start_date_daily = end_date - timedelta(days=730)  # Last 365 days
             #
             # print("Fetching data...")
             #
@@ -122,17 +164,17 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             #                                                         start_date_15min.strftime("%d %b %Y %H:%M:%S"),
             #                                                         end_date.strftime("%d %b %Y %H:%M:%S"))
             #
-            thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
-                                                                   start_date_30min.strftime("%d %b %Y %H:%M:%S"),
-                                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
-
-            hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
-                                                               start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
-                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
-
-            daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
-                                                              start_date_daily.strftime("%d %b %Y %H:%M:%S"),
-                                                              end_date.strftime("%d %b %Y %H:%M:%S"))
+            # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
+            #                                                        start_date_30min.strftime("%d %b %Y %H:%M:%S"),
+            #                                                        end_date.strftime("%d %b %Y %H:%M:%S"))
+            #
+            # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
+            #                                                    start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
+            #                                                    end_date.strftime("%d %b %Y %H:%M:%S"))
+            #
+            # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
+            #                                                   start_date_daily.strftime("%d %b %Y %H:%M:%S"),
+            #                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
 
             def process_candles(candles, timeframe):
                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
