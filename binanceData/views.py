@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
 from .analysis.IchimokuIndicator import IchimokuIndicator
+
+
 class BinanceChartDataAPIView(APIView):
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def get(self, request, symbol, interval):
@@ -102,8 +104,6 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             print(f"Error processing request for symbol {symbol}: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-
     def get_extended_kline_data(self, symbol, interval, total_candles=2000):
         binance_api_url = "https://api.binance.com/api/v3/klines"
         limit = 500  # Binance API limit per request
@@ -131,19 +131,17 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
         return all_candles[:total_candles]
 
-
     def get_bitcoin_data(self, symbol):
         try:
+            fifteen_min_candles = self.get_extended_kline_data(symbol, '15m')
             thirty_min_candles = self.get_extended_kline_data(symbol, '30m')
             hourly_candles = self.get_extended_kline_data(symbol, '1h')
             daily_candles = self.get_extended_kline_data(symbol, '1d')
-
 
             # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
             # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
             # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, limit=500)
             # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, limit=500)
-
 
             # end_date = datetime.now()
             # start_date_15min = end_date - timedelta(days=7)  # Last 7 days
@@ -231,6 +229,7 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return records
 
             return {
+                '15min': process_candles(fifteen_min_candles, '15min'),
                 '30min': process_candles(thirty_min_candles, '30min'),
                 'hourly': process_candles(hourly_candles, 'hourly'),
                 'daily': process_candles(daily_candles, 'daily')
@@ -239,8 +238,6 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
-
-
 
 # class BinanceLLMChartDataAPIView(BinanceAPIView):
 #     def get(self, request):
@@ -313,7 +310,3 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 #         except Exception as e:
 #             print(f"An error occurred: {e}")
 #             return None
-
-
-
-

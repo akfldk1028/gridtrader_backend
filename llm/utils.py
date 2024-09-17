@@ -54,12 +54,23 @@ news_analyst = Agent(
 
 )
 
+# fifteen_min_analyst = Agent(
+#     role=f'15-Minute {symbol} Market Analyst',
+#     goal='Analyze Bitcoin market trends and patterns in 15-minute timeframe',
+#     backstory="""You are an experienced cryptocurrency market analyst specializing in very short-term Bitcoin analysis.
+#     Your expertise lies in technical analysis and identifying market trends in 15-minute charts.
+#     You are known for your quick analysis and ability to spot rapid market changes.""",
+#     verbose=True,
+#     allow_delegation=False,
+# )
+
 fifteen_min_analyst = Agent(
-    role=f'15-Minute {symbol} Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 15-minute timeframe',
-    backstory="""You are an experienced cryptocurrency market analyst specializing in very short-term Bitcoin analysis.
+    role=f'15-Minute Market Analyst',
+    goal='Analyze Bitcoin market trends and patterns in 15-minute timeframe, with emphasis on Ichimoku Cloud indicators',
+    backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in 15-minute charts.
-    You are known for your quick analysis and ability to spot rapid market changes.""",
+    You are particularly skilled in interpreting Ichimoku Cloud indicators to predict market movements.
+   You are known for your quick analysis and ability to spot rapid market changes.""",
     verbose=True,
     allow_delegation=False,
 )
@@ -120,7 +131,6 @@ price_predictor = Agent(
     verbose=True,
     allow_delegation=False,
 )
-
 
 # price_predictor = Agent(
 #     role=f'{symbol} Price Predictor',
@@ -307,6 +317,57 @@ def perform_analysis():
     #     agent=news_analyst
     # )
 
+    task_15min = Task(
+        description=f"""Analyze the Bitcoin market using the latest 12 hours of 15-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['15min'][-48:]}
+
+        **Important:**
+        - The **last row** of the data (`{bitcoin_data['15min'][-48:][-1]}`) is the **most recent data**.
+        - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
+
+        Focus on:
+        1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
+        2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
+        3. **Ichimoku Cloud Indicators**:
+            - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['15min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['15min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
+            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
+            - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['15min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
+            - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['15min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['15min'][-48:][-1]['close']}).
+
+        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
+           - **RSI Analysis**: 
+             - Look for RSI values below 30 (oversold) or above 70 (overbought).
+             - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
+           - **Stochastic Oscillator Analysis**:
+             - Use '%K' and '%D' fields. 
+             - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+             - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+           - **Combined RSI and Stochastic Analysis**:
+             - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
+             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
+
+        5. **Volume Confirmation**:
+           - Check if volume increases as price starts to reverse, which can confirm the reversal.
+           - Look for volume spikes that coincide with potential reversal candles.
+
+        6. **Price Action Patterns**:
+           - Identify reversal candlestick patterns such as hammer, inverted hammer, engulfing patterns, or doji in oversold/overbought conditions.
+           - Look for double bottoms or double tops that might indicate a potential reversal.
+
+        Conclude with:
+        - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
+        - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
+        - **Short-term Outlook**: 2-6 hours.
+        - **Long-term Outlook**: 4-8 hours.
+        - **Potential Reversal Points**: Identify key price levels where a reversal might occur.
+
+        Conclude with:
+
+        Ensure clarity and focus on key indicators to accurately determine market trends.""",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 30-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
+        agent=fifteen_min_analyst
+    )
+
     task_30min = Task(
         description=f"""Analyze the Bitcoin market using the latest 24 hours of 30-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['30min'][-48:]}
@@ -428,23 +489,25 @@ def perform_analysis():
         agent=daily_analyst
     )
 
-
-
     bitcoin_analysis = Crew(
-        agents=[thirty_min_analyst, hourly_analyst, daily_analyst],
-        tasks=[task_30min, task1, task2],
+        agents=[fifteen_min_analyst,thirty_min_analyst, hourly_analyst, daily_analyst],
+        tasks=[task_15min, task_30min, task1, task2],
         verbose=True,
         process=Process.sequential
     )
     analysis_crew = bitcoin_analysis.kickoff()
     analysis_results = {}
-    analysis_results['30min'] = analysis_crew.tasks_output[0]
-    analysis_results['1hour'] = analysis_crew.tasks_output[1]
-    analysis_results['daily'] = analysis_crew.tasks_output[2]
+    analysis_results['15min'] = analysis_crew.tasks_output[0]
+    analysis_results['30min'] = analysis_crew.tasks_output[1]
+    analysis_results['1hour'] = analysis_crew.tasks_output[2]
+    analysis_results['daily'] = analysis_crew.tasks_output[3]
 
     task3 = Task(
         description=f"""Based on the analyses from the **30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
 
+        **15-minute Analysis**:
+        {analysis_results['15min']}
+        
         **30-minute Analysis**:
         {analysis_results['30min']}
         
@@ -551,7 +614,8 @@ def perform_analysis():
     print("-----------------------------------------------------")
 
     task_results = {
-        '30min_analysis':  analysis_results['30min'],
+        '15min_analysis': analysis_results['15min'],
+        '30min_analysis': analysis_results['30min'],
         'hourly_analysis': analysis_results['1hour'],
         'daily_analysis': analysis_results['daily'],
         'price_prediction': results.tasks_output[0],
@@ -564,11 +628,12 @@ def perform_analysis():
     current_price = 0
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
-        1. 30-Minute Analysis: {task_results['30min_analysis']}
-        2. Hourly Analysis: {task_results['hourly_analysis']}
-        3. Daily Analysis: {task_results['daily_analysis']}
-        4. Price Prediction: {task_results['price_prediction']}
-        5. Strategy Recommendation: {task_results['strategy_recommendation']}
+        1. 15-minute Analysis: {task_results['15min_analysis']}
+        2. 30-Minute Analysis: {task_results['30min_analysis']}
+        3. Hourly Analysis: {task_results['hourly_analysis']}
+        4. Daily Analysis: {task_results['daily_analysis']}
+        5. Price Prediction: {task_results['price_prediction']}
+        6. Strategy Recommendation: {task_results['strategy_recommendation']}
 
         Price Prediction: {price_prediction}
         Confidence: {confidence}%
@@ -586,6 +651,7 @@ def perform_analysis():
        IMPORTANT: Structure your response clearly and elegantly using the following format:
 
         1. Use Markdown headers (##) for each main section:
+           - 15분 분석
            - 30분 분석
            - 시간별 분석
            - 일별 분석
