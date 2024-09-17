@@ -503,7 +503,7 @@ def perform_analysis():
     analysis_results['daily'] = analysis_crew.tasks_output[3]
 
     task3 = Task(
-        description=f"""Based on the analyses from the **30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
+        description=f"""Based on the analyses from the **15-minute, 30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
 
         **15-minute Analysis**:
         {analysis_results['15min']}
@@ -523,14 +523,14 @@ def perform_analysis():
 
         For each timeframe, provide:
 
-        1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 30-minute and 1-hour analyses.
+        1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 15-minute, 30-minute and 1-hour analyses.
         2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators from these short-term timeframes, **adjusted slightly** by the overall trend from the daily timeframe.
         3. **Key Technical Levels**: Highlight crucial support and resistance levels.
         4. **Potential for Immediate Rebound**: Assess the likelihood of an immediate price reversal, especially for the 1-6 hour timeframe.
 
        **Guidelines:**
     
-        - **Focus on Short-Term Timeframes**: Use the 30-minute and 1-hour analyses as the primary basis for all predictions.
+        - **Focus on Short-Term Timeframes**: Use the 15-minute, 30-minute and 1-hour analyses as the primary basis for all predictions.
         - **Consider Immediate Rebound Signals**: Pay special attention to any signs of imminent price reversals, particularly in oversold or overbought conditions.
         - **Use Daily Timeframe for Confidence Adjustment Only**: Refer to the daily timeframe solely to adjust the confidence level, not to influence the prediction direction.
             - **If the daily trend aligns with the short-term prediction**, increase the confidence level.
@@ -552,16 +552,16 @@ def perform_analysis():
     )
 
     task4 = Task(
-        description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
+        description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **15-minute, 30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
 
     **Guidelines:**
 
     1. **Strategy Selection Criteria:**
 
        - **LongGrid**:
-            - Select if both the 30-minute and 1-hour predictions indicate 'Up' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Up' with a confidence level of **70% or higher**.
+            - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Up' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Up' with a confidence level of **70% or higher**.
        - **ShortGrid**:
-            - Select if both the 30-minute and 1-hour predictions indicate 'Down' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Down' with a confidence level of **70% or higher**.
+            - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Down' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Down' with a confidence level of **70% or higher**.
        - **RegularGrid**:
             - Select if predictions are mixed, confidence levels are insufficient, or the daily timeframe's conflicting signal has higher confidence.
 
