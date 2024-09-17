@@ -314,7 +314,7 @@ def perform_analysis():
         **Important:**
         - The **last row** of the data (`{bitcoin_data['30min'][-48:][-1]}`) is the **most recent data**.
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
-        
+
         Focus on:
         1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
         2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
@@ -324,18 +324,34 @@ def perform_analysis():
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
             - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['30min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}).
 
-        4. **Stochastic Oscillator**: 
-           - Use '%K' ({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D' ({bitcoin_data['30min'][-48:][-1]['%D']}) fields. 
-           - Note crossovers indicating potential trend reversals.
-           - Consider overbought (>80) or oversold (<20) conditions.
-        5. **RSI Divergences**: 
-           - Use the 'RSI' field ({bitcoin_data['30min'][-48:][-1]['RSI']}) to highlight overbought (>70) or oversold (<30) conditions.
-           - Look for divergences between RSI and price movements.
-
+        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
+           - **RSI Analysis**: 
+             - Look for RSI values below 30 (oversold) or above 70 (overbought).
+             - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
+           - **Stochastic Oscillator Analysis**:
+             - Use '%K' and '%D' fields. 
+             - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+             - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+           - **Combined RSI and Stochastic Analysis**:
+             - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
+             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
+    
+        5. **Volume Confirmation**:
+           - Check if volume increases as price starts to reverse, which can confirm the reversal.
+           - Look for volume spikes that coincide with potential reversal candles.
+    
+        6. **Price Action Patterns**:
+           - Identify reversal candlestick patterns such as hammer, inverted hammer, engulfing patterns, or doji in oversold/overbought conditions.
+           - Look for double bottoms or double tops that might indicate a potential reversal.
+    
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
+        - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
         - **Short-term Outlook**: 4-8 hours.
         - **Long-term Outlook**: 6-12 hours.
+        - **Potential Reversal Points**: Identify key price levels where a reversal might occur.
+
+        Conclude with:
 
         Ensure clarity and focus on key indicators to accurately determine market trends.""",
         expected_output="Concise and accurate Bitcoin market analysis report for the 30-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
@@ -359,9 +375,18 @@ def perform_analysis():
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
             - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
-        4. **RSI (Relative Strength Index)**: Highlight overbought (>70) or oversold (<30) conditions. Current RSI: {bitcoin_data['hourly'][-1]['RSI']}.
-        5. **Stochastic Oscillator**: Note %K and %D crossovers indicating potential trend reversals. Current %K: {bitcoin_data['hourly'][-1]['%K']}, %D: {bitcoin_data['hourly'][-1]['%D']}.
-        6. **Technical Patterns**: Detect formations like Head and Shoulders, Double Tops/Bottoms, etc.
+        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
+           - **RSI Analysis**: 
+             - Look for RSI values below 30 (oversold) or above 70 (overbought).
+             - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
+           - **Stochastic Oscillator Analysis**:
+             - Use '%K' and '%D' fields. 
+             - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+             - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+           - **Combined RSI and Stochastic Analysis**:
+             - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
+             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction. 
+        5. **Technical Patterns**: Detect formations like Head and Shoulders, Double Tops/Bottoms, etc.
 
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the above indicators.
@@ -438,13 +463,15 @@ def perform_analysis():
         1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 30-minute and 1-hour analyses.
         2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators from these short-term timeframes, **adjusted slightly** by the overall trend from the daily timeframe.
         3. **Key Technical Levels**: Highlight crucial support and resistance levels.
+        4. **Potential for Immediate Rebound**: Assess the likelihood of an immediate price reversal, especially for the 1-6 hour timeframe.
 
-        **Guidelines:**
-
+       **Guidelines:**
+    
         - **Focus on Short-Term Timeframes**: Use the 30-minute and 1-hour analyses as the primary basis for all predictions.
+        - **Consider Immediate Rebound Signals**: Pay special attention to any signs of imminent price reversals, particularly in oversold or overbought conditions.
         - **Use Daily Timeframe for Confidence Adjustment Only**: Refer to the daily timeframe solely to adjust the confidence level, not to influence the prediction direction.
-            - **If the daily trend aligns with the short-term prediction**, slightly increase the confidence level.
-            - **If the daily trend opposes the short-term prediction**, slightly decrease the confidence level.
+            - **If the daily trend aligns with the short-term prediction**, increase the confidence level.
+            - **If the daily trend opposes the short-term prediction**, decrease the confidence level.
         - **Do Not Base Predictions on Daily Timeframe**: Predictions should be made based on short-term analyses regardless of the daily trend.
         - **Conciseness**: Keep predictions clear and to the point.
 
