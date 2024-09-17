@@ -537,6 +537,8 @@ def perform_analysis():
             - **If the daily trend opposes the short-term prediction**, decrease the confidence level.
         - **Do Not Base Predictions on Daily Timeframe**: Predictions should be made based on short-term analyses regardless of the daily trend.
         - **Conciseness**: Keep predictions clear and to the point.
+        - **Conservative Approach**: Err on the side of caution when making predictions. If indicators are mixed or unclear, lean towards a more neutral stance.
+        - **Regular Assessment**: Continuously evaluate the effectiveness of predictions and adjust the strategy as needed.
 
         **Output Format:**
 
