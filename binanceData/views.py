@@ -136,7 +136,7 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             fifteen_min_candles = self.get_extended_kline_data(symbol, '15m')
             thirty_min_candles = self.get_extended_kline_data(symbol, '30m')
             hourly_candles = self.get_extended_kline_data(symbol, '1h')
-            daily_candles = self.get_extended_kline_data(symbol, '1d')
+            daily_candles = self.get_extended_kline_data(symbol, '6h')
 
             # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
             # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
@@ -204,7 +204,7 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                     ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
                 elif timeframe == 'hourly':
                     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-                elif timeframe == 'daily':
+                elif timeframe == '6hourly':
                     ichimoku_settings = {'tenkan': 20, 'kijun': 60, 'senkou_b': 120, 'displacement': 30}
                 else:
                     # 기본 설정값
@@ -232,7 +232,7 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 '15min': process_candles(fifteen_min_candles, '15min'),
                 '30min': process_candles(thirty_min_candles, '30min'),
                 'hourly': process_candles(hourly_candles, 'hourly'),
-                'daily': process_candles(daily_candles, 'daily')
+                'daily': process_candles(daily_candles, '6hourly')
             }
 
         except Exception as e:

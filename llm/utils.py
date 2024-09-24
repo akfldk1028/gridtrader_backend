@@ -98,8 +98,8 @@ hourly_analyst = Agent(
 )
 
 daily_analyst = Agent(
-    role=f'Daily {symbol} Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 1-day timeframe',
+    role=f'6-Hourly {symbol} Market Analyst',
+    goal='Analyze Bitcoin market trends and patterns in 6-hour timeframe',
     backstory="""You are an experienced cryptocurrency market analyst specializing in medium to long-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in daily charts.
     You are known for your cautious approach, always considering multiple market scenarios.""",
@@ -107,6 +107,17 @@ daily_analyst = Agent(
     allow_delegation=False,
 
 )
+
+# daily_analyst = Agent(
+#     role=f'Daily {symbol} Market Analyst',
+#     goal='Analyze Bitcoin market trends and patterns in 1-day timeframe',
+#     backstory="""You are an experienced cryptocurrency market analyst specializing in medium to long-term Bitcoin analysis.
+#     Your expertise lies in technical analysis and identifying market trends in daily charts.
+#     You are known for your cautious approach, always considering multiple market scenarios.""",
+#     verbose=True,
+#     allow_delegation=False,
+#
+# )
 
 strategist = Agent(
     role='Grid Trading Strategist',
@@ -336,10 +347,10 @@ def perform_analysis():
 
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
-             - Look for RSI values below 30 (oversold) or above 70 (overbought).
+             - Look for RSI({bitcoin_data['15min'][-48:][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
              - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
            - **Stochastic Oscillator Analysis**:
-             - Use '%K' and '%D' fields. 
+             - Use '%K'({bitcoin_data['15min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['15min'][-48:][-1]['%D']}) fields. 
              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
            - **Combined RSI and Stochastic Analysis**:
@@ -387,10 +398,10 @@ def perform_analysis():
 
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
-             - Look for RSI values below 30 (oversold) or above 70 (overbought).
+             - Look for RSI({bitcoin_data['30min'][-48:][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
              - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
            - **Stochastic Oscillator Analysis**:
-             - Use '%K' and '%D' fields. 
+             - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields. 
              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
            - **Combined RSI and Stochastic Analysis**:
@@ -438,10 +449,10 @@ def perform_analysis():
             - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
-             - Look for RSI values below 30 (oversold) or above 70 (overbought).
+             - Look for RSI({bitcoin_data['hourly'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
              - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
            - **Stochastic Oscillator Analysis**:
-             - Use '%K' and '%D' fields. 
+             - Use '%K'({bitcoin_data['hourly'][-1]['%K']}) and '%D'({bitcoin_data['hourly'][-1]['%D']}) fields. 
              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
            - **Combined RSI and Stochastic Analysis**:
@@ -460,11 +471,11 @@ def perform_analysis():
     )
 
     task2 = Task(
-        description=f"""Analyze the Bitcoin market using the latest 60 days of daily data, The data is sorted from oldest to most recent, and each data point has the following structure:
-        {bitcoin_data['daily'][-60:]}
+        description=f"""Analyze the Bitcoin market using the latest 15 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['daily'][-90:]}
 
         **Important:**
-        - The **last row** of the data (`{bitcoin_data['daily'][-60:][-1]}`) is the **most recent data**.
+        - The **last row** of the data (`{bitcoin_data['daily'][-90:][-1]}`) is the **most recent data**.
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points. 
 
         Focus on:
@@ -490,7 +501,7 @@ def perform_analysis():
     )
 
     bitcoin_analysis = Crew(
-        agents=[fifteen_min_analyst,thirty_min_analyst, hourly_analyst, daily_analyst],
+        agents=[fifteen_min_analyst, thirty_min_analyst, hourly_analyst, daily_analyst],
         tasks=[task_15min, task_30min, task1, task2],
         verbose=True,
         process=Process.sequential
@@ -514,7 +525,7 @@ def perform_analysis():
         **1-hour Analysis**:
         {analysis_results['1hour']}
         
-        **Daily Analysis (for confidence adjustment only)**:
+        **6-hour Analysis**:
         {analysis_results['daily']}
 
         1. **1-6 hours (Very Short-term)**
@@ -528,14 +539,19 @@ def perform_analysis():
         3. **Key Technical Levels**: Highlight crucial support and resistance levels.
         4. **Potential for Immediate Rebound**: Assess the likelihood of an immediate price reversal, especially for the 1-6 hour timeframe.
 
-       **Guidelines:**
-    
-        - **Focus on Short-Term Timeframes**: Use the 15-minute, 30-minute and 1-hour analyses as the primary basis for all predictions.
-        - **Consider Immediate Rebound Signals**: Pay special attention to any signs of imminent price reversals, particularly in oversold or overbought conditions.
-        - **Use Daily Timeframe for Confidence Adjustment Only**: Refer to the daily timeframe solely to adjust the confidence level, not to influence the prediction direction.
-            - **If the daily trend aligns with the short-term prediction**, increase the confidence level.
-            - **If the daily trend opposes the short-term prediction**, decrease the confidence level.
-        - **Do Not Base Predictions on Daily Timeframe**: Predictions should be made based on short-term analyses regardless of the daily trend.
+       **Guidelines:**  
+        - **Timeframe-Specific Analysis**:
+            - For 1-6 hours: Focus primarily on 15-minute, 30-minute, and 1-hour analyses.
+            - For 6-24 hours: Give more weight to 1-hour and 6-hour analyses, but still consider shorter timeframes.
+            - For 1-3 days: Emphasize the 6-hour analysis, while also considering shorter-term signals for potential trend changes.
+        - **Balanced Analysis Approach**: Use a combination of short-term (15-minute, 30-minute, 1-hour) and medium-term (6-hour) analyses for all predictions.
+        - **Trend Alignment**: 
+            - If trends across timeframes align, increase confidence level.
+            - If they conflict, decrease confidence and explain the discrepancy.
+        - **Consider Immediate Rebound Signals**: Pay special attention to signs of imminent price reversals, particularly in oversold or overbought conditions.
+        - **Adaptive Prediction**: 
+            - For shorter timeframes, prioritize immediate market conditions.
+            - For longer timeframes, give more weight to overarching trends from the 6-hour analysis.     
         - **Conciseness**: Keep predictions clear and to the point.
         - **Conservative Approach**: Err on the side of caution when making predictions. If indicators are mixed or unclear, lean towards a more neutral stance.
         - **Regular Assessment**: Continuously evaluate the effectiveness of predictions and adjust the strategy as needed.
@@ -547,50 +563,52 @@ def perform_analysis():
              "6-24 hours: [Up/Down] [Confidence]%"
              "1-3 days: [Up/Down] [Confidence]%"
         """,
-        expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, based primarily on short-term timeframes, with confidence adjusted by the daily trend.",
+        expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, tailored to short-term, medium-term, and longer-term timeframes, considering both immediate market conditions and overarching trends.",
         agent=price_predictor
     )
+
+    # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
 
     task4 = Task(
         description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **15-minute, 30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
 
-    **Guidelines:**
-
-    1. **Strategy Selection Criteria:**
-
-       - **LongGrid**:
-            - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Up' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Up' with a confidence level of **70% or higher**.
-       - **ShortGrid**:
-            - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Down' or their combined average confidence is **higher than the daily timeframe's conflicting signal or 'Down' with a confidence level of **70% or higher**.
-       - **RegularGrid**:
-            - Select if predictions are mixed, confidence levels are insufficient, or the daily timeframe's conflicting signal has higher confidence.
-
-    2. **Handling Conflicting Signals:**
-
-       - **Compare Confidence Levels**:
-         - When the daily timeframe conflicts with the short-term predictions, compare the confidence levels of both.
-       - **Adjust Confidence Levels**:
-         - Slightly adjust the overall confidence to reflect any uncertainty caused by conflicting signals.
-
-    3. **Maximize Profit:**
-
-       - Choose the strategy that best leverages the predictions with the higher confidence level to maximize profit.
-       - Be responsive to the market signals with the strongest indications.
-
-    4. **Conciseness:**
-
-       - Provide only the strategy name without additional explanation.
-
-    **Decision Rules:**
-
-    - **Select LongGrid** if the conditions favor an upward trend with higher confidence.
-    - **Select ShortGrid** if the conditions favor a downward trend with higher confidence.
-    - **Select RegularGrid** if predictions are mixed or confidence levels do not clearly favor one direction.
-
-    **Output Format:**
-
-    At the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
-    """,
+        **Guidelines:**
+    
+        1. **Strategy Selection Criteria:**
+    
+           - **LongGrid**:
+                - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Up' or their combined average confidence is **higher than the 6-hourly timeframe's conflicting signal or 'Up' with a confidence level of **70% or higher**.
+           - **ShortGrid**:
+                - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Down' or their combined average confidence is **higher than the 6-hourly timeframe's conflicting signal or 'Down' with a confidence level of **70% or higher**.
+           - **RegularGrid**:
+                - Select if predictions are mixed, confidence levels are insufficient, or the 6-hour timeframe's conflicting signal has higher confidence.
+    
+        2. **Handling Conflicting Signals:**
+    
+           - **Compare Confidence Levels**:
+             - When the 6-hour timeframe conflicts with the short-term predictions, compare the confidence levels of both.
+           - **Adjust Confidence Levels**:
+             - Slightly adjust the overall confidence to reflect any uncertainty caused by conflicting signals.
+    
+        3. **Maximize Profit:**
+    
+           - Choose the strategy that best leverages the predictions with the higher confidence level to maximize profit.
+           - Be responsive to the market signals with the strongest indications.
+    
+        4. **Conciseness:**
+    
+           - Provide only the strategy name without additional explanation.
+    
+        **Decision Rules:**
+    
+        - **Select LongGrid** if the conditions favor an upward trend with higher confidence.
+        - **Select ShortGrid** if the conditions favor a downward trend with higher confidence.
+        - **Select RegularGrid** if predictions are mixed or confidence levels do not clearly favor one direction.
+    
+        **Output Format:**
+    
+        At the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
+        """,
         expected_output="""Recommend a grid trading strategy based on the predictions with higher confidence levels, appropriately handling conflicting signals by comparing confidence levels between timeframes.""",
         agent=strategist
     )
@@ -633,7 +651,7 @@ def perform_analysis():
         1. 15-minute Analysis: {task_results['15min_analysis']}
         2. 30-Minute Analysis: {task_results['30min_analysis']}
         3. Hourly Analysis: {task_results['hourly_analysis']}
-        4. Daily Analysis: {task_results['daily_analysis']}
+        4. 6-Hourly Analysis: {task_results['daily_analysis']}
         5. Price Prediction: {task_results['price_prediction']}
         6. Strategy Recommendation: {task_results['strategy_recommendation']}
 
@@ -641,9 +659,9 @@ def perform_analysis():
         Confidence: {confidence}%
 
         Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
-        The 30-minute, hourly, and daily analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
+        The 30-minute, hourly, and 6-hourly analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
 
-        **Additionally, include a summary of the Ichimoku Cloud analysis based on the data from the 30-minute, hourly, and daily analyses.**
+        **Additionally, include a summary of the Ichimoku Cloud analysis based on the data from the 30-minute, hourly, and 6-hourly analyses.**
 
         Translate the final conclusion and selected strategy as follows:
 
@@ -656,7 +674,7 @@ def perform_analysis():
            - 15분 분석
            - 30분 분석
            - 시간별 분석
-           - 일별 분석
+           - 6시간 분석
            - 가격 예측
            - 확률 평가
            - 전략 추천
