@@ -534,26 +534,22 @@ def perform_analysis():
 
         For each timeframe, provide:
 
-        1. **Single Direction Prediction**: Determine the most likely direction (Up/Down) using primarily the 15-minute, 30-minute and 1-hour analyses.
-        2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators from these short-term timeframes, **adjusted slightly** by the overall trend from the daily timeframe.
+        1. **Single Direction Prediction**: Determine the most likely direction (Up/Down/Neutral) using a balanced consideration of all timeframe analyses.
+        2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators across all timeframes.
         3. **Key Technical Levels**: Highlight crucial support and resistance levels.
-        4. **Potential for Immediate Rebound**: Assess the likelihood of an immediate price reversal, especially for the 1-6 hour timeframe.
 
        **Guidelines:**  
-        - **Timeframe-Specific Analysis**:
-            - For 1-6 hours: Focus primarily on 15-minute, 30-minute, and 1-hour analyses.
-            - For 6-24 hours: Give more weight to 1-hour and 6-hour analyses, but still consider shorter timeframes.
-            - For 1-3 days: Emphasize the 6-hour analysis, while also considering shorter-term signals for potential trend changes.
-        - **Balanced Analysis Approach**: Use a combination of short-term (15-minute, 30-minute, 1-hour) and medium-term (6-hour) analyses for all predictions.
+        - **Balanced Analysis Approach**: Give equal weight to all timeframe analyses for a comprehensive view.
         - **Trend Alignment**: 
             - If trends across timeframes align, increase confidence level.
             - If they conflict, decrease confidence and explain the discrepancy.
-        - **Consider Immediate Rebound Signals**: Pay special attention to signs of imminent price reversals, particularly in oversold or overbought conditions.
+        - **Technical Indicator Emphasis**: Pay special attention to Ichimoku Cloud positions, RSI levels, and volume patterns across all timeframes.
+        - **Market Sentiment Consideration**: Factor in the overall market sentiment described in each timeframe analysis.
         - **Adaptive Prediction**: 
-            - For shorter timeframes, prioritize immediate market conditions.
+            - For shorter timeframes, consider immediate market conditions more heavily.
             - For longer timeframes, give more weight to overarching trends from the 6-hour analysis.     
+        - **Neutral Stance**: If indicators are mixed or unclear, do not hesitate to predict a neutral direction.
         - **Conciseness**: Keep predictions clear and to the point.
-        - **Conservative Approach**: Err on the side of caution when making predictions. If indicators are mixed or unclear, lean towards a more neutral stance.
         - **Regular Assessment**: Continuously evaluate the effectiveness of predictions and adjust the strategy as needed.
 
         **Output Format:**
@@ -563,8 +559,7 @@ def perform_analysis():
              "6-24 hours: [Up/Down] [Confidence]%"
              "1-3 days: [Up/Down] [Confidence]%"
         """,
-        expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, tailored to short-term, medium-term, and longer-term timeframes, considering both immediate market conditions and overarching trends.",
-        agent=price_predictor
+        expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, tailored to short-term, medium-term, and longer-term timeframes, considering both immediate market conditions and overarching trends.",        agent=price_predictor
     )
 
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
@@ -574,42 +569,34 @@ def perform_analysis():
 
         **Guidelines:**
     
-        1. **Strategy Selection Criteria:**
+        1. Strategy Selection Criteria:
+           - LongGrid:
+               - Select if the combined average confidence across all timeframes is 'Up' with a confidence level of 65% or higher.
+           - ShortGrid:
+               - Select if the combined average confidence across all timeframes is 'Down' with a confidence level of 70% or higher.
+           - RegularGrid:
+               - Select if predictions are mixed or the combined average confidence is below 60% for both directions.
+
+        2. Handling Conflicting Signals:
+           - When signals conflict across timeframes, weigh them based on their respective confidence levels and the overall market trend.
+           - Consider the 6-hour timeframe as equally important to shorter timeframes for a more balanced analysis.
+
+        3. Overall Trend Consideration:
+           - Factor in the general market sentiment and trend from the 6-hour analysis when making the final decision.
     
-           - **LongGrid**:
-                - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Up' or their combined average confidence is **higher than the 6-hourly timeframe's conflicting signal or 'Up' with a confidence level of **70% or higher**.
-           - **ShortGrid**:
-                - Select if both the 15-minute, 30-minute and 1-hour predictions indicate 'Down' or their combined average confidence is **higher than the 6-hourly timeframe's conflicting signal or 'Down' with a confidence level of **70% or higher**.
-           - **RegularGrid**:
-                - Select if predictions are mixed, confidence levels are insufficient, or the 6-hour timeframe's conflicting signal has higher confidence.
+        4. Maximize Profit:
+           - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
     
-        2. **Handling Conflicting Signals:**
-    
-           - **Compare Confidence Levels**:
-             - When the 6-hour timeframe conflicts with the short-term predictions, compare the confidence levels of both.
-           - **Adjust Confidence Levels**:
-             - Slightly adjust the overall confidence to reflect any uncertainty caused by conflicting signals.
-    
-        3. **Maximize Profit:**
-    
-           - Choose the strategy that best leverages the predictions with the higher confidence level to maximize profit.
-           - Be responsive to the market signals with the strongest indications.
-    
-        4. **Conciseness:**
-    
-           - Provide only the strategy name without additional explanation.
-    
-        **Decision Rules:**
-    
-        - **Select LongGrid** if the conditions favor an upward trend with higher confidence.
-        - **Select ShortGrid** if the conditions favor a downward trend with higher confidence.
-        - **Select RegularGrid** if predictions are mixed or confidence levels do not clearly favor one direction.
-    
+        Decision Rules:
+        - Select LongGrid if the conditions generally favor an upward trend.
+        - Select ShortGrid if the conditions generally favor a downward trend.
+        - Select RegularGrid if the market shows significant uncertainty or lacks a clear directional bias.
+
         **Output Format:**
     
         At the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
         """,
-        expected_output="""Recommend a grid trading strategy based on the predictions with higher confidence levels, appropriately handling conflicting signals by comparing confidence levels between timeframes.""",
+        expected_output="""Recommend a grid trading strategy based on a comprehensive analysis of all timeframes, considering both short-term fluctuations and the overall market trend.""",
         agent=strategist
     )
     # Crew 인스턴스화
