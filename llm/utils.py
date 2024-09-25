@@ -344,6 +344,17 @@ def perform_analysis():
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['15min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
             - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['15min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['15min'][-48:][-1]['close']}).
+            - **Cloud (Kumo) Analysis**: 
+                - Analyze how price interacts with the cloud. Is it finding support at the top of the cloud or resistance at the bottom?
+                - Look for instances where price pierces the cloud but fails to close outside it, indicating strong support/resistance.
+                - Identify potential breakouts or breakdowns when price moves decisively through the cloud.
+                - Cloud Thickness Analysis:
+                    - Measure the thickness of the cloud (distance between Senkou Span A and B).
+                    - Interpret cloud thickness:
+                        - Thick cloud: Indicates a strong trend and potential difficulty in breaking through. Price movements within a thick cloud may be more volatile and unpredictable.
+                        - Thin cloud: Suggests a weaker trend and easier potential for breakouts or breakdowns. Price might more easily penetrate a thin cloud, potentially signaling a trend change.
+                - Observe changes in cloud thickness over time. A transition from a thick to thin cloud (or vice versa) can signal potential trend shifts.
+                - Consider the direction of the cloud (rising or falling) in conjunction with its thickness to gauge overall trend strength and potential future movement.
 
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
@@ -356,14 +367,9 @@ def perform_analysis():
            - **Combined RSI and Stochastic Analysis**:
              - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
              - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
-
         5. **Volume Confirmation**:
            - Check if volume increases as price starts to reverse, which can confirm the reversal.
            - Look for volume spikes that coincide with potential reversal candles.
-
-        6. **Price Action Patterns**:
-           - Identify reversal candlestick patterns such as hammer, inverted hammer, engulfing patterns, or doji in oversold/overbought conditions.
-           - Look for double bottoms or double tops that might indicate a potential reversal.
 
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
@@ -371,6 +377,7 @@ def perform_analysis():
         - **Short-term Outlook**: 2-6 hours.
         - **Long-term Outlook**: 4-8 hours.
         - **Potential Reversal Points**: Identify key price levels where a reversal might occur.
+        - **Cloud Dynamics**: Summarize the current state of the cloud, including its thickness, direction, and implications for future price movement.
 
         Conclude with:
 
@@ -395,6 +402,17 @@ def perform_analysis():
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
             - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['30min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}).
+            - **Cloud (Kumo) Analysis**: 
+                - Analyze how price interacts with the cloud. Is it finding support at the top of the cloud or resistance at the bottom?
+                - Look for instances where price pierces the cloud but fails to close outside it, indicating strong support/resistance.
+                - Identify potential breakouts or breakdowns when price moves decisively through the cloud.
+                - Cloud Thickness Analysis:
+                    - Measure the thickness of the cloud (distance between Senkou Span A and B).
+                    - Interpret cloud thickness:
+                        - Thick cloud: Indicates a strong trend and potential difficulty in breaking through. Price movements within a thick cloud may be more volatile and unpredictable.
+                        - Thin cloud: Suggests a weaker trend and easier potential for breakouts or breakdowns. Price might more easily penetrate a thin cloud, potentially signaling a trend change.
+                - Observe changes in cloud thickness over time. A transition from a thick to thin cloud (or vice versa) can signal potential trend shifts.
+                - Consider the direction of the cloud (rising or falling) in conjunction with its thickness to gauge overall trend strength and potential future movement.
 
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
@@ -447,6 +465,19 @@ def perform_analysis():
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
             - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
+            - **Cloud (Kumo) Analysis**: 
+                - Analyze how price interacts with the cloud. Is it finding support at the top of the cloud or resistance at the bottom?
+                - Look for instances where price pierces the cloud but fails to close outside it, indicating strong support/resistance.
+                - Identify potential breakouts or breakdowns when price moves decisively through the cloud.
+                - Cloud Thickness Analysis:
+                    - Measure the thickness of the cloud (distance between Senkou Span A and B).
+                    - Interpret cloud thickness:
+                        - Thick cloud: Indicates a strong trend and potential difficulty in breaking through. Price movements within a thick cloud may be more volatile and unpredictable.
+                        - Thin cloud: Suggests a weaker trend and easier potential for breakouts or breakdowns. Price might more easily penetrate a thin cloud, potentially signaling a trend change.
+                - Observe changes in cloud thickness over time. A transition from a thick to thin cloud (or vice versa) can signal potential trend shifts.
+                - Consider the direction of the cloud (rising or falling) in conjunction with its thickness to gauge overall trend strength and potential future movement.
+
+        
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
              - Look for RSI({bitcoin_data['hourly'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
@@ -486,10 +517,31 @@ def perform_analysis():
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['daily'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['daily'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen & Kijun-sen Crossovers**: Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals. Tenkan-sen: {bitcoin_data['daily'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['daily'][-1]['Kijun_sen']}.
             - **Chikou Span Position**: Check if Chikou Span ({bitcoin_data['daily'][-1]['Chikou_Span']}) is above or below the current price ({bitcoin_data['daily'][-1]['close']}).
-        4. **RSI (Relative Strength Index)**: Highlight overbought (>70) or oversold (<30) conditions. Current RSI: {bitcoin_data['daily'][-1]['RSI']}.
-        5. **Stochastic Oscillator**: Note %K and %D crossovers indicating potential trend reversals. Current %K: {bitcoin_data['daily'][-1]['%K']}, %D: {bitcoin_data['daily'][-1]['%D']}.
-        6. **Technical Patterns**: Identify formations like Head and Shoulders, Double Tops/Bottoms, Triangles, Flags, etc.
+                   - **Cloud (Kumo) Analysis**: 
+                - Analyze how price interacts with the cloud. Is it finding support at the top of the cloud or resistance at the bottom?
+                - Look for instances where price pierces the cloud but fails to close outside it, indicating strong support/resistance.
+                - Identify potential breakouts or breakdowns when price moves decisively through the cloud.
+                - Cloud Thickness Analysis:
+                    - Measure the thickness of the cloud (distance between Senkou Span A and B).
+                    - Interpret cloud thickness:
+                        - Thick cloud: Indicates a strong trend and potential difficulty in breaking through. Price movements within a thick cloud may be more volatile and unpredictable.
+                        - Thin cloud: Suggests a weaker trend and easier potential for breakouts or breakdowns. Price might more easily penetrate a thin cloud, potentially signaling a trend change.
+                - Observe changes in cloud thickness over time. A transition from a thick to thin cloud (or vice versa) can signal potential trend shifts.
+                - Consider the direction of the cloud (rising or falling) in conjunction with its thickness to gauge overall trend strength and potential future movement.
 
+        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
+           - **RSI Analysis**: 
+             - Look for RSI({bitcoin_data['daily'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
+             - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
+           - **Stochastic Oscillator Analysis**:
+             - Use '%K'({bitcoin_data['daily'][-1]['%K']}) and '%D'({bitcoin_data['daily'][-1]['%D']}) fields. 
+             - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+             - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+           - **Combined RSI and Stochastic Analysis**:
+             - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
+             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction. 
+        
+        
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Short-term Outlook**: 12-24 hours.
@@ -568,37 +620,52 @@ def perform_analysis():
         description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **15-minute, 30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
 
         **Guidelines:**
-    
-        1. Strategy Selection Criteria:
-           - LongGrid:
-               - Select if the combined average confidence across all timeframes is 'Up' with a confidence level of 65% or higher.
-           - ShortGrid:
-               - Select if the combined average confidence across all timeframes is 'Down' with a confidence level of 70% or higher.
-           - RegularGrid:
-               - Select if predictions are mixed or the combined average confidence is below 60% for both directions.
 
-        2. Handling Conflicting Signals:
+        1. Ichimoku Cloud Analysis:
+           - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
+           - If the price is above the cloud or the cloud is providing support:
+               - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
+           - If the price is below the cloud or the cloud is acting as resistance:
+               - Increase the probability of ShortGrid by 5% (e.g., from 65% to 70%)
+           - Consider cloud thickness:
+               - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
+               - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
+
+        2. Strategy Selection Criteria:
+           - LongGrid:
+               - Base case: Select if the combined average confidence across all timeframes is 'Up' with a confidence level of 70% or higher.
+               - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a confidence level of 60% or higher.
+           - ShortGrid:
+               - Base case: Select if the combined average confidence across all timeframes is 'Down' with a confidence level of 70% or higher.
+               - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a confidence level of 60% or higher.
+           - RegularGrid:
+               - Select if predictions are mixed or the combined average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
+
+        3. Handling Conflicting Signals:
            - When signals conflict across timeframes, weigh them based on their respective confidence levels and the overall market trend.
            - Consider the 6-hour timeframe as equally important to shorter timeframes for a more balanced analysis.
 
-        3. Overall Trend Consideration:
+        4. Overall Trend Consideration:
            - Factor in the general market sentiment and trend from the 6-hour analysis when making the final decision.
-    
-        4. Maximize Profit:
+           - Pay special attention to the cloud dynamics in the 6-hour timeframe for longer-term trend indication.
+
+        5. Maximize Profit:
            - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
-    
+           - Consider the potential for trend continuation vs. reversal based on cloud analysis.
+
         Decision Rules:
-        - Select LongGrid if the conditions generally favor an upward trend.
-        - Select ShortGrid if the conditions generally favor a downward trend.
+        - Select LongGrid if the conditions generally favor an upward trend and meet the criteria specified in point 2.
+        - Select ShortGrid if the conditions generally favor a downward trend and meet the criteria specified in point 2.
         - Select RegularGrid if the market shows significant uncertainty or lacks a clear directional bias.
 
         **Output Format:**
-    
-        At the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
+
+        Provide a brief explanation of your decision, including key factors from the Ichimoku Cloud analysis. Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
         """,
-        expected_output="""Recommend a grid trading strategy based on a comprehensive analysis of all timeframes, considering both short-term fluctuations and the overall market trend.""",
+        expected_output="""A concise explanation of the grid trading strategy recommendation, highlighting key Ichimoku Cloud insights, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )
+
     # Crew 인스턴스화
     crew = Crew(
         agents=[price_predictor, strategist],
