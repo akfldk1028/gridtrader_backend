@@ -490,8 +490,8 @@ def perform_analysis():
 
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the above indicators.
-        - **Short-term Outlook**: 6-12 hours.
-        - **Long-term Outlook**: 12-24 hours.
+        - **Short-term Outlook**: 12-24 hours.
+        - **Long-term Outlook**: 1-3 days.
 
         Ensure clarity and focus on key indicators to accurately determine market trends.""",
         expected_output="Concise and accurate Bitcoin market analysis report for the 1-hour timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
@@ -499,11 +499,11 @@ def perform_analysis():
     )
 
     task2 = Task(
-        description=f"""Analyze the Bitcoin market using the latest 15 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
-        {bitcoin_data['daily'][-90:]}
+        description=f"""Analyze the Bitcoin market using the latest 20 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['daily'][-120:]}
 
         **Important:**
-        - The **last row** of the data (`{bitcoin_data['daily'][-90:][-1]}`) is the **most recent data**.
+        - The **last row** of the data (`{bitcoin_data['daily'][-120:][-1]}`) is the **most recent data**.
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points. 
 
         Focus on:
@@ -542,8 +542,8 @@ def perform_analysis():
         
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
-        - **Short-term Outlook**: 12-24 hours.
-        - **Long-term Outlook**: 1-3 days.
+        - **Short-term Outlook**: 1-3 days.
+        - **Long-term Outlook**: 3-7 days.
 
         Ensure clarity and focus on key indicators to accurately determine market trends.""",
         expected_output="Concise and accurate Bitcoin market analysis report for the 1-day timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
@@ -578,7 +578,7 @@ def perform_analysis():
         **6-hour Analysis**:
         {analysis_results['daily']}
 
-        1. **1-6 hours (Very Short-term)**
+        1. **2-6 hours (Very Short-term)**
         2. **6-24 hours (Short-term)**
         3. **1-3 days (Medium-term)**
 
@@ -605,7 +605,7 @@ def perform_analysis():
         **Output Format:**
 
         End your response with three lines indicating the predicted direction and confidence level for each timeframe:
-             "1-6 hours: [Up/Down] [Confidence]%"
+             "2-6 hours: [Up/Down] [Confidence]%"
              "6-24 hours: [Up/Down] [Confidence]%"
              "1-3 days: [Up/Down] [Confidence]%"
         """,
