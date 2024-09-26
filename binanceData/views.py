@@ -110,7 +110,7 @@ class TrendLinesAPIView(APIView):
         historical_low = df.loc[df['Low'].idxmin()]
 
         # 최근 데이터의 역사적 고점과 저점
-        recent_df = df.tail(300)  # 최근 100개 데이터 사용
+        recent_df = df.tail(120)  # 최근 100개 데이터 사용
         recent_high = recent_df.loc[recent_df['High'].idxmax()]
         recent_low = recent_df.loc[recent_df['Low'].idxmin()]
 
