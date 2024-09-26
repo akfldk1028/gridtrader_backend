@@ -133,7 +133,7 @@ strategist = Agent(
 price_predictor = Agent(
     role=f'{symbol} Multi-Timeframe Price Predictor',
     goal='Provide accurate price predictions for various timeframes while balancing short-term opportunities and longer-term trends',
-    backstory="""You are an expert cryptocurrency analyst specializing in multi-timeframe price prediction. Your expertise spans from very short-term (15-minute) to medium-term (daily) analyses, allowing you to provide comprehensive price forecasts.
+    backstory="""You are an expert cryptocurrency analyst specializing in multi-timeframe price prediction. Your expertise spans from very short-term to medium-term analyses, allowing you to provide comprehensive price forecasts.
 
     Your key strengths include:
     1. Synthesizing data from multiple timeframes (15-min, 30-min, 1-hour, 6-hour) to form cohesive price predictions.
