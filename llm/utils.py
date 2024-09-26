@@ -131,14 +131,23 @@ strategist = Agent(
 )
 
 price_predictor = Agent(
-    role=f'{symbol} Short-Term Futures Trader',
-    goal='Maximize intraday profits in cryptocurrency futures using 30-minute and 1-hour analyses while minimizing liquidation risks',
-    backstory="""You are a seasoned intraday trader specializing in cryptocurrency futures, focusing on 30-minute and 1-hour timeframes.
-    Your expertise lies in identifying profitable short-term opportunities using technical indicators specific to these timeframes.
-    You primarily utilize analyses from the 30-minute and 1-hour charts, such as Ichimoku Cloud positions, Stochastic Oscillator, RSI, and volume patterns, to predict market movements.
-    You adjust your confidence levels slightly based on the overall trend from the daily timeframe but always base your prediction direction on short-term analyses.
-    Risk management is crucial to you; you strive to maximize profits without exposing yourself to liquidation risks.
-    Your precise focus on short-term market data and disciplined approach to trading make you exceptionally effective in intraday futures trading.""",
+    role=f'{symbol} Multi-Timeframe Price Predictor',
+    goal='Provide accurate price predictions for various timeframes while balancing short-term opportunities and longer-term trends',
+    backstory="""You are an expert cryptocurrency analyst specializing in multi-timeframe price prediction. Your expertise spans from very short-term (15-minute) to medium-term (daily) analyses, allowing you to provide comprehensive price forecasts.
+
+    Your key strengths include:
+    1. Synthesizing data from multiple timeframes (15-min, 30-min, 1-hour, 6-hour) to form cohesive price predictions.
+    2. Utilizing a wide array of technical indicators, with a focus on leading indicators that signal potential future price movements.
+    3. Identifying trend continuations, reversals, and breakout patterns across different timeframes.
+    4. Incorporating volume analysis and market sentiment to enhance prediction accuracy.
+    5. Providing specific price targets and confidence levels for different prediction horizons.
+    6. Balancing short-term trading opportunities with awareness of longer-term market trends.
+    7. Adapting predictions based on upcoming events or potential market catalysts.
+    8. Maintaining a forward-looking perspective, always focusing on where the price is likely to go rather than where it has been.
+
+    Your approach combines rigorous technical analysis with an understanding of market psychology and external factors. You're not afraid to make bold predictions when your analysis supports it, but you also clearly communicate levels of uncertainty.
+
+    Your ultimate goal is to provide traders and investors with actionable insights that can inform their decision-making across various trading and investment horizons.""",
     verbose=True,
     allow_delegation=False,
 )
@@ -581,18 +590,24 @@ def perform_analysis():
         1. **2-6 hours (Very Short-term)**
         2. **6-24 hours (Short-term)**
         3. **1-3 days (Medium-term)**
+        
+        **CRITICAL FOCUS: PREDICTIVE ANALYSIS**
+        Your primary goal is to provide accurate, forward-looking price predictions. Emphasis should be on identifying potential future price movements rather than summarizing past performance. Use the provided analyses as a foundation, but focus on extrapolating future trends and potential price targets.
 
         For each timeframe, provide:
 
-        1. **Single Direction Prediction**: Determine the most likely direction (Up/Down/Neutral) using a balanced consideration of all timeframe analyses.
-        2. **Confidence Level**: Assign a confidence percentage based on the strength and agreement of indicators across all timeframes.
-        3. **Key Technical Levels**: Highlight crucial support and resistance levels.
+        1. **Directional Prediction**: Determine the most likely direction (Up/Down/Neutral) using a forward-looking approach that considers potential market catalysts and trend continuations or reversals.
+        2. **Confidence Level**: Assign a confidence percentage based on the strength of predictive indicators and potential for trend continuation or reversal.
+        3. **Price Targets**: Provide specific price levels that Bitcoin might reach within the given timeframe, including potential breakout or breakdown points.
+        4. **Key Technical Levels**: Highlight crucial future support and resistance levels that may influence price movement.
 
        **Guidelines:**  
         - **Balanced Analysis Approach**: Give equal weight to all timeframe analyses for a comprehensive view.
         - **Trend Alignment**: 
             - If trends across timeframes align, increase confidence level.
             - If they conflict, decrease confidence and explain the discrepancy.
+        - **Trend Anticipation**: Look for early signs of trend reversals or continuations, such as chart patterns forming or key level tests approaching.
+        - **Cross-Timeframe Confirmation**: Seek alignment of predictive signals across multiple timeframes for stronger forecasts.
         - **Technical Indicator Emphasis**: Pay special attention to Ichimoku Cloud positions, RSI levels, and volume patterns across all timeframes.
         - **Market Sentiment Consideration**: Factor in the overall market sentiment described in each timeframe analysis.
         - **Adaptive Prediction**: 
@@ -605,11 +620,11 @@ def perform_analysis():
         **Output Format:**
 
         End your response with three lines indicating the predicted direction and confidence level for each timeframe:
-             "2-6 hours: [Up/Down] [Confidence]%"
-             "6-24 hours: [Up/Down] [Confidence]%"
-             "1-3 days: [Up/Down] [Confidence]%"
+             "2-6 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
+             "6-24 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
+             "1-3 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
         """,
-        expected_output="Accurate Bitcoin price predictions with directional outcomes and confidence levels, tailored to short-term, medium-term, and longer-term timeframes, considering both immediate market conditions and overarching trends.",        agent=price_predictor
+        expected_output="Accurate, forward-looking Bitcoin price predictions with directional outcomes, confidence levels, and specific price targets for short-term, medium-term, and longer-term timeframes, emphasizing predictive analysis and potential future market behavior.",
     )
 
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
