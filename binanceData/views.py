@@ -82,7 +82,7 @@ class TrendLinesAPIView(APIView):
             df = self.fetch_binance_data(symbol, interval)
             pivot_points = self.find_pivot_points(df)
             historical_extremes = self.get_historical_extremes(df)
-            trend_lines = self.generate_trend_lines(df, pivot_points, historical_extremes)
+            trend_lines = self.generate_trend_lines(df, pivot_points, historical_extremes, symbol)
             top_trend_lines = self.select_top_trend_lines(trend_lines, pivot_points, historical_extremes)
 
             # top_trend_lines를 리스트로 평탄화
@@ -253,9 +253,9 @@ class TrendLinesAPIView(APIView):
                 })
         return pivot_points
 
-    def generate_trend_lines(self, df, pivot_points, historical_extremes):
+    def generate_trend_lines(self, df, pivot_points, historical_extremes, symbol):
         trend_lines = []
-        current_price = self.get_current_price(df['symbol'].iloc[0])  # 심볼은 DataFrame에서 가져온다고 가정
+        current_price = self.get_current_price(symbol)  # 심볼은 DataFrame에서 가져온다고 가정
 
         def get_price(index, price_type):
             if price_type == 'High':
