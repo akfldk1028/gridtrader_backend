@@ -110,7 +110,7 @@ class TrendLinesAPIView(APIView):
         historical_low = df.loc[df['Low'].idxmin()]
 
         # 최근 데이터의 역사적 고점과 저점
-        recent_df = df.tail(120)  # 최근 100개 데이터 사용
+        recent_df = df.tail(300)  # 최근 100개 데이터 사용
         recent_high = recent_df.loc[recent_df['High'].idxmax()]
         recent_low = recent_df.loc[recent_df['Low'].idxmin()]
 
@@ -219,9 +219,14 @@ class TrendLinesAPIView(APIView):
         ]
         df = pd.DataFrame(all_candles, columns=columns)
 
-        # 데이터 타입 변환
-        df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms")
-        df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms")
+        # 데이터 타입 변환 및 UTC로 시간대 설정
+        df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms", utc=True)
+        df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms", utc=True)
+
+        # 시간을 9시간 앞당기기 (KST -> UTC 변환)
+        df["Open Time"] = df["Open Time"] - pd.Timedelta(hours=9)
+        df["Close Time"] = df["Close Time"] - pd.Timedelta(hours=9)
+
         for col in ["Open", "High", "Low", "Close", "Volume", "Quote Asset Volume",
                     "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume"]:
             df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -235,14 +240,14 @@ class TrendLinesAPIView(APIView):
             if df['High'].iloc[i] == df['High'].iloc[i - window:i + window + 1].max():
                 pivot_points.append({
                     'Index': i,
-                    'Date': df['Open Time'].iloc[i].isoformat(),
+                    'Date': df['Open Time'].iloc[i].isoformat(),  # UTC 시간으로 이미 설정되어 있음
                     'Price': float(df['High'].iloc[i]),
                     'Type': 'High'
                 })
             elif df['Low'].iloc[i] == df['Low'].iloc[i - window:i + window + 1].min():
                 pivot_points.append({
                     'Index': i,
-                    'Date': df['Open Time'].iloc[i].isoformat(),
+                    'Date': df['Open Time'].iloc[i].isoformat(),  # UTC 시간으로 이미 설정되어 있음
                     'Price': float(df['Low'].iloc[i]),
                     'Type': 'Low'
                 })
@@ -358,22 +363,11 @@ class TrendLinesAPIView(APIView):
         if current_price is None:
             return []  # 현재 가격을 가져올 수 없으면 빈 리스트 반환
 
+
         # current_time을 얻음
         current_time = pd.Timestamp.utcnow()
-
-        # current_time의 시간대 처리
-        if current_time.tzinfo is None:
-            current_time = current_time.tz_localize('UTC')
-        else:
-            current_time = current_time.tz_convert('UTC')
-
         start_time = df['Open Time'].iloc[0]
 
-        # start_time의 시간대 처리
-        if start_time.tzinfo is None:
-            start_time = start_time.tz_localize('UTC')
-        else:
-            start_time = start_time.tz_convert('UTC')
 
         time_since_start = (current_time - start_time).total_seconds()
 
