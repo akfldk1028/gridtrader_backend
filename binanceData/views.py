@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
 from .analysis.IchimokuIndicator import IchimokuIndicator
+import numpy as np
+import math
 
 
 class BinanceChartDataAPIView(APIView):
@@ -72,6 +74,407 @@ class BinanceChartDataAPIView(APIView):
         # Generate JSON response
         response_data = df.to_dict('records')
         return Response(response_data)
+
+
+class TrendLinesAPIView(APIView):
+    def get(self, request, symbol, interval):
+        try:
+            df = self.fetch_binance_data(symbol, interval)
+            pivot_points = self.find_pivot_points(df)
+            historical_extremes = self.get_historical_extremes(df)
+            trend_lines = self.generate_trend_lines(df, pivot_points, historical_extremes)
+            top_trend_lines = self.select_top_trend_lines(trend_lines, pivot_points, historical_extremes)
+
+            # top_trend_lines를 리스트로 평탄화
+            all_top_trend_lines = []
+            for trend_list in top_trend_lines.values():
+                all_top_trend_lines.extend(trend_list)
+
+            # 현재 가격이 추세선에 접근하고 있는지 확인
+            approaching_trend_lines = self.check_current_price_against_trend_lines(df, all_top_trend_lines, symbol)
+
+            response_data = {
+                'pivots': pivot_points,
+                'trend_lines': top_trend_lines,
+                'historical_extremes': historical_extremes,
+                'approaching_trend_lines': approaching_trend_lines
+            }
+
+            return Response(response_data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get_historical_extremes(self, df):
+        # 전체 기간의 역사적 고점과 저점
+        historical_high = df.loc[df['High'].idxmax()]
+        historical_low = df.loc[df['Low'].idxmin()]
+
+        # 최근 데이터의 역사적 고점과 저점
+        recent_df = df.tail(120)  # 최근 100개 데이터 사용
+        recent_high = recent_df.loc[recent_df['High'].idxmax()]
+        recent_low = recent_df.loc[recent_df['Low'].idxmin()]
+
+        result = {
+            'LongTermHigh': {
+                'Index': int(historical_high.name),
+                'Date': historical_high['Open Time'].isoformat(),
+                'Price': float(historical_high['High'])
+            },
+            'LongTermLow': {
+                'Index': int(historical_low.name),
+                'Date': historical_low['Open Time'].isoformat(),
+                'Price': float(historical_low['Low'])
+            },
+            'RecentSteepHigh': {
+                'Index': int(recent_high.name),
+                'Date': recent_high['Open Time'].isoformat(),
+                'Price': float(recent_high['High'])
+            },
+            'RecentSteepLow': {
+                'Index': int(recent_low.name),
+                'Date': recent_low['Open Time'].isoformat(),
+                'Price': float(recent_low['Low'])
+            }
+        }
+
+        return result
+
+    # def get_historical_extremes(self, df):
+    #     # 전체 기간의 역사적 고점과 저점
+    #     historical_high = df.loc[df['High'].idxmax()]
+    #     historical_low = df.loc[df['Low'].idxmin()]
+    #
+    #     # 최근 데이터 기준 가장 경사가 급한 변곡점 찾기
+    #     recent_df = df.tail(100)  # 최근 100개 데이터 사용
+    #     pivot_points = self.find_pivot_points(recent_df, window=5)
+    #     pivot_highs = [p for p in pivot_points if p['Type'] == 'High']
+    #     pivot_lows = [p for p in pivot_points if p['Type'] == 'Low']
+    #
+    #     steepest_high = max(pivot_highs, key=lambda x: x['Price'], default=None)
+    #     steepest_low = min(pivot_lows, key=lambda x: x['Price'], default=None)
+    #
+    #     result = {
+    #         'LongTermHigh': {
+    #             'Index': int(historical_high.name),
+    #             'Date': historical_high['Open Time'].isoformat(),
+    #             'Price': float(historical_high['High'])
+    #         },
+    #         'LongTermLow': {
+    #             'Index': int(historical_low.name),
+    #             'Date': historical_low['Open Time'].isoformat(),
+    #             'Price': float(historical_low['Low'])
+    #         }
+    #     }
+    #
+    #     if steepest_high:
+    #         result['RecentSteepHigh'] = {
+    #             'Index': steepest_high['Index'] + len(df) - 100,  # 전체 DataFrame에서의 인덱스로 조정
+    #             'Date': steepest_high['Date'],
+    #             'Price': steepest_high['Price']
+    #         }
+    #
+    #     if steepest_low:
+    #         result['RecentSteepLow'] = {
+    #             'Index': steepest_low['Index'] + len(df) - 100,  # 전체 DataFrame에서의 인덱스로 조정
+    #             'Date': steepest_low['Date'],
+    #             'Price': steepest_low['Price']
+    #         }
+    #
+    #     return result
+
+    def fetch_binance_data(self, symbol, interval):
+        binance_api_url = "https://api.binance.com/api/v3/klines"
+        limit = 500
+        total_candles = 3000
+        all_candles = []
+
+        while len(all_candles) < total_candles:
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'limit': limit
+            }
+
+            if all_candles:
+                params['endTime'] = all_candles[0][0] - 1
+
+            try:
+                response = requests.get(binance_api_url, params=params)
+                response.raise_for_status()
+                candles = response.json()
+
+                if not candles:
+                    break
+
+                all_candles = candles + all_candles
+
+            except requests.RequestException as e:
+                raise Exception(f"Failed to fetch data: {str(e)}")
+
+        # 데이터프레임 변환
+        columns = [
+            "Open Time", "Open", "High", "Low", "Close", "Volume",
+            "Close Time", "Quote Asset Volume", "Number of Trades",
+            "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
+        ]
+        df = pd.DataFrame(all_candles, columns=columns)
+
+        # 데이터 타입 변환
+        df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms")
+        df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms")
+        for col in ["Open", "High", "Low", "Close", "Volume", "Quote Asset Volume",
+                    "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume"]:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df["Number of Trades"] = df["Number of Trades"].astype(int)
+
+        return df
+
+    def find_pivot_points(self, df, window=2):
+        pivot_points = []
+        for i in range(window, len(df) - window):
+            if df['High'].iloc[i] == df['High'].iloc[i - window:i + window + 1].max():
+                pivot_points.append({
+                    'Index': i,
+                    'Date': df['Open Time'].iloc[i].isoformat(),
+                    'Price': float(df['High'].iloc[i]),
+                    'Type': 'High'
+                })
+            elif df['Low'].iloc[i] == df['Low'].iloc[i - window:i + window + 1].min():
+                pivot_points.append({
+                    'Index': i,
+                    'Date': df['Open Time'].iloc[i].isoformat(),
+                    'Price': float(df['Low'].iloc[i]),
+                    'Type': 'Low'
+                })
+        return pivot_points
+
+    def generate_trend_lines(self, df, pivot_points, historical_extremes):
+        trend_lines = []
+
+        # Long-term trend lines
+        for pivot in pivot_points:
+            if pivot['Type'] == 'High':
+                if pivot['Index'] != historical_extremes['LongTermHigh']['Index']:
+                    trend_line = self.create_trend_line(df,
+                                                        historical_extremes['LongTermHigh']['Index'],
+                                                        historical_extremes['RecentSteepHigh']['Index'],
+                                                        historical_extremes['LongTermHigh']['Price'],
+                                                        historical_extremes['RecentSteepHigh']['Price'],
+                                                        'High')
+                    if trend_line:
+                        trend_lines.append(trend_line)
+            else:  # pivot['Type'] == 'Low'
+                if pivot['Index'] != historical_extremes['LongTermLow']['Index']:
+                    trend_line = self.create_trend_line(df,
+                                                        historical_extremes['LongTermLow']['Index'],
+                                                        historical_extremes['RecentSteepLow']['Index'],
+                                                        historical_extremes['LongTermLow']['Price'],
+                                                        historical_extremes['RecentSteepLow']['Price'],
+                                                        'Low')
+                    if trend_line:
+                        trend_lines.append(trend_line)
+
+        # Recent steep trend lines
+        if 'RecentSteepHigh' in historical_extremes:
+            for pivot in pivot_points:
+                if pivot['Type'] == 'High' and pivot['Index'] != historical_extremes['RecentSteepHigh']['Index']:
+                    trend_line = self.create_trend_line(df,
+                                                        historical_extremes['RecentSteepHigh']['Index'],
+                                                        pivot['Index'],
+                                                        historical_extremes['RecentSteepHigh']['Price'],
+                                                        pivot['Price'],
+                                                        'High')
+                    if trend_line:
+                        trend_lines.append(trend_line)
+
+        if 'RecentSteepLow' in historical_extremes:
+            for pivot in pivot_points:
+                if pivot['Type'] == 'Low' and pivot['Index'] != historical_extremes['RecentSteepLow']['Index']:
+                    trend_line = self.create_trend_line(df,
+                                                        historical_extremes['RecentSteepLow']['Index'],
+                                                        pivot['Index'],
+                                                        historical_extremes['RecentSteepLow']['Price'],
+                                                        pivot['Price'],
+                                                        'Low')
+                    if trend_line:
+                        trend_lines.append(trend_line)
+
+        return trend_lines
+
+    def create_trend_line(self, df, start_idx, end_idx, start_price, end_price, line_type):
+        start_time = df['Open Time'].iloc[start_idx]
+        end_time = df['Open Time'].iloc[end_idx]
+        if end_time <= start_time:
+            return None  # 시간 순서가 맞지 않으면 None 반환
+
+        # 시간과 가격 차이 계산
+        time_diff = max((end_time - start_time).total_seconds(), 1e-6)  # 0으로 나누는 것 방지
+        price_diff = end_price - start_price
+
+        # 기울기 계산
+        slope = price_diff / time_diff
+
+        # 절편 계산
+        start_time_seconds = (start_time - df['Open Time'].iloc[0]).total_seconds()
+        intercept = start_price - slope * start_time_seconds
+
+        # 중요도 계산 (예시로 유지)
+        importance = abs(slope) * np.log1p(time_diff + 1e-6)
+        if math.isnan(importance) or math.isinf(importance):
+            importance = 0
+
+        return {
+            'StartIndex': int(start_idx),
+            'EndIndex': int(end_idx),
+            'StartDate': start_time.isoformat(),
+            'EndDate': end_time.isoformat(),
+            'StartPrice': float(start_price),
+            'EndPrice': float(end_price),
+            'Slope': float(slope),
+            'Intercept': float(intercept),
+            'Importance': float(importance),
+            'Type': line_type
+        }
+
+    def get_current_price(self, symbol):
+        try:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+            response = requests.get(url)
+            if response.status_code != 200:
+                print(f"Error fetching current price: {response.status_code} - {response.text}")
+                return None
+            data = response.json()
+            if 'price' not in data:
+                print(f"Error: 'price' not found in response: {data}")
+                return None
+            return float(data['price'])
+        except Exception as e:
+            print(f"Exception fetching current price for {symbol}: {e}")
+            return None
+
+    def check_current_price_against_trend_lines(self, df, trend_lines, symbol):
+        current_price = self.get_current_price(symbol)
+        print(current_price)
+        if current_price is None:
+            return []  # 현재 가격을 가져올 수 없으면 빈 리스트 반환
+
+        # current_time을 얻음
+        current_time = pd.Timestamp.utcnow()
+
+        # current_time의 시간대 처리
+        if current_time.tzinfo is None:
+            current_time = current_time.tz_localize('UTC')
+        else:
+            current_time = current_time.tz_convert('UTC')
+
+        start_time = df['Open Time'].iloc[0]
+
+        # start_time의 시간대 처리
+        if start_time.tzinfo is None:
+            start_time = start_time.tz_localize('UTC')
+        else:
+            start_time = start_time.tz_convert('UTC')
+
+        time_since_start = (current_time - start_time).total_seconds()
+
+        approaching_lines = []
+
+        for trend_line in trend_lines:
+            # 현재 시간에 해당하는 추세선 가격 계산
+            price_on_line = trend_line['Slope'] * time_since_start + trend_line['Intercept']
+
+            # 임계값 설정 (예: 추세선 가격의 0.1%)
+            threshold = 0.001 * price_on_line
+
+            # 현재 가격이 추세선 가격에 근접한지 확인
+            if abs(current_price - price_on_line) <= threshold:
+                approaching_lines.append({
+                    'TrendLine': trend_line,
+                    'CurrentPrice': current_price,
+                    'PriceOnLine': price_on_line,
+                    'Difference': abs(current_price - price_on_line)
+                })
+
+        return approaching_lines
+
+    def price_on_trend_line(self, df, trend_line, timestamp):
+        # 시작 시간으로부터의 초 단위 시간 계산
+        start_time = df['Open Time'].iloc[0]
+        time_since_start = (timestamp - start_time).total_seconds()
+        price = trend_line['Slope'] * time_since_start + trend_line['Intercept']
+        return price
+
+    def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
+        def find_nearest_opposite_pivot(start_index, end_index, line_type):
+            opposite_type = 'Low' if line_type == 'High' else 'High'
+            opposite_pivots = [p for p in pivot_points if
+                               p['Type'] == opposite_type and start_index <= p['Index'] <= end_index]
+
+            if not opposite_pivots:
+                return None
+            mid_point = (start_index + end_index) / 2
+
+            # 중간 지점에서 가장 가까운 피봇 찾기
+            nearest_pivot = min(opposite_pivots, key=lambda p: abs(p['Index'] - mid_point))
+
+            return nearest_pivot
+
+            # extreme_pivot = max(opposite_pivots, key=lambda p: p['Price']) if line_type == 'High' else min(
+            #     opposite_pivots, key=lambda p: p['Price'])
+            #
+            # return extreme_pivot
+
+        def process_trend_lines(lines, reverse_order=False, top_n=1):
+            for line in lines:
+                opposite_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
+                if opposite_pivot:
+                    line['PivotDifference'] = abs(line['EndPrice'] - opposite_pivot['Price'])
+                else:
+                    line['PivotDifference'] = 0
+            return sorted(lines, key=lambda x: x['PivotDifference'], reverse=reverse_order)[:top_n]
+
+        # 추세선 분류
+        recent_steep_high = [line for line in trend_lines if
+                             line['Type'] == 'High' and line['StartIndex'] == historical_extremes['RecentSteepHigh'][
+                                 'Index']]
+        recent_steep_low = [line for line in trend_lines if
+                            line['Type'] == 'Low' and line['StartIndex'] == historical_extremes['RecentSteepLow'][
+                                'Index']]
+        long_term_high = [line for line in trend_lines if
+                          line['Type'] == 'High' and line['StartIndex'] == historical_extremes['LongTermHigh']['Index']]
+        long_term_low = [line for line in trend_lines if
+                         line['Type'] == 'Low' and line['StartIndex'] == historical_extremes['LongTermLow']['Index']]
+
+        # 각 분류별로 상위 10개 선택
+        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=False, top_n=5)  # 경사도 작은 것부터
+        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=False, top_n=5)  # 경사도 작은 것부터
+        top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1)  # 경사도 큰 것부터
+        top_long_term_low = process_trend_lines(long_term_low, reverse_order=True, top_n=1)
+
+        return {
+            'RecentSteepHigh': top_recent_steep_high,
+            'RecentSteepLow': top_recent_steep_low,
+            'LongTermHigh': top_long_term_high,
+            'LongTermLow': top_long_term_low
+        }
+
+    # def select_top_trend_lines(self, trend_lines, top_n=100):
+    #     # NaN이나 무한대 값 필터링
+    #     valid_lines = [line for line in trend_lines if
+    #                    not (math.isnan(line['Importance']) or math.isinf(line['Importance']))]
+    #     sorted_lines = sorted(valid_lines, key=lambda x: x['Importance'], reverse=True)
+    #     return sorted_lines[:top_n]
+
+    def to_serializable(self, obj):
+        if isinstance(obj, (datetime, np.datetime64)):
+            return obj.isoformat()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
 
 
 class BinanceAPIView(APIView):
