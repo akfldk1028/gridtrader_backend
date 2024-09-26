@@ -126,7 +126,7 @@ class TrendLinesAPIView(APIView):
             historical_low = df.loc[df['Low'].idxmin()]
 
             # 최근 데이터의 역사적 고점과 저점
-            recent_df = df.tail(120)  # 최근 100개 데이터 사용
+            recent_df = df.tail(500)  # 최근 100개 데이터 사용
             recent_high = recent_df.loc[recent_df['High'].idxmax()]
             recent_low = recent_df.loc[recent_df['Low'].idxmin()]
 
@@ -456,13 +456,6 @@ class TrendLinesAPIView(APIView):
     #
     #     return approaching_lines
 
-    def price_on_trend_line(self, df, trend_line, timestamp):
-        # 시작 시간으로부터의 초 단위 시간 계산
-        start_time = df['Open Time'].iloc[0]
-        time_since_start = (timestamp - start_time).total_seconds()
-        price = trend_line['Slope'] * time_since_start + trend_line['Intercept']
-        return price
-
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
         def find_nearest_opposite_pivot(start_index, end_index, line_type):
             opposite_type = 'Low' if line_type == 'High' else 'High'
@@ -472,16 +465,23 @@ class TrendLinesAPIView(APIView):
             if not opposite_pivots:
                 return None
             mid_point = (start_index + end_index) / 2
-
-            # 중간 지점에서 가장 가까운 피봇 찾기
             nearest_pivot = min(opposite_pivots, key=lambda p: abs(p['Index'] - mid_point))
-
             return nearest_pivot
 
-            # extreme_pivot = max(opposite_pivots, key=lambda p: p['Price']) if line_type == 'High' else min(
-            #     opposite_pivots, key=lambda p: p['Price'])
-            #
-            # return extreme_pivot
+        def group_similar_slopes(lines, slope_tolerance=0.0001):
+            if not lines:
+                return []
+
+            sorted_lines = sorted(lines, key=lambda x: x['Slope'])
+            groups = [[sorted_lines[0]]]
+
+            for line in sorted_lines[1:]:
+                if line['Slope'] - groups[-1][0]['Slope'] <= slope_tolerance:
+                    groups[-1].append(line)
+                else:
+                    groups.append([line])
+
+            return [group[0] for group in groups]  # 각 그룹의 첫 번째 라인만 반환
 
         def process_trend_lines(lines, reverse_order=False, top_n=1):
             for line in lines:
@@ -490,6 +490,8 @@ class TrendLinesAPIView(APIView):
                     line['PivotDifference'] = abs(line['EndPrice'] - opposite_pivot['Price'])
                 else:
                     line['PivotDifference'] = 0
+
+            # 최종적으로 PivotDifference로 정렬
             return sorted(lines, key=lambda x: x['PivotDifference'], reverse=reverse_order)[:top_n]
 
         # 추세선 분류
@@ -503,7 +505,6 @@ class TrendLinesAPIView(APIView):
                           line['Type'] == 'High' and line['StartIndex'] == historical_extremes['LongTermHigh']['Index']]
         long_term_low = [line for line in trend_lines if
                          line['Type'] == 'Low' and line['StartIndex'] == historical_extremes['LongTermLow']['Index']]
-
         # 각 분류별로 상위 10개 선택
         top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=False, top_n=5)  # 경사도 작은 것부터
         top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=False, top_n=5)  # 경사도 작은 것부터
