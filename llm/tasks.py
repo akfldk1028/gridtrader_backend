@@ -41,7 +41,7 @@ def setup_bitcoin_analysis_task():
     schedule(
         'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron="15 8,11,15,19,22,23 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+        cron="0 8,11,15,19,22,23 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
         next_run=next_hour,
         repeats=-1  # 무한 반복
     )
