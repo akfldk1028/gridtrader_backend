@@ -625,6 +625,8 @@ def perform_analysis():
              "1-3 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
         """,
         expected_output="Accurate, forward-looking Bitcoin price predictions with directional outcomes, confidence levels, and specific price targets for short-term, medium-term, and longer-term timeframes, emphasizing predictive analysis and potential future market behavior.",
+        agent=price_predictor
+
     )
 
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
