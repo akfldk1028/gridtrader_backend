@@ -379,49 +379,29 @@ class TrendLinesAPIView(APIView):
         return None
     def check_current_price_against_trend_lines(self, df, trend_lines, symbol):
         current_price = self.get_current_price(symbol)
+        print(current_price)
         if current_price is None:
             return []  # 현재 가격을 가져올 수 없으면 빈 리스트 반환
 
+
+        # current_time을 얻음
         current_time = pd.Timestamp.utcnow()
         start_time = df['Open Time'].iloc[0]
+
+
         time_since_start = (current_time - start_time).total_seconds()
 
         approaching_lines = []
-        threshold_percentage = 0.001  # 0.1%
 
         for trend_line in trend_lines:
+            # 현재 시간에 해당하는 추세선 가격 계산
             price_on_line = trend_line['Slope'] * time_since_start + trend_line['Intercept']
-            threshold = threshold_percentage * price_on_line
 
+            # 임계값 설정 (예: 추세선 가격의 0.1%)
+            threshold = 0.001 * price_on_line
+
+            # 현재 가격이 추세선 가격에 근접한지 확인
             if abs(current_price - price_on_line) <= threshold:
-                # 현재 가격이 추세선에 매우 가까운 경우
-                if trend_line['Type'] == 'High' and current_price >= price_on_line:
-                    # 상승 추세선에서 현재 가격이 선 위에 있는 경우
-                    next_line = self.find_next_trend_line(trend_lines, trend_line, 'High')
-                    if next_line:
-                        price_on_next_line = next_line['Slope'] * time_since_start + next_line['Intercept']
-                        approaching_lines.append({
-                            'TrendLine': next_line,
-                            'CurrentPrice': current_price,
-                            'PriceOnLine': price_on_next_line,
-                            'Difference': abs(current_price - price_on_next_line)
-                        })
-                    continue
-
-                if trend_line['Type'] == 'Low' and current_price <= price_on_line:
-                    # 하락 추세선에서 현재 가격이 선 아래에 있는 경우
-                    next_line = self.find_next_trend_line(trend_lines, trend_line, 'Low')
-                    if next_line:
-                        price_on_next_line = next_line['Slope'] * time_since_start + next_line['Intercept']
-                        approaching_lines.append({
-                            'TrendLine': next_line,
-                            'CurrentPrice': current_price,
-                            'PriceOnLine': price_on_next_line,
-                            'Difference': abs(current_price - price_on_next_line)
-                        })
-                    continue
-
-                # 그 외의 경우 원래 추세선 사용
                 approaching_lines.append({
                     'TrendLine': trend_line,
                     'CurrentPrice': current_price,
