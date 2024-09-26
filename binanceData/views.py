@@ -457,6 +457,11 @@ class TrendLinesAPIView(APIView):
     #     return approaching_lines
 
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
+
+        def calculate_pivot_slope(pivot1, pivot2):
+            time_diff = abs(pivot1['Index'] - pivot2['Index'])
+            price_diff = abs(pivot1['Price'] - pivot2['Price'])
+            return price_diff / time_diff if time_diff != 0 else 0
         def find_nearest_opposite_pivot(start_index, end_index, line_type):
             opposite_type = 'Low' if line_type == 'High' else 'High'
             opposite_pivots = [p for p in pivot_points if
@@ -468,31 +473,30 @@ class TrendLinesAPIView(APIView):
             nearest_pivot = min(opposite_pivots, key=lambda p: abs(p['Index'] - mid_point))
             return nearest_pivot
 
-        def group_similar_slopes(lines, slope_tolerance=0.0001):
-            if not lines:
-                return []
-
-            sorted_lines = sorted(lines, key=lambda x: x['Slope'])
-            groups = [[sorted_lines[0]]]
-
-            for line in sorted_lines[1:]:
-                if line['Slope'] - groups[-1][0]['Slope'] <= slope_tolerance:
-                    groups[-1].append(line)
-                else:
-                    groups.append([line])
-
-            return [group[0] for group in groups]  # 각 그룹의 첫 번째 라인만 반환
-
         def process_trend_lines(lines, reverse_order=False, top_n=1):
             for line in lines:
-                opposite_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
-                if opposite_pivot:
-                    line['PivotDifference'] = abs(line['EndPrice'] - opposite_pivot['Price'])
+                start_pivot = next(p for p in pivot_points if p['Index'] == line['StartIndex'])
+                nearest_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
+                if nearest_pivot:
+                    line['NearestPivot'] = nearest_pivot
+                    line['PivotSlope'] = calculate_pivot_slope(start_pivot, nearest_pivot)
                 else:
-                    line['PivotDifference'] = 0
+                    line['NearestPivot'] = None
+                    line['PivotSlope'] = 0
 
-            # 최종적으로 PivotDifference로 정렬
-            return sorted(lines, key=lambda x: x['PivotDifference'], reverse=reverse_order)[:top_n]
+
+            return sorted(lines, key=lambda x: x['PivotSlope'], reverse=reverse_order)[:top_n]
+
+        # def process_trend_lines(lines, reverse_order=False, top_n=1):
+        #     for line in lines:
+        #         opposite_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
+        #         if opposite_pivot:
+        #             line['PivotDifference'] = abs(line['EndPrice'] - opposite_pivot['Price'])
+        #         else:
+        #             line['PivotDifference'] = 0
+        #
+        #     # 최종적으로 PivotDifference로 정렬
+        #     return sorted(lines, key=lambda x: x['PivotDifference'], reverse=reverse_order)[:top_n]
 
         # 추세선 분류
         recent_steep_high = [line for line in trend_lines if
