@@ -110,7 +110,7 @@ class TrendLinesAPIView(APIView):
         historical_low = df.loc[df['Low'].idxmin()]
 
         # 최근 데이터의 역사적 고점과 저점
-        recent_df = df.tail(240)  # 최근 100개 데이터 사용
+        recent_df = df.tail(180)  # 최근 100개 데이터 사용
         recent_high = recent_df.loc[recent_df['High'].idxmax()]
         recent_low = recent_df.loc[recent_df['Low'].idxmin()]
 
@@ -255,54 +255,62 @@ class TrendLinesAPIView(APIView):
 
     def generate_trend_lines(self, df, pivot_points, historical_extremes):
         trend_lines = []
+        current_price = self.get_current_price(df['symbol'].iloc[0])  # 심볼은 DataFrame에서 가져온다고 가정
+
+        def get_price(index, price_type):
+            if price_type == 'High':
+                return df['High'].iloc[index] if current_price <= df['High'].iloc[index] else df['Open'].iloc[index]
+            else:  # Low
+                return df['Low'].iloc[index] if current_price >= df['Low'].iloc[index] else df['Open'].iloc[index]
 
         # Long-term trend lines
-        for pivot in pivot_points:
-            if pivot['Type'] == 'High':
-                if pivot['Index'] != historical_extremes['LongTermHigh']['Index']:
-                    trend_line = self.create_trend_line(df,
-                                                        historical_extremes['LongTermHigh']['Index'],
-                                                        historical_extremes['RecentSteepHigh']['Index'],
-                                                        historical_extremes['LongTermHigh']['Price'],
-                                                        historical_extremes['RecentSteepHigh']['Price'],
-                                                        'High')
-                    if trend_line:
-                        trend_lines.append(trend_line)
-            else:  # pivot['Type'] == 'Low'
-                if pivot['Index'] != historical_extremes['LongTermLow']['Index']:
-                    trend_line = self.create_trend_line(df,
-                                                        historical_extremes['LongTermLow']['Index'],
-                                                        historical_extremes['RecentSteepLow']['Index'],
-                                                        historical_extremes['LongTermLow']['Price'],
-                                                        historical_extremes['RecentSteepLow']['Price'],
-                                                        'Low')
-                    if trend_line:
-                        trend_lines.append(trend_line)
+        long_term_high_start = get_price(historical_extremes['LongTermHigh']['Index'], 'High')
+        long_term_high_end = get_price(historical_extremes['RecentSteepHigh']['Index'], 'High')
+        trend_lines.append(self.create_trend_line(df,
+                                                  historical_extremes['LongTermHigh']['Index'],
+                                                  historical_extremes['RecentSteepHigh']['Index'],
+                                                  long_term_high_start,
+                                                  long_term_high_end,
+                                                  'High'))
+
+        long_term_low_start = get_price(historical_extremes['LongTermLow']['Index'], 'Low')
+        long_term_low_end = get_price(historical_extremes['RecentSteepLow']['Index'], 'Low')
+        trend_lines.append(self.create_trend_line(df,
+                                                  historical_extremes['LongTermLow']['Index'],
+                                                  historical_extremes['RecentSteepLow']['Index'],
+                                                  long_term_low_start,
+                                                  long_term_low_end,
+                                                  'Low'))
 
         # Recent steep trend lines
-        if 'RecentSteepHigh' in historical_extremes:
-            for pivot in pivot_points:
-                if pivot['Type'] == 'High' and pivot['Index'] != historical_extremes['RecentSteepHigh']['Index']:
-                    trend_line = self.create_trend_line(df,
-                                                        historical_extremes['RecentSteepHigh']['Index'],
-                                                        pivot['Index'],
-                                                        historical_extremes['RecentSteepHigh']['Price'],
-                                                        pivot['Price'],
-                                                        'High')
-                    if trend_line:
-                        trend_lines.append(trend_line)
+        recent_high_pivots = [p for p in pivot_points if
+                              p['Type'] == 'High' and p['Index'] > historical_extremes['RecentSteepHigh']['Index']]
+        recent_low_pivots = [p for p in pivot_points if
+                             p['Type'] == 'Low' and p['Index'] > historical_extremes['RecentSteepLow']['Index']]
 
-        if 'RecentSteepLow' in historical_extremes:
-            for pivot in pivot_points:
-                if pivot['Type'] == 'Low' and pivot['Index'] != historical_extremes['RecentSteepLow']['Index']:
-                    trend_line = self.create_trend_line(df,
-                                                        historical_extremes['RecentSteepLow']['Index'],
-                                                        pivot['Index'],
-                                                        historical_extremes['RecentSteepLow']['Price'],
-                                                        pivot['Price'],
-                                                        'Low')
-                    if trend_line:
-                        trend_lines.append(trend_line)
+        for pivot in recent_high_pivots:
+            start_price = get_price(historical_extremes['RecentSteepHigh']['Index'], 'High')
+            end_price = get_price(pivot['Index'], 'High')
+            trend_line = self.create_trend_line(df,
+                                                historical_extremes['RecentSteepHigh']['Index'],
+                                                pivot['Index'],
+                                                start_price,
+                                                end_price,
+                                                'High')
+            if trend_line:
+                trend_lines.append(trend_line)
+
+        for pivot in recent_low_pivots:
+            start_price = get_price(historical_extremes['RecentSteepLow']['Index'], 'Low')
+            end_price = get_price(pivot['Index'], 'Low')
+            trend_line = self.create_trend_line(df,
+                                                historical_extremes['RecentSteepLow']['Index'],
+                                                pivot['Index'],
+                                                start_price,
+                                                end_price,
+                                                'Low')
+            if trend_line:
+                trend_lines.append(trend_line)
 
         return trend_lines
 
