@@ -272,7 +272,7 @@ class TrendLinesAPIView(APIView):
                 })
         return pivot_points
 
-    def generate_trend_lines(self, df, pivot_points, historical_extremes):
+    def generate_trend_lines(self, df, pivot_points, historical_extremes, symbol):
         trend_lines = []
 
         # Long-term trend lines
