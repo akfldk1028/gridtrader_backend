@@ -22,7 +22,8 @@ import bisect
 from typing import Optional, List, Dict, Tuple
 from collections import defaultdict
 from functools import lru_cache
-
+from django.core.cache import caches
+import json
 class KRXStockDataAPIView(APIView):
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     def get(self, request, symbol, start_date, end_date, interval='D'):
@@ -146,9 +147,56 @@ class BinanceChartDataAPIView(APIView):
         return Response(response_data)
 
 
+
+class TrendLineDataRetrieveView(APIView):
+    cache_name = 'default'  # TrendLinesAPIView와 동일한 캐시 사용
+    cache_key_prefix = 'trend_line_data'
+
+    def get_cache(self):
+        return caches[self.cache_name]
+
+    def get_cache_key(self, symbol, interval):
+        return f"{self.cache_key_prefix}:{symbol}:{interval}"
+
+    def get(self, request, symbol, interval):
+        cache = self.get_cache()
+        key = self.get_cache_key(symbol, interval)
+
+        try:
+            stored_data = cache.get(key)
+            if stored_data:
+                decoded_data = json.loads(stored_data)
+                return Response(decoded_data, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Failed to retrieve data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class TrendLinesAPIView(APIView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.previous_states = {}  # 이전 상태를 저장할 딕셔너리
+
+    cache_name = 'default'  # 또는 원하는 캐시 이름
+    cache_key_prefix = 'trend_line_data'
+
+    def get_cache(self):
+        return caches[self.cache_name]
+
+    def get_cache_key(self, symbol, interval):
+        return f"{self.cache_key_prefix}:{symbol}:{interval}"
     def get(self, request, symbol, interval):
         try:
+
+            cache = self.get_cache()
+            key = self.get_cache_key(symbol, interval)
+            stored_data = cache.get(key)
+            if stored_data:
+                previous_data = json.loads(stored_data)
+                self.previous_states = {line['id']: line.get('CurrentState') for category, lines in previous_data['trend_lines'].items() for line in lines}
+
+
             df = self.fetch_binance_data(symbol, interval)
             if df is None or df.empty:
                 return Response({'error': 'Failed to fetch data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -174,22 +222,21 @@ class TrendLinesAPIView(APIView):
 
             # top_trend_lines를 리스트로 평탄화
             all_top_trend_lines = []
-            for trend_list in top_trend_lines.values():
-                all_top_trend_lines.extend(trend_list)
-            print(f"All top trend lines: {all_top_trend_lines}")
+            for category, trend_list in top_trend_lines.items():
+                for line in trend_list:
+                    line['id'] = f"{line['StartIndex']}_{line['EndIndex']}"
+                    all_top_trend_lines.append(line)
 
-            # 현재 가격이 추세선에 접근하고 있는지 확인
-            print("Checking current price against trend lines...")
-            approaching_trend_lines = self.check_current_price_against_trend_lines(df, all_top_trend_lines, symbol)
-            print(f"Approaching trend lines: {approaching_trend_lines}")
-
+            trend_line_states = self.check_current_price_against_trend_lines(df, all_top_trend_lines, symbol, interval)
             response_data = {
                 'pivots': pivot_points,
-                'trend_lines': top_trend_lines,
+                'trend_lines': top_trend_lines,  # 원본 구조 유지
                 'historical_extremes': historical_extremes,
-                'approaching_trend_lines': approaching_trend_lines
+                'trend_line_states': trend_line_states,
+                'symbol': symbol,
+                'interval': interval
             }
-            print(f"Response data: {response_data}")
+            cache.set(key, json.dumps(response_data), timeout=None)
 
             return Response(response_data)
 
@@ -432,11 +479,6 @@ class TrendLinesAPIView(APIView):
         # 절편 계산
         intercept = start_price - slope * start_time.timestamp()
 
-        # 중요도 계산 (예시로 유지)
-        importance = abs(slope) * np.log1p(time_diff + 1e-6)
-        if math.isnan(importance) or math.isinf(importance):
-            importance = 0
-
 
         opposite_type = 'Low' if line_type == 'High' else 'High'
         current_pivot = next(p for p in pivot_points if p['Index'] == end_idx and p['Type'] == line_type)
@@ -476,7 +518,6 @@ class TrendLinesAPIView(APIView):
             'EndPrice': float(end_price),
             'Slope': float(slope),
             'Intercept': float(intercept),
-            'Importance': float(importance),
             'Type': line_type,
             'CurrentPivot': {
                 'Index': int(current_pivot['Index']),
@@ -528,40 +569,57 @@ class TrendLinesAPIView(APIView):
             pass
 
         return None
-    def check_current_price_against_trend_lines(self, df, trend_lines, symbol):
+
+    def get_price_state(self, price, trend_line):
+        price_on_line = trend_line['CurrentPrice']
+        threshold = 0.001 * price_on_line  # 0.1% 임계값
+
+        if abs(price - price_on_line) <= threshold:
+            return 'Near'
+        elif trend_line['Type'] == 'High':
+            return 'Above' if price > price_on_line else 'Below'
+        else:  # Low type
+            return 'Below' if price < price_on_line else 'Above'
+
+    def check_current_price_against_trend_lines(self, df, trend_lines, symbol , interval):
         current_price = self.get_current_price(symbol)
-        print(current_price)
         if current_price is None:
             return []  # 현재 가격을 가져올 수 없으면 빈 리스트 반환
 
 
-        # current_time을 얻음
-        current_time = pd.Timestamp.utcnow()
-        start_time = df['Open Time'].iloc[0]
-
-
-        time_since_start = (current_time - start_time).total_seconds()
-
-        approaching_lines = []
-
+        trend_line_states = []
         for trend_line in trend_lines:
-            # 현재 시간에 해당하는 추세선 가격 계산
-            price_on_line = trend_line['Slope'] * time_since_start + trend_line['Intercept']
+            trend_line_id = trend_line['id']
+            current_state = self.get_price_state(current_price, trend_line)
+            previous_state = self.previous_states.get(trend_line_id)
 
-            # 임계값 설정 (예: 추세선 가격의 0.1%)
-            threshold = 0.001 * price_on_line
+            breakout_status = 'No Change'
+            if previous_state != current_state:
+                if previous_state == 'Near':
+                    if (trend_line['Type'] == 'High' and current_state == 'Above') or \
+                       (trend_line['Type'] == 'Low' and current_state == 'Below'):
+                        breakout_status = 'Breakout'
+                    else:
+                        breakout_status = 'Reversal'
+                elif current_state == 'Near':
+                    breakout_status = 'Approaching'
+                else:
+                    breakout_status = 'Crossing'
+            self.previous_states[trend_line_id] = current_state
 
-            # 현재 가격이 추세선 가격에 근접한지 확인
-            if abs(current_price - price_on_line) <= threshold:
-                approaching_lines.append({
-                    'TrendLine': trend_line,
-                    'CurrentPrice': current_price,
-                    'PriceOnLine': price_on_line,
-                    'Difference': abs(current_price - price_on_line)
-                })
+            trend_line_states.append({
+                'TrendLine': trend_line,
+                'CurrentPrice': current_price,
+                'PriceOnLine': trend_line['CurrentPrice'],
+                'Difference': current_price - trend_line['CurrentPrice'],
+                'PreviousState': previous_state,
+                'CurrentState': current_state,
+                'BreakoutStatus': breakout_status,
+                'symbol': symbol,
+                'interval': interval
+            })
 
-        return approaching_lines
-
+        return trend_line_states
     @staticmethod
     def index_pivot_points(pivot_points: List[Dict]) -> Dict[str, List[Dict]]:
         indexed = defaultdict(list)
@@ -611,20 +669,21 @@ class TrendLinesAPIView(APIView):
 
                 time_diff = (reference_time - start_time).total_seconds()
                 line['CurrentPrice'] = line['Slope'] * time_diff + line['StartPrice']
-                line['TrendLineTime'] = {reference_time}
+                line['CurrentTime'] = reference_time
 
                 print(
                     f"Debug: StartTime={start_time}, TimeDiff={time_diff}, Slope={line['Slope']}, StartPrice={line['StartPrice']}, CurrentPrice={line['CurrentPrice']}")
 
             sorted_lines = sorted(lines, key=lambda x: x['MaxRelativePriceDiff'], reverse=True)[:top_n]
 
+            for rank, line in enumerate(sorted_lines, start=1):
+                line['Importance'] = rank
 
+            # 중요도(순위)를 기준으로 정렬
+            result = sorted(sorted_lines, key=lambda x: x['Importance'])[:top_n]
 
-            # 디버깅을 위해 정렬된 라인들의 MaxPivotSlope 출력
-            for line in sorted_lines:
-                print(f"Type: {line['Type']}, MaxPivotSlope: {line['MaxRelativePriceDiff']}, EndPrice: {line['EndPrice']}")
+            return result
 
-            return sorted_lines
 
         # 추세선 분류
         recent_steep_high = [line for line in trend_lines if
