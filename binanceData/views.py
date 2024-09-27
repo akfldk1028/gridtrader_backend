@@ -463,20 +463,45 @@ class TrendLinesAPIView(APIView):
             if not high_pivots or not low_pivots:
                 return None, 0
 
-            max_slope = 0
+            max_slope = None
             steepest_pair = None
+            low_indices = [low['Index'] for low in low_pivots]  # 저점들의 인덱스를 미리 저장
 
-            for high in high_pivots:  # 상위 5개의 고점만 고려
-                for low in low_pivots:  # 상위 5개의 저점만 고려
-                    slope = calculate_pivot_slope(high['Index'], high['Price'], low['Index'], low['Price'])
-                    if slope > max_slope:
-                        max_slope = slope
-                        steepest_pair = (high, low)
+            for high in high_pivots:
+                high_index = high['Index']
 
-                if steepest_pair:
-                    break
+                # 1. 바로 앞의 저점 찾기 (high_index보다 작은 가장 큰 값)
+                prev_low_idx = next((i for i, low_index in enumerate(low_indices) if low_index >= high_index), 0) - 1
+                closest_previous_low = low_pivots[prev_low_idx] if prev_low_idx >= 0 else None
 
-            return steepest_pair, max_slope
+                # 2. 바로 뒤의 저점 찾기 (high_index보다 큰 가장 작은 값)
+                next_low_idx = next((i for i, low_index in enumerate(low_indices) if low_index > high_index), None)
+                closest_next_low = low_pivots[next_low_idx] if next_low_idx is not None else None
+
+                # 3. 바로 앞의 저점과 경사도 계산
+                if closest_previous_low:
+                    slope_prev = calculate_pivot_slope(closest_previous_low['Index'], closest_previous_low['Price'],
+                                                       high['Index'], high['Price'])
+                else:
+                    slope_prev = None
+
+                # 4. 바로 뒤의 저점과 경사도 계산
+                if closest_next_low:
+                    slope_next = calculate_pivot_slope(high['Index'], high['Price'], closest_next_low['Index'],
+                                                       closest_next_low['Price'])
+                else:
+                    slope_next = None
+
+                # 5. 두 경사도 중 더 가파른 것 선택
+                if slope_prev is not None and (max_slope is None or abs(slope_prev) > abs(max_slope)):
+                    max_slope = slope_prev
+                    steepest_pair = (closest_previous_low, high)
+
+                if slope_next is not None and (max_slope is None or abs(slope_next) > abs(max_slope)):
+                    max_slope = slope_next
+                    steepest_pair = (high, closest_next_low)
+
+            return steepest_pair, max_slope if max_slope is not None else 0  # max_slope가 None인 경우 0 반환
         def process_trend_lines(lines,
                                 reverse_order: bool = False,
                                 top_n: int = 5,
