@@ -365,7 +365,7 @@ class TrendLinesAPIView(APIView):
 
         return df
 
-    def find_pivot_points(self, df, window=2):
+    def find_pivot_points(self, df, window=5):
         pivot_points = []
         for i in range(window, len(df) - window):
             if df['High'].iloc[i] == df['High'].iloc[i - window:i + window + 1].max():
