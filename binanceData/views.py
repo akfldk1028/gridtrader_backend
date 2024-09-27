@@ -473,19 +473,35 @@ class TrendLinesAPIView(APIView):
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
 
         def calculate_pivot_slope(pivot1, pivot2):
-            time_diff = abs(pivot1['Index'] - pivot2['Index'])
-            price_diff = abs(pivot1['Price'] - pivot2['Price'])
-            return price_diff / time_diff if time_diff != 0 else 0
-        def find_nearest_opposite_pivot(start_index, end_index, line_type):
-            opposite_type = 'Low' if line_type == 'High' else 'High'
-            opposite_pivots = [p for p in pivot_points if
-                               p['Type'] == opposite_type and start_index <= p['Index'] <= end_index]
+            time_diff = pivot2['Index'] - pivot1['Index']
+            if time_diff == 0:
+                return 0
+            return abs((pivot2['Price'] - pivot1['Price']) / time_diff)
 
-            if not opposite_pivots:
+        def find_steepest_slope(start_pivot, opposite_pivots, end_index):
+            relevant_pivots = [p for p in opposite_pivots if start_pivot['Index'] < p['Index'] <= end_index]
+            if not relevant_pivots:
+                return 0, None
+
+            max_slope = float('-inf')
+            steepest_pivot = None
+            for pivot in relevant_pivots:
+                slope = calculate_pivot_slope(start_pivot, pivot)
+                if slope > max_slope:
+                    max_slope = slope
+                    steepest_pivot = pivot
+
+            return max_slope, steepest_pivot
+
+        def find_end_pivot(start_pivot, same_type_pivots, steepest_opposite_pivot, end_index):
+            relevant_pivots = [p for p in same_type_pivots if
+                               steepest_opposite_pivot['Index'] < p['Index'] <= end_index]
+            if not relevant_pivots:
                 return None
-            mid_point = (start_index + end_index) / 2
-            nearest_pivot = min(opposite_pivots, key=lambda p: abs(p['Index'] - mid_point))
-            return nearest_pivot
+            return max(relevant_pivots, key=lambda p: p['Price'] if start_pivot['Type'] == 'High' else -p['Price'])
+
+        def find_nearest_opposite_pivot(pivot, opposite_pivots):
+            return min(opposite_pivots, key=lambda p: abs(p['Index'] - pivot['Index']))
 
         def process_trend_lines(lines,
                                 reverse_order: bool = False,
@@ -496,15 +512,42 @@ class TrendLinesAPIView(APIView):
             elif reference_time.tzinfo is None:
                 reference_time = reference_time.tz_localize('UTC')
 
+
+            pivot_highs = [p for p in pivot_points if p['Type'] == 'High']
+            pivot_lows = [p for p in pivot_points if p['Type'] == 'Low']
+
             for line in lines:
                 start_pivot = next(p for p in pivot_points if p['Index'] == line['StartIndex'])
-                nearest_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
-                if nearest_pivot:
-                    line['NearestPivot'] = nearest_pivot
-                    line['PivotSlope'] = calculate_pivot_slope(start_pivot, nearest_pivot)
-                else:
-                    line['NearestPivot'] = None
-                    line['PivotSlope'] = 0
+                if line['Type'] == 'High':
+                    line['PivotSlope'], steepest_opposite = find_steepest_slope(start_pivot, pivot_lows,
+                                                                                line['EndIndex'])
+                    end_pivot = find_end_pivot(start_pivot, pivot_highs, steepest_opposite,
+                                               line['EndIndex']) if steepest_opposite else None
+                else:  # Low
+                    line['PivotSlope'], steepest_opposite = find_steepest_slope(start_pivot, pivot_highs,
+                                                                                line['EndIndex'])
+                    end_pivot = find_end_pivot(start_pivot, pivot_lows, steepest_opposite,
+                                               line['EndIndex']) if steepest_opposite else None
+
+                if end_pivot:
+                    line['EndPivot'] = end_pivot
+                    line['EndIndex'] = end_pivot['Index']
+                    line['EndDate'] = end_pivot['Date']
+                    line['EndPrice'] = end_pivot['Price']
+                    # Recalculate slope and intercept based on new end point
+                    time_diff = line['EndIndex'] - line['StartIndex']
+                    line['Slope'] = (line['EndPrice'] - line['StartPrice']) / time_diff
+                    line['Intercept'] = line['StartPrice'] - line['Slope'] * line['StartIndex']
+
+                # for line in lines:
+            #     start_pivot = next(p for p in pivot_points if p['Index'] == line['StartIndex'])
+            #     nearest_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
+            #     if nearest_pivot:
+            #         line['NearestPivot'] = nearest_pivot
+            #         line['PivotSlope'] = calculate_pivot_slope(start_pivot, nearest_pivot)
+            #     else:
+            #         line['NearestPivot'] = None
+            #         line['PivotSlope'] = 0
                 # 현재 시점까지 추세선 연장
                 start_time = pd.Timestamp(line['StartDate'])
                 if start_time.tzinfo is None:
