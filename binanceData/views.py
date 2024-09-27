@@ -301,7 +301,7 @@ class TrendLinesAPIView(APIView):
                                                         historical_extremes['RecentSteepHigh']['Index'],
                                                         historical_extremes['LongTermHigh']['Price'],
                                                         historical_extremes['RecentSteepHigh']['Price'],
-                                                        'High')
+                                                        'High',pivot_points)
                     if trend_line:
                         trend_lines.append(trend_line)
             else:  # pivot['Type'] == 'Low'
@@ -311,7 +311,7 @@ class TrendLinesAPIView(APIView):
                                                         historical_extremes['RecentSteepLow']['Index'],
                                                         historical_extremes['LongTermLow']['Price'],
                                                         historical_extremes['RecentSteepLow']['Price'],
-                                                        'Low')
+                                                        'Low',pivot_points)
                     if trend_line:
                         trend_lines.append(trend_line)
 
@@ -324,9 +324,10 @@ class TrendLinesAPIView(APIView):
                                                         pivot['Index'],
                                                         historical_extremes['RecentSteepHigh']['Price'],
                                                         pivot['Price'],
-                                                        'High')
+                                                        'High',pivot_points)
                     if trend_line:
                         trend_lines.append(trend_line)
+
 
         if 'RecentSteepLow' in historical_extremes:
             for pivot in pivot_points:
@@ -336,13 +337,13 @@ class TrendLinesAPIView(APIView):
                                                         pivot['Index'],
                                                         historical_extremes['RecentSteepLow']['Price'],
                                                         pivot['Price'],
-                                                        'Low')
+                                                        'Low',pivot_points)
                     if trend_line:
                         trend_lines.append(trend_line)
 
         return trend_lines
 
-    def create_trend_line(self, df, start_idx, end_idx, start_price, end_price, line_type):
+    def create_trend_line(self, df, start_idx, end_idx, start_price, end_price, line_type, pivot_points):
         start_time = df['Open Time'].iloc[start_idx]
         end_time = df['Open Time'].iloc[end_idx]
         if end_time <= start_time:
@@ -364,6 +365,21 @@ class TrendLinesAPIView(APIView):
         if math.isnan(importance) or math.isinf(importance):
             importance = 0
 
+
+        opposite_type = 'Low' if line_type == 'High' else 'High'
+        current_pivot = next(p for p in pivot_points if p['Index'] == end_idx and p['Type'] == line_type)
+        prev_pivot = next((p for p in reversed(pivot_points) if p['Type'] == opposite_type and p['Index'] < end_idx),
+                          None)
+        next_pivot = next((p for p in pivot_points if p['Type'] == opposite_type and p['Index'] > end_idx), None)
+
+        def calculate_slope(p1, p2):
+            if p1 and p2:
+                return (p2['Price'] - p1['Price']) / (p2['Index'] - p1['Index'])
+            return None
+
+        prev_slope = calculate_slope(prev_pivot, current_pivot)
+        next_slope = calculate_slope(current_pivot, next_pivot)
+
         return {
             'StartIndex': int(start_idx),
             'EndIndex': int(end_idx),
@@ -374,9 +390,25 @@ class TrendLinesAPIView(APIView):
             'Slope': float(slope),
             'Intercept': float(intercept),
             'Importance': float(importance),
-            'Type': line_type
+            'Type': line_type,
+            'CurrentPivot': {
+                'Index': int(current_pivot['Index']),
+                'Date': current_pivot['Date'],
+                'Price': float(current_pivot['Price'])
+            },
+            'PrevPivot': {
+                'Index': int(prev_pivot['Index']) if prev_pivot else None,
+                'Date': prev_pivot['Date'] if prev_pivot else None,
+                'Price': float(prev_pivot['Price']) if prev_pivot else None,
+                'Slope': float(prev_slope) if prev_slope else None
+            },
+            'NextPivot': {
+                'Index': int(next_pivot['Index']) if next_pivot else None,
+                'Date': next_pivot['Date'] if next_pivot else None,
+                'Price': float(next_pivot['Price']) if next_pivot else None,
+                'Slope': float(next_slope) if next_slope else None
+            }
         }
-
     def get_current_price(self, symbol):
         try:
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
@@ -448,61 +480,17 @@ class TrendLinesAPIView(APIView):
             type_pivots.sort(key=lambda p: p['Price'], reverse=True)
         return indexed
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
-        indexed_pivots = self.index_pivot_points(pivot_points)
+        def find_steepest_pivot_for_trend_line(trend_line: Dict):
+            prev_slope = abs(trend_line['PrevPivot']['Slope']) if trend_line['PrevPivot'] and trend_line['PrevPivot'][
+                'Slope'] is not None else 0
+            next_slope = abs(trend_line['NextPivot']['Slope']) if trend_line['NextPivot'] and trend_line['NextPivot'][
+                'Slope'] is not None else 0
 
-        def calculate_pivot_slope(index1: int, price1: float, index2: int, price2: float) -> float:
-            time_diff = index2 - index1
-            price_diff = price2 - price1
-            return price_diff / time_diff if time_diff != 0 else 0
-
-        def find_steepest_pivot_pair_for_trend_line(trend_line: Dict, indexed_pivot: Dict[str, List[Dict]]):
-            """
-            주어진 추세선(trend_line)에 대해 이전과 이후의 pivot을 찾아 경사도를 계산하고, 가장 가파른 경사도를 반환합니다.
-            """
-
-
-            line_type = trend_line['Type']
-            line_index = trend_line['EndIndex']
-            line_price = trend_line['EndPrice']
-
-            # 추세선이 고점 연결선일 경우 저점과 비교, 추세선이 저점 연결선일 경우 고점과 비교
-            if line_type == 'High':
-                comparison_pivots = indexed_pivot['Low']  # 고점은 저점과 비교
-            elif line_type == 'Low':
-                comparison_pivots = indexed_pivot['High']  # 저점은 고점과 비교
+            if prev_slope > next_slope:
+                return trend_line['PrevPivot'], prev_slope
             else:
-                return None, 0  # 예상치 못한 타입일 경우 0 반환
+                return trend_line['NextPivot'], next_slope
 
-            comparison_indices = [p['Index'] for p in comparison_pivots]
-
-            # 1. line_index 이전에 있는 가장 가까운 pivot 찾기
-            prev_idx = next((i for i, index in reversed(list(enumerate(comparison_indices))) if index < line_index),
-                            None)
-            closest_previous_pivot = comparison_pivots[prev_idx] if prev_idx is not None else None
-
-            # 2. line_index 이후에 있는 가장 가까운 pivot 찾기
-            next_idx = next((i for i, index in enumerate(comparison_indices) if index > line_index), None)
-            closest_next_pivot = comparison_pivots[next_idx] if next_idx is not None else None
-
-            max_slope = None
-            steepest_pivot = None
-
-            # 3. 이전 pivot과 경사도 계산
-            if closest_previous_pivot:
-                slope_prev = calculate_pivot_slope(closest_previous_pivot['Index'], closest_previous_pivot['Price'],
-                                                   line_index, line_price)
-                max_slope = slope_prev
-                steepest_pivot = closest_previous_pivot
-
-            # 4. 이후 pivot과 경사도 계산
-            if closest_next_pivot:
-                slope_next = calculate_pivot_slope(line_index, line_price, closest_next_pivot['Index'],
-                                                   closest_next_pivot['Price'])
-                if max_slope is None or abs(slope_next) > abs(max_slope):
-                    max_slope = slope_next
-                    steepest_pivot = closest_next_pivot
-
-            return steepest_pivot, max_slope if max_slope is not None else 0
 
         def process_trend_lines(lines,
                                 reverse_order: bool = False,
@@ -514,15 +502,9 @@ class TrendLinesAPIView(APIView):
                 reference_time = reference_time.tz_localize('UTC')
 
             for line in lines:
-                steepest_pair, max_slope = find_steepest_pivot_pair_for_trend_line(line, indexed_pivots)
-                # steepest_pair, max_slope = find_steepest_pivot_pair(line['StartIndex'], line['EndIndex'])
-
-                if steepest_pair:
-                    line['SteepestPivotPair'] = steepest_pair
-                    line['PivotSlope'] = max_slope
-                else:
-                    line['SteepestPivotPair'] = None
-                    line['PivotSlope'] = 0
+                steepest_pivot, max_slope = find_steepest_pivot_for_trend_line(line)
+                line['SteepestPivot'] = steepest_pivot
+                line['MaxPivotSlope'] = max_slope if max_slope is not None else 0
 
 
 
@@ -533,12 +515,13 @@ class TrendLinesAPIView(APIView):
                 time_diff = (reference_time - start_time).total_seconds()
                 line['CurrentPrice'] = line['Slope'] * time_diff + line['Intercept']
 
-            sorted_lines = sorted(lines, key=lambda x: abs(x['PivotSlope']), reverse=True)
+            sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)
 
             # 비슷한 경사도 제거
             unique_lines = []
             for line in sorted_lines:
-                if not unique_lines or abs(line['PivotSlope'] - unique_lines[-1]['PivotSlope']) > 0.0001:  # 임계값 조정 가능
+                if not unique_lines or abs(
+                        line['MaxPivotSlope'] - unique_lines[-1]['MaxPivotSlope']) > 0.0001:  # 임계값 조정 가능
                     unique_lines.append(line)
 
             # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
@@ -561,9 +544,9 @@ class TrendLinesAPIView(APIView):
         # 각 분류별로 상위 선택
         current_time = pd.Timestamp.now()
 
-        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=5,
+        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=10,
                                                     reference_time=current_time)
-        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=5,
+        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=10,
                                                    reference_time=current_time)
         top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1,
                                                  reference_time=current_time)
