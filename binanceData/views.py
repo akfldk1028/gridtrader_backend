@@ -450,58 +450,60 @@ class TrendLinesAPIView(APIView):
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
         indexed_pivots = self.index_pivot_points(pivot_points)
 
-        @lru_cache(maxsize=None)
-        def calculate_pivot_slope(pivot1_index: int, pivot1_price: float, pivot2_index: int, pivot2_price: float) -> float:
-            time_diff = abs(pivot1_index - pivot2_index)
-            price_diff = abs(pivot1_price - pivot2_price)
+        def calculate_pivot_slope(index1: int, price1: float, index2: int, price2: float) -> float:
+            time_diff = index2 - index1
+            price_diff = price2 - price1
             return price_diff / time_diff if time_diff != 0 else 0
 
-        def find_steepest_pivot_pair(start_index: int, end_index: int) -> Tuple[Optional[Tuple[Dict, Dict]], float]:
-            high_pivots = [p for p in indexed_pivots['High'] if start_index <= p['Index'] <= end_index]
-            low_pivots = [p for p in indexed_pivots['Low'] if start_index <= p['Index'] <= end_index]
+        def find_steepest_pivot_pair_for_trend_line(trend_line: Dict, indexed_pivot: Dict[str, List[Dict]]):
+            """
+            주어진 추세선(trend_line)에 대해 이전과 이후의 pivot을 찾아 경사도를 계산하고, 가장 가파른 경사도를 반환합니다.
+            """
 
-            if not high_pivots or not low_pivots:
-                return None, 0
+
+            line_type = trend_line['Type']
+            line_index = trend_line['EndIndex']
+            line_price = trend_line['EndPrice']
+
+            # 추세선이 고점 연결선일 경우 저점과 비교, 추세선이 저점 연결선일 경우 고점과 비교
+            if line_type == 'High':
+                comparison_pivots = indexed_pivot['Low']  # 고점은 저점과 비교
+            elif line_type == 'Low':
+                comparison_pivots = indexed_pivot['High']  # 저점은 고점과 비교
+            else:
+                return None, 0  # 예상치 못한 타입일 경우 0 반환
+
+            comparison_indices = [p['Index'] for p in comparison_pivots]
+
+            # 1. line_index 이전에 있는 가장 가까운 pivot 찾기
+            prev_idx = next((i for i, index in reversed(list(enumerate(comparison_indices))) if index < line_index),
+                            None)
+            closest_previous_pivot = comparison_pivots[prev_idx] if prev_idx is not None else None
+
+            # 2. line_index 이후에 있는 가장 가까운 pivot 찾기
+            next_idx = next((i for i, index in enumerate(comparison_indices) if index > line_index), None)
+            closest_next_pivot = comparison_pivots[next_idx] if next_idx is not None else None
 
             max_slope = None
-            steepest_pair = None
-            low_indices = [low['Index'] for low in low_pivots]  # 저점들의 인덱스를 미리 저장
+            steepest_pivot = None
 
-            for high in high_pivots:
-                high_index = high['Index']
+            # 3. 이전 pivot과 경사도 계산
+            if closest_previous_pivot:
+                slope_prev = calculate_pivot_slope(closest_previous_pivot['Index'], closest_previous_pivot['Price'],
+                                                   line_index, line_price)
+                max_slope = slope_prev
+                steepest_pivot = closest_previous_pivot
 
-                # 1. 바로 앞의 저점 찾기 (high_index보다 작은 가장 큰 값)
-                prev_low_idx = next((i for i, low_index in enumerate(low_indices) if low_index >= high_index), 0) - 1
-                closest_previous_low = low_pivots[prev_low_idx] if prev_low_idx >= 0 else None
-
-                # 2. 바로 뒤의 저점 찾기 (high_index보다 큰 가장 작은 값)
-                next_low_idx = next((i for i, low_index in enumerate(low_indices) if low_index > high_index), None)
-                closest_next_low = low_pivots[next_low_idx] if next_low_idx is not None else None
-
-                # 3. 바로 앞의 저점과 경사도 계산
-                if closest_previous_low:
-                    slope_prev = calculate_pivot_slope(closest_previous_low['Index'], closest_previous_low['Price'],
-                                                       high['Index'], high['Price'])
-                else:
-                    slope_prev = None
-
-                # 4. 바로 뒤의 저점과 경사도 계산
-                if closest_next_low:
-                    slope_next = calculate_pivot_slope(high['Index'], high['Price'], closest_next_low['Index'],
-                                                       closest_next_low['Price'])
-                else:
-                    slope_next = None
-
-                # 5. 두 경사도 중 더 가파른 것 선택
-                if slope_prev is not None and (max_slope is None or abs(slope_prev) > abs(max_slope)):
-                    max_slope = slope_prev
-                    steepest_pair = (closest_previous_low, high)
-
-                if slope_next is not None and (max_slope is None or abs(slope_next) > abs(max_slope)):
+            # 4. 이후 pivot과 경사도 계산
+            if closest_next_pivot:
+                slope_next = calculate_pivot_slope(line_index, line_price, closest_next_pivot['Index'],
+                                                   closest_next_pivot['Price'])
+                if max_slope is None or abs(slope_next) > abs(max_slope):
                     max_slope = slope_next
-                    steepest_pair = (high, closest_next_low)
+                    steepest_pivot = closest_next_pivot
 
-            return steepest_pair, max_slope if max_slope is not None else 0  # max_slope가 None인 경우 0 반환
+            return steepest_pivot, max_slope if max_slope is not None else 0
+
         def process_trend_lines(lines,
                                 reverse_order: bool = False,
                                 top_n: int = 5,
@@ -512,7 +514,7 @@ class TrendLinesAPIView(APIView):
                 reference_time = reference_time.tz_localize('UTC')
 
             for line in lines:
-                steepest_pair, max_slope = find_steepest_pivot_pair(line['StartIndex'], line['EndIndex'])
+                steepest_pair, max_slope = find_steepest_pivot_pair_for_trend_line(line, indexed_pivots)
 
                 if steepest_pair:
                     line['SteepestPivotPair'] = steepest_pair
