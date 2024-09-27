@@ -380,6 +380,21 @@ class TrendLinesAPIView(APIView):
         prev_slope = calculate_slope(prev_pivot, current_pivot)
         next_slope = calculate_slope(current_pivot, next_pivot)
 
+        def calculate_price_diff(p1, p2):
+            if p1 and p2:
+                return abs(p2['Price'] - p1['Price'])
+            return None
+
+        prev_price_diff = calculate_price_diff(prev_pivot, current_pivot)
+        next_price_diff = calculate_price_diff(current_pivot, next_pivot)
+        # 가격 차이의 상대적 크기 계산
+        max_price = max(start_price, end_price)
+        min_price = min(start_price, end_price)
+        price_range = max_price - min_price
+
+        prev_relative_diff = prev_price_diff / price_range if prev_price_diff and price_range else 0
+        next_relative_diff = next_price_diff / price_range if next_price_diff and price_range else 0
+
         return {
             'StartIndex': int(start_idx),
             'EndIndex': int(end_idx),
@@ -400,13 +415,17 @@ class TrendLinesAPIView(APIView):
                 'Index': int(prev_pivot['Index']) if prev_pivot else None,
                 'Date': prev_pivot['Date'] if prev_pivot else None,
                 'Price': float(prev_pivot['Price']) if prev_pivot else None,
-                'Slope': float(prev_slope) if prev_slope else None
+                'Slope': float(prev_slope) if prev_slope else None,
+                'PriceDiff': float(prev_price_diff) if prev_price_diff else None,
+                'RelativeDiff': float(prev_relative_diff)
             },
             'NextPivot': {
                 'Index': int(next_pivot['Index']) if next_pivot else None,
                 'Date': next_pivot['Date'] if next_pivot else None,
                 'Price': float(next_pivot['Price']) if next_pivot else None,
-                'Slope': float(next_slope) if next_slope else None
+                'Slope': float(next_slope) if next_slope else None,
+                'PriceDiff': float(next_price_diff) if next_price_diff else None,
+                'RelativeDiff': float(next_relative_diff)
             }
         }
     def get_current_price(self, symbol):
@@ -480,17 +499,24 @@ class TrendLinesAPIView(APIView):
             type_pivots.sort(key=lambda p: p['Price'], reverse=True)
         return indexed
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
-        def find_steepest_pivot_for_trend_line(trend_line: Dict):
-            prev_slope = abs(trend_line['PrevPivot']['Slope']) if trend_line['PrevPivot'] and trend_line['PrevPivot'][
-                'Slope'] is not None else 0
-            next_slope = abs(trend_line['NextPivot']['Slope']) if trend_line['NextPivot'] and trend_line['NextPivot'][
-                'Slope'] is not None else 0
+        # def find_steepest_pivot_for_trend_line(trend_line: Dict):
+        #     prev_slope = abs(trend_line['PrevPivot']['Slope']) if trend_line['PrevPivot'] and trend_line['PrevPivot'][
+        #         'Slope'] is not None else 0
+        #     next_slope = abs(trend_line['NextPivot']['Slope']) if trend_line['NextPivot'] and trend_line['NextPivot'][
+        #         'Slope'] is not None else 0
+        #
+        #     if prev_slope > next_slope:
+        #         return trend_line['PrevPivot'], prev_slope
+        #     else:
+        #         return trend_line['NextPivot'], next_slope
+        def find_largest_price_diff_pivot(trend_line: Dict):
+            prev_diff = trend_line['PrevPivot']['RelativeDiff'] if trend_line['PrevPivot'] else 0
+            next_diff = trend_line['NextPivot']['RelativeDiff'] if trend_line['NextPivot'] else 0
 
-            if prev_slope > next_slope:
-                return trend_line['PrevPivot'], prev_slope
+            if prev_diff > next_diff:
+                return 'PrevPivot', trend_line['PrevPivot'], prev_diff
             else:
-                return trend_line['NextPivot'], next_slope
-
+                return 'NextPivot', trend_line['NextPivot'], next_diff
 
         def process_trend_lines(lines,
                                 reverse_order: bool = False,
@@ -502,9 +528,10 @@ class TrendLinesAPIView(APIView):
                 reference_time = reference_time.tz_localize('UTC')
 
             for line in lines:
-                steepest_pivot, max_slope = find_steepest_pivot_for_trend_line(line)
-                line['SteepestPivot'] = steepest_pivot
-                line['MaxPivotSlope'] = max_slope if max_slope is not None else 0
+                pivot_type, largest_diff_pivot, max_diff = find_largest_price_diff_pivot(line)
+                line['LargestDiffPivotType'] = pivot_type
+                line['LargestDiffPivot'] = largest_diff_pivot
+                line['MaxRelativePriceDiff'] = max_diff
 
 
 
@@ -514,12 +541,13 @@ class TrendLinesAPIView(APIView):
                     start_time = start_time.tz_localize('UTC')
                 time_diff = (reference_time - start_time).total_seconds()
                 line['CurrentPrice'] = line['Slope'] * time_diff + line['Intercept']
+            sorted_lines = sorted(lines, key=lambda x: x['MaxRelativePriceDiff'], reverse=True)[:top_n]
 
-            sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)[:top_n]
+
 
             # 디버깅을 위해 정렬된 라인들의 MaxPivotSlope 출력
             for line in sorted_lines:
-                print(f"Type: {line['Type']}, MaxPivotSlope: {line['MaxPivotSlope']}, EndPrice: {line['EndPrice']}")
+                print(f"Type: {line['Type']}, MaxPivotSlope: {line['MaxRelativePriceDiff']}, EndPrice: {line['EndPrice']}")
 
             return sorted_lines
 
