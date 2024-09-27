@@ -149,37 +149,26 @@ class BinanceChartDataAPIView(APIView):
 class TrendLinesAPIView(APIView):
     def get(self, request, symbol, interval):
         try:
-            print(f"Fetching data for symbol: {symbol}, interval: {interval}")
             df = self.fetch_binance_data(symbol, interval)
-            print(f"Fetched data: {df if df is not None else 'No Data'}")
-
             if df is None or df.empty:
-                print("DataFrame is empty or None")
                 return Response({'error': 'Failed to fetch data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            print("Finding pivot points...")
+            # 피벗 포인트 찾기 전에 최신 데이터 포함
             pivot_points = self.find_pivot_points(df)
-            print(f"Pivot points: {pivot_points}")
-
-            print("Getting historical extremes...")
             historical_extremes = self.get_historical_extremes(df, interval)
-            print(f"Historical extremes: {historical_extremes}")
 
             if historical_extremes is None:
-                print("Failed to get historical extremes")
                 return Response({'error': 'Failed to get historical extremes'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            print("Generating trend lines...")
-            trend_lines = self.generate_trend_lines(df, pivot_points, historical_extremes, symbol)
-            print(f"Generated trend lines: {trend_lines}")
+            # 최근 고점과 저점을 피벗 포인트에 추가
+            self.add_recent_extremes_to_pivots(pivot_points, historical_extremes)
 
+            trend_lines = self.generate_trend_lines(df, pivot_points, historical_extremes, symbol)
             if not trend_lines:
-                print("Failed to generate trend lines")
                 return Response({'error': 'Failed to generate trend lines'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            print("Selecting top trend lines...")
             top_trend_lines = self.select_top_trend_lines(trend_lines, pivot_points, historical_extremes)
             print(f"Top trend lines: {top_trend_lines}")
 
@@ -207,6 +196,24 @@ class TrendLinesAPIView(APIView):
         except Exception as e:
             print(f"Exception occurred: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def add_recent_extremes_to_pivots(self, pivot_points, historical_extremes):
+        for extreme_type in ['RecentSteepHigh', 'RecentSteepLow']:
+            if extreme_type in historical_extremes:
+                extreme = historical_extremes[extreme_type]
+                pivot_type = 'High' if 'High' in extreme_type else 'Low'
+                new_pivot = {
+                    'Index': extreme['Index'],
+                    'Date': extreme['Date'],
+                    'Price': extreme['Price'],
+                    'Type': pivot_type
+                }
+                if new_pivot not in pivot_points:
+                    pivot_points.append(new_pivot)
+
+        # 인덱스로 정렬
+        pivot_points.sort(key=lambda x: x['Index'])
+
     def get_historical_extremes(self, df, interval):
         if df is None or df.empty:
             print("DataFrame is None or empty in get_historical_extremes")
