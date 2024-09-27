@@ -679,19 +679,11 @@ class TrendLinesAPIView(APIView):
             trend_line.update({
                 'CurrentPrice': current_candle['Close'],
                 'Difference': current_candle['Close'] - price_on_line,
-                'PreviousState': {
-                    'en': previous_state,
-                },
-                'CurrentState': {
-                    'en': current_state,
-                },
-                'TrendStrength': {
-                    'en': trend_strength,
-                },
+                'PreviousState': previous_state,
+                'CurrentState': current_state,
+                'TrendStrength': trend_strength,
                 'threshold': threshold,
-                'CurrentRole': {
-                    'en': 'Resistance' if price_on_line > current_candle['Close'] else 'Support',
-                },
+                'CurrentRole': 'Resistance' if price_on_line > current_candle['Close'] else 'Support',
                 'symbol': symbol,
                 'interval': interval
             })
