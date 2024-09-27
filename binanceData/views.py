@@ -228,12 +228,17 @@ class TrendLinesAPIView(APIView):
                     line['id'] = f"{line['StartIndex']}_{line['EndIndex']}"
                     all_top_trend_lines.append(line)
 
-            trend_line_states = self.check_current_price_against_trend_lines(df, all_top_trend_lines, symbol, interval)
+            updated_trend_lines = self.check_current_price_against_trend_lines(df, all_top_trend_lines, symbol,
+                                                                               interval)
+            # top_trend_lines 업데이트
+            print("2222222222222")
+            for category in top_trend_lines:
+                top_trend_lines[category] = [line for line in updated_trend_lines if line in top_trend_lines[category]]
+
             response_data = {
                 'pivots': pivot_points,
-                'trend_lines': top_trend_lines,  # 원본 구조 유지
+                'trend_lines': top_trend_lines,  # 업데이트된 trend_lines
                 'historical_extremes': historical_extremes,
-                'trend_line_states': trend_line_states,
                 'symbol': symbol,
                 'interval': interval
             }
@@ -584,56 +589,115 @@ class TrendLinesAPIView(APIView):
 
         return None
 
-    def get_price_state(self, price, trend_line):
-        price_on_line = trend_line['CurrentPrice']
-        threshold = 0.001 * price_on_line  # 0.1% 임계값
-
-        if abs(price - price_on_line) <= threshold:
-            return 'Near'
-        elif trend_line['Type'] == 'High':
-            return 'Above' if price > price_on_line else 'Below'
-        else:  # Low type
-            return 'Below' if price < price_on_line else 'Above'
-
-    def check_current_price_against_trend_lines(self, df, trend_lines, symbol , interval):
-        current_price = self.get_current_price(symbol)
-        if current_price is None:
-            return []  # 현재 가격을 가져올 수 없으면 빈 리스트 반환
+    def get_price_state(self, current_candle, previous_candle, trend_line, threshold, price_on_line):
+        current_low, current_high, current_close = current_candle['Low'], current_candle['High'], current_candle[
+            'Close']
+        previous_low, previous_high = previous_candle['Low'], previous_candle['High']
 
 
-        trend_line_states = []
+        is_above = current_close > price_on_line
+        is_below = current_close < price_on_line
+
+        if abs(current_close - price_on_line) <= threshold:
+            return 'At_Level'
+
+        if is_below:  # 가격이 추세선 아래에 있을 때 (잠재적 저항)
+            if previous_high >= price_on_line - threshold:  # 이전 캔들이 레벨에 닿았었고
+                if current_high < price_on_line and current_candle['Close'] < current_candle[
+                    'Open']:  # 현재 캔들이 하락하며 레벨 아래에 있다면
+                    return 'Pullback'
+                elif current_high > price_on_line + threshold:  # 현재 캔들이 레벨을 상향 돌파했다면
+                    return 'Breakout_Up'
+
+        elif is_above:  # 가격이 추세선 위에 있을 때 (잠재적 지지)
+            if previous_low <= price_on_line + threshold:  # 이전 캔들이 레벨에 닿았었고
+                if current_low > price_on_line and current_candle['Close'] > current_candle[
+                    'Open']:  # 현재 캔들이 상승하며 레벨 위에 있다면
+                    return 'Bounce'
+                elif current_low < price_on_line - threshold:  # 현재 캔들이 레벨을 하향 돌파했다면
+                    return 'Breakout_Down'
+
+        # 그 외의 경우
+        return 'Above' if is_above else 'Below'
+
+    def check_current_price_against_trend_lines(self, df, trend_lines, symbol, interval):
+        if len(df) < 2:
+            return trend_lines  # 최소 2개의 캔들이 필요합니다
+
+        current_candle = df.iloc[-1]
+        previous_candle = df.iloc[-2]
+
+        state_translations = {
+            'At_Level': '레벨에 근접',
+            'Pullback': '되돌림',
+            'Breakout_Up': '상향 돌파',
+            'Bounce': '반등',
+            'Breakout_Down': '하향 돌파',
+            'Above': '저항선',
+            'Below': '지지선'
+        }
+
+        trend_strength_translations = {
+            'Very Bullish': '매우 강세',
+            'Bullish': '강세',
+            'Bearish': '약세',
+            'Very Bearish': '매우 약세',
+            'Consolidating': '횡보',
+            'Neutral': '중립'
+        }
+
         for trend_line in trend_lines:
             trend_line_id = trend_line['id']
-            current_state = self.get_price_state(current_price, trend_line)
-            previous_state = self.previous_states.get(trend_line_id)
 
-            breakout_status = 'No Change'
+            price_on_line = trend_line['CurrentPrice']
+            threshold = 0.001 * price_on_line  # 0.1% 임계값
+            print("000000000000000000")
+            current_state = self.get_price_state(current_candle, previous_candle, trend_line, threshold, price_on_line)
+            print("11111111111111111")
+
+            previous_state = self.previous_states.get(trend_line_id, '')  # 기본값으로 빈 문자열 사용
+            print("333333333333333")
+
+            trend_strength = 'Neutral'
             if previous_state != current_state:
-                if previous_state == 'Near':
-                    if (trend_line['Type'] == 'High' and current_state == 'Above') or \
-                       (trend_line['Type'] == 'Low' and current_state == 'Below'):
-                        breakout_status = 'Breakout'
-                    else:
-                        breakout_status = 'Reversal'
-                elif current_state == 'Near':
-                    breakout_status = 'Approaching'
-                else:
-                    breakout_status = 'Crossing'
-            self.previous_states[trend_line_id] = current_state
+                if current_state == 'Bounce':
+                    trend_strength = 'Bullish'
+                elif current_state == 'Pullback':
+                    trend_strength = 'Bearish'
+                elif current_state == 'Breakout_Up':
+                    trend_strength = 'Very Bullish'
+                elif current_state == 'Breakout_Down':
+                    trend_strength = 'Very Bearish'
+                elif current_state == 'At_Level':
+                    trend_strength = 'Consolidating'
 
-            trend_line_states.append({
-                'TrendLine': trend_line,
-                'CurrentPrice': current_price,
-                'PriceOnLine': trend_line['CurrentPrice'],
-                'Difference': current_price - trend_line['CurrentPrice'],
-                'PreviousState': previous_state,
-                'CurrentState': current_state,
-                'BreakoutStatus': breakout_status,
+            self.previous_states[trend_line_id] = current_state
+            print("3555555555555555555")
+
+            # 기존 trend_line 딕셔너리에 새로운 정보 추가
+            # 기존 trend_line 딕셔너리에 새로운 정보 추가
+            trend_line.update({
+                'CurrentPrice': current_candle['Close'],
+                'Difference': current_candle['Close'] - price_on_line,
+                'PreviousState': {
+                    'en': previous_state,
+                },
+                'CurrentState': {
+                    'en': current_state,
+                },
+                'TrendStrength': {
+                    'en': trend_strength,
+                },
+                'threshold': threshold,
+                'CurrentRole': {
+                    'en': 'Resistance' if price_on_line > current_candle['Close'] else 'Support',
+                },
                 'symbol': symbol,
                 'interval': interval
             })
+            print("77777777777777755555")
 
-        return trend_line_states
+        return trend_lines
     @staticmethod
     def index_pivot_points(pivot_points: List[Dict]) -> Dict[str, List[Dict]]:
         indexed = defaultdict(list)
