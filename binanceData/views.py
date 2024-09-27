@@ -270,48 +270,6 @@ class TrendLinesAPIView(APIView):
             print(f"Error in get_historical_extremes: {e}")
             return None
 
-    # def get_historical_extremes(self, df):
-    #     # 전체 기간의 역사적 고점과 저점
-    #     historical_high = df.loc[df['High'].idxmax()]
-    #     historical_low = df.loc[df['Low'].idxmin()]
-    #
-    #     # 최근 데이터 기준 가장 경사가 급한 변곡점 찾기
-    #     recent_df = df.tail(100)  # 최근 100개 데이터 사용
-    #     pivot_points = self.find_pivot_points(recent_df, window=5)
-    #     pivot_highs = [p for p in pivot_points if p['Type'] == 'High']
-    #     pivot_lows = [p for p in pivot_points if p['Type'] == 'Low']
-    #
-    #     steepest_high = max(pivot_highs, key=lambda x: x['Price'], default=None)
-    #     steepest_low = min(pivot_lows, key=lambda x: x['Price'], default=None)
-    #
-    #     result = {
-    #         'LongTermHigh': {
-    #             'Index': int(historical_high.name),
-    #             'Date': historical_high['Open Time'].isoformat(),
-    #             'Price': float(historical_high['High'])
-    #         },
-    #         'LongTermLow': {
-    #             'Index': int(historical_low.name),
-    #             'Date': historical_low['Open Time'].isoformat(),
-    #             'Price': float(historical_low['Low'])
-    #         }
-    #     }
-    #
-    #     if steepest_high:
-    #         result['RecentSteepHigh'] = {
-    #             'Index': steepest_high['Index'] + len(df) - 100,  # 전체 DataFrame에서의 인덱스로 조정
-    #             'Date': steepest_high['Date'],
-    #             'Price': steepest_high['Price']
-    #         }
-    #
-    #     if steepest_low:
-    #         result['RecentSteepLow'] = {
-    #             'Index': steepest_low['Index'] + len(df) - 100,  # 전체 DataFrame에서의 인덱스로 조정
-    #             'Date': steepest_low['Date'],
-    #             'Price': steepest_low['Price']
-    #         }
-    #
-    #     return result
 
     def fetch_binance_data(self, symbol, interval):
         binance_api_url = "https://api.binance.com/api/v3/klines"
@@ -683,9 +641,9 @@ class TrendLinesAPIView(APIView):
         current_time = pd.Timestamp.now(tz='UTC')
 
 
-        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=5,
+        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=10,
                                                     reference_time=current_time)
-        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=5,
+        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=10,
                                                    reference_time=current_time)
         top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1,
                                                  reference_time=current_time)
