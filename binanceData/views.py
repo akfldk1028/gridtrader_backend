@@ -18,7 +18,10 @@ from .analysis.IchimokuIndicator import IchimokuIndicator
 import numpy as np
 import math
 from typing import List, Dict, Optional
-
+import bisect
+from typing import Optional, List, Dict, Tuple
+from collections import defaultdict
+from functools import lru_cache
 
 class BinanceChartDataAPIView(APIView):
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
@@ -436,73 +439,42 @@ class TrendLinesAPIView(APIView):
 
         return approaching_lines
 
-    # def check_current_price_against_trend_lines(self, df, trend_lines, symbol):
-    #     current_price = self.get_current_price(symbol)
-    #     print(current_price)
-    #     if current_price is None:
-    #         return []  # 현재 가격을 가져올 수 없으면 빈 리스트 반환
-    #
-    #
-    #     # current_time을 얻음
-    #     current_time = pd.Timestamp.utcnow()
-    #     start_time = df['Open Time'].iloc[0]
-    #
-    #
-    #     time_since_start = (current_time - start_time).total_seconds()
-    #
-    #     approaching_lines = []
-    #
-    #     for trend_line in trend_lines:
-    #         # 현재 시간에 해당하는 추세선 가격 계산
-    #         price_on_line = trend_line['Slope'] * time_since_start + trend_line['Intercept']
-    #
-    #         # 임계값 설정 (예: 추세선 가격의 0.1%)
-    #         threshold = 0.001 * price_on_line
-    #
-    #         # 현재 가격이 추세선 가격에 근접한지 확인
-    #         if abs(current_price - price_on_line) <= threshold:
-    #             approaching_lines.append({
-    #                 'TrendLine': trend_line,
-    #                 'CurrentPrice': current_price,
-    #                 'PriceOnLine': price_on_line,
-    #                 'Difference': abs(current_price - price_on_line)
-    #             })
-    #
-    #     return approaching_lines
-
+    @staticmethod
+    def index_pivot_points(pivot_points: List[Dict]) -> Dict[str, List[Dict]]:
+        indexed = defaultdict(list)
+        for pivot in pivot_points:
+            indexed[pivot['Type']].append(pivot)
+        for type_pivots in indexed.values():
+            type_pivots.sort(key=lambda p: p['Price'], reverse=True)
+        return indexed
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
+        indexed_pivots = self.index_pivot_points(pivot_points)
 
-        def calculate_pivot_slope(pivot1, pivot2):
-            time_diff = abs(pivot1['Index'] - pivot2['Index'])
-            price_diff = abs(pivot1['Price'] - pivot2['Price'])
+        @lru_cache(maxsize=None)
+        def calculate_pivot_slope(pivot1_index: int, pivot1_price: float, pivot2_index: int, pivot2_price: float) -> float:
+            time_diff = abs(pivot1_index - pivot2_index)
+            price_diff = abs(pivot1_price - pivot2_price)
             return price_diff / time_diff if time_diff != 0 else 0
 
-        def find_nearest_opposite_pivot(start_index, end_index, line_type):
-            opposite_type = 'Low' if line_type == 'High' else 'High'
-            opposite_pivots = [p for p in pivot_points if
-                               p['Type'] == opposite_type and start_index <= p['Index'] <= end_index]
+        def find_steepest_pivot_pair(start_index: int, end_index: int) -> Tuple[Optional[Tuple[Dict, Dict]], float]:
+            high_pivots = [p for p in indexed_pivots['High'] if start_index <= p['Index'] <= end_index]
+            low_pivots = [p for p in indexed_pivots['Low'] if start_index <= p['Index'] <= end_index]
 
-            if not opposite_pivots:
-                return None
-            mid_point = (start_index + end_index) / 2
-            nearest_pivot = min(opposite_pivots, key=lambda p: abs(p['Index'] - mid_point))
-            return nearest_pivot
+            if not high_pivots or not low_pivots:
+                return None, 0
 
-        def find_steepest_nearby_pivot_pair(start_index, end_index, line_type, max_distance=20):
-            opposite_type = 'Low' if line_type == 'High' else 'High'
-            opposite_pivots = [p for p in pivot_points if
-                               p['Type'] == opposite_type and start_index <= p['Index'] <= end_index]
-
-            steepest_pair = None
             max_slope = 0
+            steepest_pair = None
 
-            for i, pivot in enumerate(opposite_pivots):
-                nearby_pivots = [p for p in opposite_pivots[i + 1:] if abs(p['Index'] - pivot['Index']) <= max_distance]
-                for nearby_pivot in nearby_pivots:
-                    slope = calculate_pivot_slope(pivot, nearby_pivot)
+            for high in high_pivots[:5]:  # 상위 5개의 고점만 고려
+                for low in low_pivots[:5]:  # 상위 5개의 저점만 고려
+                    slope = calculate_pivot_slope(high['Index'], high['Price'], low['Index'], low['Price'])
                     if slope > max_slope:
                         max_slope = slope
-                        steepest_pair = (pivot, nearby_pivot)
+                        steepest_pair = (high, low)
+
+                if steepest_pair:
+                    break
 
             return steepest_pair, max_slope
         def process_trend_lines(lines,
@@ -515,8 +487,8 @@ class TrendLinesAPIView(APIView):
                 reference_time = reference_time.tz_localize('UTC')
 
             for line in lines:
-                steepest_pair, max_slope = find_steepest_nearby_pivot_pair(line['StartIndex'], line['EndIndex'],
-                                                                           line['Type'])
+                steepest_pair, max_slope = find_steepest_pivot_pair(line['StartIndex'], line['EndIndex'])
+
 
                 if steepest_pair:
                     line['SteepestPivotPair'] = steepest_pair
