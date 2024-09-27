@@ -84,7 +84,7 @@ class TrendLinesAPIView(APIView):
                 return Response({'error': 'Failed to fetch data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             pivot_points = self.find_pivot_points(df)
-            historical_extremes = self.get_historical_extremes(df)
+            historical_extremes = self.get_historical_extremes(df, interval)
             if historical_extremes is None:
                 return Response({'error': 'Failed to get historical extremes'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -116,7 +116,7 @@ class TrendLinesAPIView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def get_historical_extremes(self, df):
+    def get_historical_extremes(self, df, interval):
         if df is None or df.empty:
             return None
 
@@ -126,7 +126,20 @@ class TrendLinesAPIView(APIView):
             historical_low = df.loc[df['Low'].idxmin()]
 
             # 최근 데이터의 역사적 고점과 저점
-            recent_df = df.tail(500)  # 최근 100개 데이터 사용
+            recent_data_count = {
+                '5m': 900,  # 약 3일
+                '15m': 720,  # 약 10일
+                '30m': 600,  # 약 20일
+                '1h': 360,  # 약 30일
+                '2h': 330,  # �� 41일
+                '4h': 300,  # 약 83일
+                '1d': 240,  # 약 1년
+                '3d': 180,
+                '1w': 120,  # 약 4년
+            }
+
+            count = recent_data_count.get(interval, 500)  # 기본값은 500
+            recent_df = df.tail(count)
             recent_high = recent_df.loc[recent_df['High'].idxmax()]
             recent_low = recent_df.loc[recent_df['Low'].idxmin()]
 
@@ -484,8 +497,19 @@ class TrendLinesAPIView(APIView):
                     line['NearestPivot'] = None
                     line['PivotSlope'] = 0
 
+            sorted_lines = sorted(lines, key=lambda x: x['Slope'], reverse=reverse_order)
 
-            return sorted(lines, key=lambda x: x['PivotSlope'], reverse=reverse_order)[:top_n]
+            # 비슷한 경사도 제거
+            unique_lines = []
+            for line in sorted_lines:
+                if not unique_lines or abs(line['Slope'] - unique_lines[-1]['Slope']) > 0.0001:  # 임계값 조정 가능
+                    unique_lines.append(line)
+
+            # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
+            if lines and lines[0]['Type'] == 'High':
+                return sorted(unique_lines, key=lambda x: x['EndPrice'], reverse=True)[:top_n]
+            else:  # Low
+                return sorted(unique_lines, key=lambda x: x['EndPrice'])[:top_n]
 
         # def process_trend_lines(lines, reverse_order=False, top_n=1):
         #     for line in lines:
