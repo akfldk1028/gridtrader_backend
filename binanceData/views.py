@@ -517,7 +517,7 @@ class TrendLinesAPIView(APIView):
             # 비슷한 경사도 제거
             unique_lines = []
             for line in sorted_lines:
-                if not unique_lines or (line['Slope'] - unique_lines[-1]['Slope']) > 0.0001:  # 임계값 조정 가능
+                if not unique_lines or abs(line['Slope'] - unique_lines[-1]['Slope']) > 0.0001:  # 임계값 조정 가능
                     unique_lines.append(line)
 
             # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
