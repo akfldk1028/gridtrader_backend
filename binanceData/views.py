@@ -270,7 +270,7 @@ class TrendLinesAPIView(APIView):
 
         return df
 
-    def find_pivot_points(self, df, window=1):
+    def find_pivot_points(self, df, window=2):
         pivot_points = []
         for i in range(window, len(df) - window):
             if df['High'].iloc[i] == df['High'].iloc[i - window:i + window + 1].max():
@@ -515,6 +515,7 @@ class TrendLinesAPIView(APIView):
 
             for line in lines:
                 steepest_pair, max_slope = find_steepest_pivot_pair_for_trend_line(line, indexed_pivots)
+                # steepest_pair, max_slope = find_steepest_pivot_pair(line['StartIndex'], line['EndIndex'])
 
                 if steepest_pair:
                     line['SteepestPivotPair'] = steepest_pair
