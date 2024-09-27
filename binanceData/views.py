@@ -515,7 +515,7 @@ class TrendLinesAPIView(APIView):
                 time_diff = (reference_time - start_time).total_seconds()
                 line['CurrentPrice'] = line['Slope'] * time_diff + line['Intercept']
 
-            sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)
+            sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)[:top_n]
 
             # 디버깅을 위해 정렬된 라인들의 MaxPivotSlope 출력
             for line in sorted_lines:
