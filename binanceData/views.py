@@ -259,9 +259,9 @@ class TrendLinesAPIView(APIView):
         df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms", utc=True)
         df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms", utc=True)
 
-        # 시간을 9시간 앞당기기 (KST -> UTC 변환)
-        df["Open Time"] = df["Open Time"] - pd.Timedelta(hours=9)
-        df["Close Time"] = df["Close Time"] - pd.Timedelta(hours=9)
+        # # 시간을 9시간 앞당기기 (KST -> UTC 변환)
+        # df["Open Time"] = df["Open Time"] - pd.Timedelta(hours=9)
+        # df["Close Time"] = df["Close Time"] - pd.Timedelta(hours=9)
 
         for col in ["Open", "High", "Low", "Close", "Volume", "Quote Asset Volume",
                     "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume"]:
@@ -276,14 +276,14 @@ class TrendLinesAPIView(APIView):
             if df['High'].iloc[i] == df['High'].iloc[i - window:i + window + 1].max():
                 pivot_points.append({
                     'Index': i,
-                    'Date': df['Open Time'].iloc[i].isoformat(),  # UTC 시간으로 이미 설정되어 있음
+                    'Date': df['Open Time'].iloc[i].isoformat(),
                     'Price': float(df['High'].iloc[i]),
                     'Type': 'High'
                 })
             elif df['Low'].iloc[i] == df['Low'].iloc[i - window:i + window + 1].min():
                 pivot_points.append({
                     'Index': i,
-                    'Date': df['Open Time'].iloc[i].isoformat(),  # UTC 시간으로 이미 설정되어 있음
+                    'Date': df['Open Time'].iloc[i].isoformat(),
                     'Price': float(df['Low'].iloc[i]),
                     'Type': 'Low'
                 })
