@@ -17,6 +17,7 @@ from .analysis.rsi import RSIAnalyzer
 from .analysis.IchimokuIndicator import IchimokuIndicator
 import numpy as np
 import math
+from typing import List, Dict, Optional
 
 
 class BinanceChartDataAPIView(APIView):
@@ -130,9 +131,9 @@ class TrendLinesAPIView(APIView):
                 '5m': 900,  # 약 3일
                 '15m': 720,  # 약 10일
                 '30m': 600,  # 약 20일
-                '1h': 360,  # 약 30일
-                '2h': 330,  # �� 41일
-                '4h': 300,  # 약 83일
+                '1h': 600,  # 약 30일
+                '2h': 540,  # �� 41일
+                '4h': 480,  # 약 83일
                 '1d': 240,  # 약 1년
                 '3d': 180,
                 '1w': 120,  # 약 4년
@@ -486,7 +487,15 @@ class TrendLinesAPIView(APIView):
             nearest_pivot = min(opposite_pivots, key=lambda p: abs(p['Index'] - mid_point))
             return nearest_pivot
 
-        def process_trend_lines(lines, reverse_order=False, top_n=1):
+        def process_trend_lines(lines,
+                                reverse_order: bool = False,
+                                top_n: int = 5,
+                                reference_time: Optional[pd.Timestamp] = None):
+            if reference_time is None:
+                reference_time = pd.Timestamp.now(tz='UTC')
+            elif reference_time.tzinfo is None:
+                reference_time = reference_time.tz_localize('UTC')
+
             for line in lines:
                 start_pivot = next(p for p in pivot_points if p['Index'] == line['StartIndex'])
                 nearest_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
@@ -496,13 +505,19 @@ class TrendLinesAPIView(APIView):
                 else:
                     line['NearestPivot'] = None
                     line['PivotSlope'] = 0
+                # 현재 시점까지 추세선 연장
+                start_time = pd.Timestamp(line['StartDate'])
+                if start_time.tzinfo is None:
+                    start_time = start_time.tz_localize('UTC')
+                time_diff = (reference_time - start_time).total_seconds()
+                line['CurrentPrice'] = line['Slope'] * time_diff + line['Intercept']
 
             sorted_lines = sorted(lines, key=lambda x: x['Slope'], reverse=reverse_order)
 
             # 비슷한 경사도 제거
             unique_lines = []
             for line in sorted_lines:
-                if not unique_lines or abs(line['Slope'] - unique_lines[-1]['Slope']) > 0.0001:  # 임계값 조정 가능
+                if not unique_lines or (line['Slope'] - unique_lines[-1]['Slope']) > 0.0001:  # 임계값 조정 가능
                     unique_lines.append(line)
 
             # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
@@ -510,17 +525,6 @@ class TrendLinesAPIView(APIView):
                 return sorted(unique_lines, key=lambda x: x['EndPrice'], reverse=True)[:top_n]
             else:  # Low
                 return sorted(unique_lines, key=lambda x: x['EndPrice'])[:top_n]
-
-        # def process_trend_lines(lines, reverse_order=False, top_n=1):
-        #     for line in lines:
-        #         opposite_pivot = find_nearest_opposite_pivot(line['StartIndex'], line['EndIndex'], line['Type'])
-        #         if opposite_pivot:
-        #             line['PivotDifference'] = abs(line['EndPrice'] - opposite_pivot['Price'])
-        #         else:
-        #             line['PivotDifference'] = 0
-        #
-        #     # 최종적으로 PivotDifference로 정렬
-        #     return sorted(lines, key=lambda x: x['PivotDifference'], reverse=reverse_order)[:top_n]
 
         # 추세선 분류
         recent_steep_high = [line for line in trend_lines if
@@ -534,10 +538,15 @@ class TrendLinesAPIView(APIView):
         long_term_low = [line for line in trend_lines if
                          line['Type'] == 'Low' and line['StartIndex'] == historical_extremes['LongTermLow']['Index']]
         # 각 분류별로 상위 10개 선택
-        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=False, top_n=5)  # 경사도 작은 것부터
-        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=False, top_n=5)  # 경사도 작은 것부터
-        top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1)  # 경사도 큰 것부터
-        top_long_term_low = process_trend_lines(long_term_low, reverse_order=True, top_n=1)
+        current_time = pd.Timestamp.now()
+
+
+        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=5,
+                                                    reference_time=current_time)
+        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=5,
+                                                   reference_time=current_time)
+        top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1, reference_time=current_time)
+        top_long_term_low = process_trend_lines(long_term_low, reverse_order=True, top_n=1, reference_time=current_time)
 
         return {
             'RecentSteepHigh': top_recent_steep_high,
