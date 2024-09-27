@@ -24,6 +24,7 @@ from collections import defaultdict
 from functools import lru_cache
 from django.core.cache import caches
 import json
+from pandas import Timestamp
 class KRXStockDataAPIView(APIView):
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     def get(self, request, symbol, start_date, end_date, interval='D'):
@@ -236,6 +237,19 @@ class TrendLinesAPIView(APIView):
                 'symbol': symbol,
                 'interval': interval
             }
+
+            def process_timestamps(data):
+                if isinstance(data, dict):
+                    return {k: process_timestamps(v) for k, v in data.items()}
+                elif isinstance(data, list):
+                    return [process_timestamps(v) for v in data]
+                elif isinstance(data, Timestamp):
+                    return data.isoformat()
+                else:
+                    return data
+
+            # 사용 예:
+            response_data = process_timestamps(response_data)
             cache.set(key, json.dumps(response_data), timeout=None)
 
             return Response(response_data)
