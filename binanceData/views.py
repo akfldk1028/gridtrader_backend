@@ -517,18 +517,26 @@ class TrendLinesAPIView(APIView):
 
             sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)
 
-            # 비슷한 경사도 제거
-            unique_lines = []
+            # 디버깅을 위해 정렬된 라인들의 MaxPivotSlope 출력
             for line in sorted_lines:
-                if not unique_lines or abs(
-                        line['MaxPivotSlope'] - unique_lines[-1]['MaxPivotSlope']) > 0.0001:  # 임계값 조정 가능
-                    unique_lines.append(line)
+                print(f"Type: {line['Type']}, MaxPivotSlope: {line['MaxPivotSlope']}, EndPrice: {line['EndPrice']}")
 
-            # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
-            if lines and lines[0]['Type'] == 'High':
-                return sorted(unique_lines, key=lambda x: x['EndPrice'], reverse=True)[:top_n]
-            else:  # Low
-                return sorted(unique_lines, key=lambda x: x['EndPrice'])[:top_n]
+            return sorted_lines
+
+            # sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)
+            #
+            # # 비슷한 경사도 제거
+            # unique_lines = []
+            # for line in sorted_lines:
+            #     if not unique_lines or abs(
+            #             line['MaxPivotSlope'] - unique_lines[-1]['MaxPivotSlope']) > 0.0001:  # 임계값 조정 가능
+            #         unique_lines.append(line)
+            #
+            # # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
+            # if lines and lines[0]['Type'] == 'High':
+            #     return sorted(unique_lines, key=lambda x: x['EndPrice'], reverse=True)[:top_n]
+            # else:  # Low
+            #     return sorted(unique_lines, key=lambda x: x['EndPrice'])[:top_n]
 
         # 추세선 분류
         recent_steep_high = [line for line in trend_lines if
