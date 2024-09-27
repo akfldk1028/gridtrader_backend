@@ -466,8 +466,8 @@ class TrendLinesAPIView(APIView):
             max_slope = 0
             steepest_pair = None
 
-            for high in high_pivots[:5]:  # 상위 5개의 고점만 고려
-                for low in low_pivots[:5]:  # 상위 5개의 저점만 고려
+            for high in high_pivots:  # 상위 5개의 고점만 고려
+                for low in low_pivots:  # 상위 5개의 저점만 고려
                     slope = calculate_pivot_slope(high['Index'], high['Price'], low['Index'], low['Price'])
                     if slope > max_slope:
                         max_slope = slope
@@ -489,13 +489,14 @@ class TrendLinesAPIView(APIView):
             for line in lines:
                 steepest_pair, max_slope = find_steepest_pivot_pair(line['StartIndex'], line['EndIndex'])
 
-
                 if steepest_pair:
                     line['SteepestPivotPair'] = steepest_pair
                     line['PivotSlope'] = max_slope
                 else:
                     line['SteepestPivotPair'] = None
                     line['PivotSlope'] = 0
+
+
 
                 # 현재 시점까지 추세선 연장
                 start_time = pd.Timestamp(line['StartDate'])
