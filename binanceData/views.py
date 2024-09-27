@@ -350,15 +350,15 @@ class TrendLinesAPIView(APIView):
             return None  # 시간 순서가 맞지 않으면 None 반환
 
         # 시간과 가격 차이 계산
-        time_diff = max((end_time - start_time).total_seconds(), 1e-6)  # 0으로 나누는 것 방지
+        # 시간과 가격 차이 계산
+        time_diff = (end_time - start_time).total_seconds()
         price_diff = end_price - start_price
 
         # 기울기 계산
         slope = price_diff / time_diff
 
         # 절편 계산
-        start_time_seconds = (start_time - df['Open Time'].iloc[0]).total_seconds()
-        intercept = start_price - slope * start_time_seconds
+        intercept = start_price - slope * start_time.timestamp()
 
         # 중요도 계산 (예시로 유지)
         importance = abs(slope) * np.log1p(time_diff + 1e-6)
@@ -533,14 +533,17 @@ class TrendLinesAPIView(APIView):
                 line['LargestDiffPivot'] = largest_diff_pivot
                 line['MaxRelativePriceDiff'] = max_diff
 
-
-
-                # 현재 시점까지 추세선 연장
                 start_time = pd.Timestamp(line['StartDate'])
                 if start_time.tzinfo is None:
                     start_time = start_time.tz_localize('UTC')
+
                 time_diff = (reference_time - start_time).total_seconds()
-                line['CurrentPrice'] = line['Slope'] * time_diff + line['Intercept']
+                line['CurrentPrice'] = line['Slope'] * time_diff + line['StartPrice']
+                line['TrendLineTime'] = {reference_time}
+
+                print(
+                    f"Debug: StartTime={start_time}, TimeDiff={time_diff}, Slope={line['Slope']}, StartPrice={line['StartPrice']}, CurrentPrice={line['CurrentPrice']}")
+
             sorted_lines = sorted(lines, key=lambda x: x['MaxRelativePriceDiff'], reverse=True)[:top_n]
 
 
@@ -550,21 +553,6 @@ class TrendLinesAPIView(APIView):
                 print(f"Type: {line['Type']}, MaxPivotSlope: {line['MaxRelativePriceDiff']}, EndPrice: {line['EndPrice']}")
 
             return sorted_lines
-
-            # sorted_lines = sorted(lines, key=lambda x: abs(x['MaxPivotSlope']), reverse=True)
-            #
-            # # 비슷한 경사도 제거
-            # unique_lines = []
-            # for line in sorted_lines:
-            #     if not unique_lines or abs(
-            #             line['MaxPivotSlope'] - unique_lines[-1]['MaxPivotSlope']) > 0.0001:  # 임계값 조정 가능
-            #         unique_lines.append(line)
-            #
-            # # 가격 고려 (High는 높은 가격, Low는 낮은 가격 우선)
-            # if lines and lines[0]['Type'] == 'High':
-            #     return sorted(unique_lines, key=lambda x: x['EndPrice'], reverse=True)[:top_n]
-            # else:  # Low
-            #     return sorted(unique_lines, key=lambda x: x['EndPrice'])[:top_n]
 
         # 추세선 분류
         recent_steep_high = [line for line in trend_lines if
@@ -578,7 +566,8 @@ class TrendLinesAPIView(APIView):
         long_term_low = [line for line in trend_lines if
                          line['Type'] == 'Low' and line['StartIndex'] == historical_extremes['LongTermLow']['Index']]
         # 각 분류별로 상위 선택
-        current_time = pd.Timestamp.now()
+        current_time = pd.Timestamp.now(tz='UTC')
+
 
         top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=5,
                                                     reference_time=current_time)
@@ -595,23 +584,7 @@ class TrendLinesAPIView(APIView):
             'LongTermLow': top_long_term_low
         }
 
-    # def select_top_trend_lines(self, trend_lines, top_n=100):
-    #     # NaN이나 무한대 값 필터링
-    #     valid_lines = [line for line in trend_lines if
-    #                    not (math.isnan(line['Importance']) or math.isinf(line['Importance']))]
-    #     sorted_lines = sorted(valid_lines, key=lambda x: x['Importance'], reverse=True)
-    #     return sorted_lines[:top_n]
 
-    def to_serializable(self, obj):
-        if isinstance(obj, (datetime, np.datetime64)):
-            return obj.isoformat()
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return obj
 
 
 class BinanceAPIView(APIView):
