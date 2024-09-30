@@ -627,36 +627,15 @@ class TrendLinesAPIView(APIView):
         current_candle = df.iloc[-1]
         previous_candle = df.iloc[-2]
 
-        state_translations = {
-            'At_Level': '레벨에 근접',
-            'Pullback': '되돌림',
-            'Breakout_Up': '상향 돌파',
-            'Bounce': '반등',
-            'Breakout_Down': '하향 돌파',
-            'Above': '저항선',
-            'Below': '지지선'
-        }
-
-        trend_strength_translations = {
-            'Very Bullish': '매우 강세',
-            'Bullish': '강세',
-            'Bearish': '약세',
-            'Very Bearish': '매우 약세',
-            'Consolidating': '횡보',
-            'Neutral': '중립'
-        }
 
         for trend_line in trend_lines:
             trend_line_id = trend_line['id']
 
             price_on_line = trend_line['CurrentPrice']
             threshold = 0.001 * price_on_line  # 0.1% 임계값
-            print("000000000000000000")
             current_state = self.get_price_state(current_candle, previous_candle, trend_line, threshold, price_on_line)
-            print("11111111111111111")
 
             previous_state = self.previous_states.get(trend_line_id, '')  # 기본값으로 빈 문자열 사용
-            print("333333333333333")
 
             trend_strength = 'Neutral'
             if previous_state != current_state:
@@ -672,7 +651,6 @@ class TrendLinesAPIView(APIView):
                     trend_strength = 'Consolidating'
 
             self.previous_states[trend_line_id] = current_state
-            print("3555555555555555555")
 
             # 기존 trend_line 딕셔너리에 새로운 정보 추가
             # 기존 trend_line 딕셔너리에 새로운 정보 추가
@@ -687,7 +665,6 @@ class TrendLinesAPIView(APIView):
                 'symbol': symbol,
                 'interval': interval
             })
-            print("77777777777777755555")
 
         return trend_lines
     @staticmethod

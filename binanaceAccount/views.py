@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import BinanceOrder, BinanceSymbolSettings,DailyBalance
+from .models import BinanceOrder, BinanceSymbolSettings, DailyBalance
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from decimal import Decimal
@@ -17,6 +17,11 @@ import json
 from datetime import date
 from collections import defaultdict
 import pytz
+from enum import Enum
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List, Dict
+
 
 class BinanceAPIView(APIView):
     def __init__(self, **kwargs):
@@ -32,10 +37,12 @@ class BinanceAPIView(APIView):
             print(f"Error syncing server time: {e}")
             raise
 
+
 class FuturesBalanceView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+
     def get(self, request):
         try:
             futures_balances = self.client.futures_account_balance()
@@ -44,8 +51,8 @@ class FuturesBalanceView(BinanceAPIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class ServerTimeView(BinanceAPIView):
 
+class ServerTimeView(BinanceAPIView):
 
     def get(self, request):
         try:
@@ -122,6 +129,7 @@ class FuturesAccountInfoView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+
     def get(self, request):
         try:
             futures_account_info = self.client.futures_account()
@@ -130,12 +138,11 @@ class FuturesAccountInfoView(BinanceAPIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 class SpotAccountInfoView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+
     def get(self, request):
         try:
             spot_account_info = self.client.get_account()
@@ -161,13 +168,11 @@ class SpotAccountInfoView(BinanceAPIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
 class SpotBalanceView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+
     def get(self, request):
         try:
             spot_account_info = self.client.get_account()
@@ -181,15 +186,8 @@ class SpotBalanceView(BinanceAPIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
-
-
-
-
 class PositionsView(BinanceAPIView):
-    #TODO 각각 GET 할때 UPDATE
+    # TODO 각각 GET 할때 UPDATE
     pass
 
 
@@ -240,6 +238,7 @@ class LeverageView(BinanceAPIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class OpenOrderView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -277,10 +276,12 @@ class OpenOrderView(BinanceAPIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class CloseOrderView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+
     def post(self, request):
         try:
             symbol = request.data.get('symbol')
@@ -289,7 +290,9 @@ class CloseOrderView(BinanceAPIView):
 
             # 'SHORT' 또는 'LONG' 대신, 'SELL' 또는 'BUY'를 사용해야 합니다.
             if side not in ['SELL', 'BUY']:
-                return Response({'error': 'Invalid side. Use "SELL" for closing long positions and "BUY" for closing short positions.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'error': 'Invalid side. Use "SELL" for closing long positions and "BUY" for closing short positions.'},
+                    status=status.HTTP_400_BAD_REQUEST)
 
             order = self.client.futures_create_order(
                 symbol=symbol,
@@ -323,24 +326,83 @@ class CloseOrderView(BinanceAPIView):
         except BinanceAPIException as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# class DailyBalanceView(BinanceAPIView):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#         self.sync_server_time()
+
+class InvestorType(Enum):
+    YOU = "you"
+    FRIEND = "friend"
+
+class TransactionType(Enum):
+    DEPOSIT = "deposit"
+    WITHDRAWAL = "withdrawal"
+
+@dataclass
+class Transaction:
+    date: date
+    investor: InvestorType
+    type: TransactionType
+    amount: float
+
+class InvestmentTracker:
+    def __init__(self):
+        self.transactions: List[Transaction] = []
+
+    def add_transaction(self, transaction: Transaction):
+        self.transactions.append(transaction)
+        self.transactions.sort(key=lambda x: x.date)  # 날짜순으로 정렬
+
+    def get_investment_amount(self, investor: InvestorType, target_date: date) -> float:
+        amount = 0
+        for t in self.transactions:
+            if t.date <= target_date and t.investor == investor:
+                if t.type == TransactionType.DEPOSIT:
+                    amount += t.amount
+                elif t.type == TransactionType.WITHDRAWAL:
+                    amount -= t.amount
+        return amount
+    def get_initial_investment_amount(self, investor_type: InvestorType) -> float:
+        # 해당 투자자의 DEPOSIT 타입 거래 필터링
+        investor_deposits = [t for t in self.transactions
+                             if t.investor == investor_type and t.type == TransactionType.DEPOSIT]
+        if not investor_deposits:
+            return 0.0
+        # 가장 빠른 투자 날짜 찾기
+        earliest_date = min(t.date for t in investor_deposits)
+        # 최초 투자일의 투자 금액 합산
+        initial_investment = sum(t.amount for t in investor_deposits if t.date == earliest_date)
+        return initial_investment
+    def get_total_investment(self, target_date: date) -> float:
+        return sum(self.get_investment_amount(investor, target_date) for investor in InvestorType)
+
+    def get_investment_ratio(self, target_date: date) -> Dict[InvestorType, float]:
+        total = self.get_total_investment(target_date)
+        return {
+            investor: self.get_investment_amount(investor, target_date) / total
+            for investor in InvestorType
+        } if total > 0 else {investor: 0 for investor in InvestorType}
+
+    def calculate_profit_rate(self, start_balance: float, end_balance: float, investment: float) -> float:
+        if investment == 0:
+            return 0
+        return ((end_balance - investment) / investment) * 100
 
 class DailyBalanceView(BinanceAPIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sync_server_time()
+        self.investment_tracker = InvestmentTracker()
+        self.initialize_investments()
+
+    def initialize_investments(self):
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 9, 5), InvestorType.YOU, TransactionType.DEPOSIT, 109.58))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 9, 5), InvestorType.FRIEND, TransactionType.DEPOSIT, 40))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 9, 29), InvestorType.FRIEND, TransactionType.DEPOSIT, 72))
 
     def get_balance(self, balance_data):
         balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
         return float(balance_dict.get('balance', 0))
-
-    def calculate_profit_rate(self, start_balance, end_balance):
-        if start_balance == 0:
-            return 0
-        return ((end_balance - start_balance) / start_balance) * 100
 
     def get_latest_balance(self):
         try:
@@ -363,7 +425,8 @@ class DailyBalanceView(BinanceAPIView):
             date = balance.created_at.astimezone(kst).date()
             balance_value = self.get_balance(balance.futures_balance)
             if date not in daily_data:
-                daily_data[date] = {'first': balance_value, 'last': balance_value, 'timestamp': balance.created_at.astimezone(kst)}
+                daily_data[date] = {'first': balance_value, 'last': balance_value,
+                                    'timestamp': balance.created_at.astimezone(kst)}
             else:
                 if balance.created_at.astimezone(kst) < daily_data[date]['timestamp']:
                     daily_data[date]['first'] = balance_value
@@ -374,65 +437,311 @@ class DailyBalanceView(BinanceAPIView):
         sorted_dates = sorted(daily_data.keys())
         latest_balance = self.get_latest_balance()
 
-        for i, date in enumerate(sorted_dates):
+        prev_you_investment = 0
+        prev_friend_investment = 0
+        prev_you_balance = 0
+        prev_friend_balance = 0
+
+        for i, current_date in enumerate(sorted_dates):
             if i < len(sorted_dates) - 1:
                 next_date = sorted_dates[i + 1]
                 end_balance = daily_data[next_date]['first']
             else:
-                end_balance = latest_balance if latest_balance is not None else daily_data[date]['last']
+                end_balance = latest_balance if latest_balance is not None else daily_data[current_date]['last']
 
-            profit_rate = self.calculate_profit_rate(daily_data[date]['first'], end_balance)
+            start_balance = daily_data[current_date]['last']
+
+
+
+            # 전체 profit_rate 계산 (기존 방식 유지)
+            total_profit_rate = self.calculate_profit_rate(start_balance, end_balance)
+
+            # 현재 날짜의 총 투자금 계산
+            you_total_investment = self.investment_tracker.get_investment_amount(InvestorType.YOU, current_date)
+            friend_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND, current_date)
+
+            # 새로운 투자금 계산
+            you_new_investment = you_total_investment - prev_you_investment
+            friend_new_investment = friend_total_investment - prev_friend_investment
+
+            # 이전 잔액에 새 투자금 추가
+            you_balance = prev_you_balance + you_new_investment
+            friend_balance = prev_friend_balance + friend_new_investment
+
+            # 총 투자금 및 비율 계산
+            total_balance = you_balance + friend_balance
+            you_ratio = you_balance / total_balance if total_balance > 0 else 0
+            friend_ratio = friend_balance / total_balance if total_balance > 0 else 0
+
+            # 현재 잔액을 비율에 따라 분배
+            you_balance = end_balance * you_ratio
+            friend_balance = end_balance * friend_ratio
+            # you_balance = start_balance * you_ratio
+            # friend_balance = start_balance * friend_ratio
+
+
+            # 수정된 profit_rate 계산
+            you_profit_rate = self.investment_tracker.calculate_profit_rate(you_total_investment, you_balance,
+                                                                            you_total_investment)
+            friend_profit_rate = self.investment_tracker.calculate_profit_rate(friend_total_investment, friend_balance,
+                                                                               friend_total_investment)
 
             daily_profits.append({
-                'date': date.strftime('%Y-%m-%d'),
-                'timestamp': daily_data[date]['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
-                'balance': daily_data[date]['first'],
-                'profit_rate': profit_rate
+                'date': current_date.strftime('%Y-%m-%d'),
+                'timestamp': daily_data[current_date]['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+                'balance': start_balance,
+                'profit_rate': total_profit_rate,
+                'you': {
+                    'balance': you_balance,
+                    'investment': you_total_investment,
+                    'profit_rate': you_profit_rate
+                },
+                'friend': {
+                    'balance': friend_balance,
+                    'investment': friend_total_investment,
+                    'profit_rate': friend_profit_rate
+                }
             })
+
+            # 다음 반복을 위해 현재 값을 이전 값으로 저장
+            prev_you_investment = you_total_investment
+            prev_friend_investment = friend_total_investment
+            prev_you_balance = you_balance
+            prev_friend_balance = friend_balance
 
         return daily_profits, latest_balance
 
-    def find_closest_date(self, daily_profits, target_date):
-        return min(daily_profits, key=lambda x: abs(date.fromisoformat(x['date']) - target_date))
+
+
+    def calculate_profit_rate(self, start_balance: float, end_balance: float) -> float:
+        if start_balance == 0:
+            return 0
+        return ((end_balance - start_balance) / start_balance) * 100
 
     def get_profit_summary(self, daily_profits, latest_balance):
         if not daily_profits:
             return {
-                '1_day': {'profit_rate': 0, 'balance': 0},
-                '7_days': {'profit_rate': 0, 'balance': 0},
-                '30_days': {'profit_rate': 0, 'balance': 0},
-                'total': {'profit_rate': 0, 'balance': 0}
+                '1_day': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
+                          'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}},
+                '7_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
+                           'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}},
+                '30_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
+                            'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}},
+                'total': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
+                          'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}}
             }
 
         kst = pytz.timezone('Asia/Seoul')
         today = timezone.now().astimezone(kst).date()
 
-        # 1일 수익률 (오늘)
+        # Helper function to find the index of the closest date in daily_profits
+        def find_closest_index(target_date):
+            for idx, profit_data in enumerate(daily_profits):
+                if date.fromisoformat(profit_data['date']) >= target_date:
+                    return idx
+            return len(daily_profits) - 1  # Return the last index if date not found
+
+        # Get the latest investor data
+        latest_investor_data = daily_profits[-1]
+
+        # 1-day profit rate (today)
+        one_day_index = find_closest_index(today)
+        one_day_data = daily_profits[one_day_index]
         today_earliest = next((p for p in daily_profits if date.fromisoformat(p['date']) == today), None)
         one_day_profit = self.calculate_profit_rate(today_earliest['balance'], latest_balance) if today_earliest else 0
 
-        # 7일 수익률
+        # 7-day profit rate
         seven_days_ago = today - timedelta(days=7)
+        seven_day_index = find_closest_index(seven_days_ago)
+        seven_day_data = daily_profits[seven_day_index]
         seven_day_start = self.find_closest_date(daily_profits, seven_days_ago)
         seven_day_profit = self.calculate_profit_rate(seven_day_start['balance'], latest_balance)
 
-        # 30일 수익률
+
+        # 30-day profit rate
         thirty_days_ago = today - timedelta(days=30)
+        thirty_day_index = find_closest_index(thirty_days_ago)
+        thirty_day_data = daily_profits[thirty_day_index]
+        thirty_day_profit_rate = daily_profits[thirty_day_index]['profit_rate']
         thirty_day_start = self.find_closest_date(daily_profits, thirty_days_ago)
         thirty_day_profit = self.calculate_profit_rate(thirty_day_start['balance'], latest_balance)
 
-        # 총 수익률
+
+        # Total profit rate
         total_profit = self.calculate_profit_rate(daily_profits[0]['balance'], latest_balance)
 
         return {
-            '1_day': {'profit_rate': one_day_profit, 'balance': today_earliest['balance'] if today_earliest else 0},
-            '7_days': {'profit_rate': seven_day_profit, 'balance': seven_day_start['balance']},
-            '30_days': {'profit_rate': thirty_day_profit, 'balance': thirty_day_start['balance']},
-            'total': {'profit_rate': total_profit, 'balance': daily_profits[0]['balance']}
+            '1_day': {
+                'profit_rate': one_day_profit,
+                'balance':  today_earliest['balance'] if today_earliest else 0,
+                'you': {
+                    'balance': one_day_data['you']['balance'],
+                    'investment': one_day_data['you']['investment'],
+                    'profit_rate': one_day_data['you']['profit_rate']
+                },
+                'friend': {
+                    'balance': one_day_data['friend']['balance'],
+                    'investment': one_day_data['friend']['investment'],
+                    'profit_rate': one_day_data['friend']['profit_rate']
+                }
+            },
+            '7_days': {
+                'profit_rate': seven_day_profit,
+                'balance': seven_day_start['balance'],
+                'you': {
+                    'balance': seven_day_data['you']['balance'],
+                    'investment': seven_day_data['you']['investment'],
+                    'profit_rate': seven_day_data['you']['profit_rate']
+                },
+                'friend': {
+                    'balance': seven_day_data['friend']['balance'],
+                    'investment': seven_day_data['friend']['investment'],
+                    'profit_rate': seven_day_data['friend']['profit_rate']
+                }
+            },
+            '30_days': {
+                'profit_rate': thirty_day_profit,
+                'balance': thirty_day_start['balance'],
+                'you': {
+                    'balance': thirty_day_data['you']['balance'],
+                    'investment': thirty_day_data['you']['investment'],
+                    'profit_rate': thirty_day_data['you']['profit_rate']
+                },
+                'friend': {
+                    'balance': thirty_day_data['friend']['balance'],
+                    'investment': thirty_day_data['friend']['investment'],
+                    'profit_rate': thirty_day_data['friend']['profit_rate']
+                }
+            },
+            'total': {
+                'profit_rate':  total_profit,
+                'balance': daily_profits[0]['balance'],
+                'you': {
+                    'balance': latest_investor_data['you']['balance'],
+                    'investment': latest_investor_data['you']['investment'],
+                    'profit_rate': latest_investor_data['you']['profit_rate']
+                },
+                'friend': {
+                    'balance': latest_investor_data['friend']['balance'],
+                    'investment': latest_investor_data['friend']['investment'],
+                    'profit_rate': latest_investor_data['friend']['profit_rate']
+                }
+            }
         }
+
+    # def get_profit_summary(self, daily_profits, latest_balance):
+    #     if not daily_profits:
+    #         return {
+    #             '1_day': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+    #                       'friend': {'balance': 0, 'profit_rate': 0}},
+    #             '7_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+    #                        'friend': {'balance': 0, 'profit_rate': 0}},
+    #             '30_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+    #                         'friend': {'balance': 0, 'profit_rate': 0}},
+    #             'total': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+    #                       'friend': {'balance': 0, 'profit_rate': 0}}
+    #         }
+    #
+    #     kst = pytz.timezone('Asia/Seoul')
+    #     today = timezone.now().astimezone(kst).date()
+    #
+    #     def get_period_data(days=None):
+    #         if days is None or days == 0:
+    #             # 'total'의 경우, 각 투자자의 초기 투자 금액을 직접 사용
+    #             you_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU)
+    #             friend_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
+    #
+    #             start_balance_you = you_initial_investment
+    #             start_balance_friend = friend_initial_investment
+    #         else:
+    #             target_date = today - timedelta(days=days)
+    #             start_data = next(
+    #                 (p for p in reversed(daily_profits) if date.fromisoformat(p['date']) <= target_date),
+    #                 daily_profits[0]
+    #             )
+    #             start_balance_you = start_data['you']['balance']
+    #             start_balance_friend = start_data['friend']['balance']
+    #
+    #         end_data = daily_profits[-1]
+    #         end_balance_you = end_data['you']['balance']
+    #         end_balance_friend = end_data['friend']['balance']
+    #
+    #         you_profit_rate = self.calculate_profit_rate(start_balance_you, end_balance_you)
+    #         friend_profit_rate = self.calculate_profit_rate(start_balance_friend, end_balance_friend)
+    #
+    #         return {
+    #             'you': {
+    #                 'startBalance': start_balance_you,
+    #                 'endBalance': end_balance_you,
+    #                 'profit_rate': you_profit_rate
+    #             },
+    #             'friend': {
+    #                 'startBalance': start_balance_friend,
+    #                 'endBalance': end_balance_friend,
+    #                 'profit_rate': friend_profit_rate
+    #             }
+    #         }
+    #
+    #     # 1일 수익률 (오늘)
+    #     today_earliest = next((p for p in daily_profits if date.fromisoformat(p['date']) == today), None)
+    #     one_day_profit = self.calculate_profit_rate(today_earliest['balance'], latest_balance) if today_earliest else 0
+    #     one_day_data = get_period_data(1)
+    #
+    #     # 7일 수익률
+    #     seven_days_ago = today - timedelta(days=7)
+    #     seven_day_start = self.find_closest_date(daily_profits, seven_days_ago)
+    #     seven_day_profit = self.calculate_profit_rate(seven_day_start['balance'], latest_balance)
+    #     seven_day_data = get_period_data(7)
+    #
+    #     # 30일 수익률
+    #     thirty_days_ago = today - timedelta(days=30)
+    #     thirty_day_start = self.find_closest_date(daily_profits, thirty_days_ago)
+    #     thirty_day_profit = self.calculate_profit_rate(thirty_day_start['balance'], latest_balance)
+    #     thirty_day_data = get_period_data(30)
+    #
+    #     # 총 수익률
+    #     # 총 수익률 계산 시 최초 투자 금액만 사용
+    #     total_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU) + \
+    #                                self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
+    #
+    #     total_profit = self.calculate_profit_rate(total_initial_investment, latest_balance)
+    #     total_data = get_period_data()
+    #
+    #     return {
+    #         '1_day': {
+    #             'profit_rate': one_day_profit,
+    #             'balance': today_earliest['balance'] if today_earliest else 0,
+    #             'you': one_day_data['you'],
+    #             'friend': one_day_data['friend']
+    #         },
+    #         '7_days': {
+    #             'profit_rate': seven_day_profit,
+    #             'balance': seven_day_start['balance'],
+    #             'you': seven_day_data['you'],
+    #             'friend': seven_day_data['friend']
+    #         },
+    #         '30_days': {
+    #             'profit_rate': thirty_day_profit,
+    #             'balance': thirty_day_start['balance'],
+    #             'you': thirty_day_data['you'],
+    #             'friend': thirty_day_data['friend']
+    #         },
+    #         'total': {
+    #             'profit_rate': total_profit,
+    #             'balance': daily_profits[0]['balance'],
+    #             'you': total_data['you'],
+    #             'friend': total_data['friend']
+    #         }
+    #     }
+
+    def find_closest_date(self, daily_profits, target_date):
+        return min(daily_profits, key=lambda x: abs(date.fromisoformat(x['date']) - target_date))
 
     def get(self, request):
         try:
+            calculation_date_str = request.query_params.get('date', timezone.now().date().isoformat())
+            calculation_date = datetime.strptime(calculation_date_str, "%Y-%m-%d").date()
+
             daily_profits, latest_balance = self.get_daily_profits()
 
             if latest_balance is None:
@@ -440,24 +749,202 @@ class DailyBalanceView(BinanceAPIView):
 
             profit_summary = self.get_profit_summary(daily_profits, latest_balance)
 
-            # Add today's data if not already present
-            kst = pytz.timezone('Asia/Seoul')
-            today = timezone.now().astimezone(kst).date()
-            if daily_profits and date.fromisoformat(daily_profits[-1]['date']) < today:
-                today_profit_rate = self.calculate_profit_rate(daily_profits[-1]['balance'], latest_balance)
-                daily_profits.append({
-                    'date': today.strftime('%Y-%m-%d'),
-                    'timestamp': timezone.now().astimezone(kst).strftime('%Y-%m-%d %H:%M:%S'),
-                    'balance': latest_balance,
-                    'profit_rate': today_profit_rate
-                })
-
             data = {
+                'calculation_date': calculation_date.isoformat(),
                 'daily_profits': daily_profits,
                 'profit_summary': profit_summary,
-                'latest_balance': latest_balance
+                'latest_balance': latest_balance,
             }
 
             return Response(data)
         except DailyBalance.DoesNotExist:
             return Response({"error": "No DailyBalance found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+# class InvestorType(Enum):
+#     YOU = "you"
+#     FRIEND = "friend"
+#
+#
+# class TransactionType(Enum):
+#     DEPOSIT = "deposit"
+#     WITHDRAWAL = "withdrawal"
+#
+#
+# @dataclass
+# class Transaction:
+#     date: date
+#     investor: InvestorType
+#     type: TransactionType
+#     amount: float
+#
+#
+# class InvestmentTracker:
+#     def __init__(self):
+#         self.transactions: List[Transaction] = []
+#
+#     def add_transaction(self, transaction: Transaction):
+#         self.transactions.append(transaction)
+#
+#     def get_investment_at_date(self, investor: InvestorType, target_date: date) -> float:
+#         investment = 0
+#         for t in self.transactions:
+#             if t.date <= target_date and t.investor == investor:
+#                 if t.type == TransactionType.DEPOSIT:
+#                     investment += t.amount
+#                 elif t.type == TransactionType.WITHDRAWAL:
+#                     investment -= t.amount
+#         return investment
+#
+#
+# class DailyBalanceView(BinanceAPIView):
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+#         self.sync_server_time()
+#         self.investment_tracker = InvestmentTracker()
+#         self.initialize_investments()
+#
+#     def initialize_investments(self):
+#         self.investment_tracker.add_transaction(
+#             Transaction(date(2024, 9, 5), InvestorType.YOU, TransactionType.DEPOSIT, 109))
+#         self.investment_tracker.add_transaction(
+#             Transaction(date(2024, 9, 5), InvestorType.FRIEND, TransactionType.DEPOSIT, 40))
+#         self.investment_tracker.add_transaction(Transaction(date(2024, 9, 30), InvestorType.FRIEND, TransactionType.DEPOSIT, 72))
+#
+#
+#     def get_balance(self, balance_data):
+#         balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
+#         return float(balance_dict.get('balance', 0))
+#
+#     def calculate_profit_rate(self, start_balance, end_balance):
+#         if start_balance == 0:
+#             return 0
+#         return ((end_balance - start_balance) / start_balance) * 100
+#
+#     def get_latest_balance(self):
+#         try:
+#             futures_balances = self.client.futures_account_balance()
+#             futures_usdt_balance = next((item for item in futures_balances if item["asset"] == "USDT"), None)
+#             return float(futures_usdt_balance['balance'])
+#         except Exception as e:
+#             print(f"Error fetching latest balance: {str(e)}")
+#             return None
+#
+#     def get_daily_profits(self, days=30):
+#         kst = pytz.timezone('Asia/Seoul')
+#         end_date = timezone.now().astimezone(kst).date()
+#         start_date = end_date - timedelta(days=days)
+#
+#         balances = DailyBalance.objects.filter(created_at__date__gte=start_date).order_by('created_at')
+#
+#         daily_data = {}
+#         for balance in balances:
+#             date = balance.created_at.astimezone(kst).date()
+#             balance_value = self.get_balance(balance.futures_balance)
+#             if date not in daily_data:
+#                 daily_data[date] = {'first': balance_value, 'last': balance_value,
+#                                     'timestamp': balance.created_at.astimezone(kst)}
+#             else:
+#                 if balance.created_at.astimezone(kst) < daily_data[date]['timestamp']:
+#                     daily_data[date]['first'] = balance_value
+#                     daily_data[date]['timestamp'] = balance.created_at.astimezone(kst)
+#                 daily_data[date]['last'] = balance_value
+#
+#         daily_profits = []
+#         sorted_dates = sorted(daily_data.keys())
+#         latest_balance = self.get_latest_balance()
+#
+#         for i, date in enumerate(sorted_dates):
+#             if i < len(sorted_dates) - 1:
+#                 next_date = sorted_dates[i + 1]
+#                 end_balance = daily_data[next_date]['first']
+#             else:
+#                 end_balance = latest_balance if latest_balance is not None else daily_data[date]['last']
+#
+#             profit_rate = self.calculate_profit_rate(daily_data[date]['first'], end_balance)
+#
+#             daily_profits.append({
+#                 'date': date.strftime('%Y-%m-%d'),
+#                 'timestamp': daily_data[date]['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+#                 'balance': daily_data[date]['first'],
+#                 'profit_rate': profit_rate
+#             })
+#
+#         return daily_profits, latest_balance
+#
+#     def find_closest_date(self, daily_profits, target_date):
+#         return min(daily_profits, key=lambda x: abs(date.fromisoformat(x['date']) - target_date))
+#
+#     def get_profit_summary(self, daily_profits, latest_balance):
+#         if not daily_profits:
+#             return {
+#                 '1_day': {'profit_rate': 0, 'balance': 0},
+#                 '7_days': {'profit_rate': 0, 'balance': 0},
+#                 '30_days': {'profit_rate': 0, 'balance': 0},
+#                 'total': {'profit_rate': 0, 'balance': 0}
+#             }
+#
+#         kst = pytz.timezone('Asia/Seoul')
+#         today = timezone.now().astimezone(kst).date()
+#
+#         # 1일 수익률 (오늘)
+#         today_earliest = next((p for p in daily_profits if date.fromisoformat(p['date']) == today), None)
+#         one_day_profit = self.calculate_profit_rate(today_earliest['balance'], latest_balance) if today_earliest else 0
+#
+#         # 7일 수익률
+#         seven_days_ago = today - timedelta(days=7)
+#         seven_day_start = self.find_closest_date(daily_profits, seven_days_ago)
+#         seven_day_profit = self.calculate_profit_rate(seven_day_start['balance'], latest_balance)
+#
+#         # 30일 수익률
+#         thirty_days_ago = today - timedelta(days=30)
+#         thirty_day_start = self.find_closest_date(daily_profits, thirty_days_ago)
+#         thirty_day_profit = self.calculate_profit_rate(thirty_day_start['balance'], latest_balance)
+#
+#         # 총 수익률
+#         total_profit = self.calculate_profit_rate(daily_profits[0]['balance'], latest_balance)
+#
+#         return {
+#             '1_day': {'profit_rate': one_day_profit, 'balance': today_earliest['balance'] if today_earliest else 0},
+#             '7_days': {'profit_rate': seven_day_profit, 'balance': seven_day_start['balance']},
+#             '30_days': {'profit_rate': thirty_day_profit, 'balance': thirty_day_start['balance']},
+#             'total': {'profit_rate': total_profit, 'balance': daily_profits[0]['balance']}
+#         }
+#
+#     def get(self, request):
+#         try:
+#
+#             calculation_date_str = request.query_params.get('date', timezone.now().date().isoformat())
+#             calculation_date = datetime.strptime(calculation_date_str, "%Y-%m-%d").date()
+#
+#             daily_profits, latest_balance = self.get_daily_profits()
+#
+#             if latest_balance is None:
+#                 return Response({"error": "Unable to fetch latest balance"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+#
+#             profit_summary = self.get_profit_summary(daily_profits, latest_balance)
+#
+#             kst = pytz.timezone('Asia/Seoul')
+#             today = timezone.now().astimezone(kst).date()
+#             if daily_profits and date.fromisoformat(daily_profits[-1]['date']) < today:
+#                 today_profit_rate = self.calculate_profit_rate(daily_profits[-1]['balance'], latest_balance)
+#                 daily_profits.append({
+#                     'date': today.strftime('%Y-%m-%d'),
+#                     'timestamp': timezone.now().astimezone(kst).strftime('%Y-%m-%d %H:%M:%S'),
+#                     'balance': latest_balance,
+#                     'profit_rate': today_profit_rate
+#                 })
+#
+#
+#
+#             data = {
+#                 'calculation_date': calculation_date.isoformat(),
+#                 'daily_profits': daily_profits,
+#                 'profit_summary': profit_summary,
+#                 'latest_balance': latest_balance,
+#             }
+#
+#             return Response(data)
+#         except DailyBalance.DoesNotExist:
+#             return Response({"error": "No DailyBalance found"}, status=status.HTTP_404_NOT_FOUND)
