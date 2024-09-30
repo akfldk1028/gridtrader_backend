@@ -373,13 +373,6 @@ class InvestmentTracker:
     def get_total_investment(self, target_date: date) -> float:
         return sum(self.get_investment_amount(investor, target_date) for investor in InvestorType)
 
-    def get_investment_ratio(self, target_date: date) -> Dict[InvestorType, float]:
-        total = self.get_total_investment(target_date)
-        return {
-            investor: self.get_investment_amount(investor, target_date) / total
-            for investor in InvestorType
-        } if total > 0 else {investor: 0 for investor in InvestorType}
-
     def calculate_profit_rate(self, start_balance: float, end_balance: float, investment: float) -> float:
         if investment == 0:
             return 0
@@ -399,6 +392,8 @@ class DailyBalanceView(BinanceAPIView):
             Transaction(date(2024, 9, 5), InvestorType.FRIEND, TransactionType.DEPOSIT, 40))
         self.investment_tracker.add_transaction(
             Transaction(date(2024, 9, 29), InvestorType.FRIEND, TransactionType.DEPOSIT, 72))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 9, 30), InvestorType.YOU, TransactionType.DEPOSIT, 36))
 
     def get_balance(self, balance_data):
         balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
