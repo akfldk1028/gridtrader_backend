@@ -449,7 +449,7 @@ class DailyBalanceView(BinanceAPIView):
             else:
                 end_balance = latest_balance if latest_balance is not None else daily_data[current_date]['last']
 
-            start_balance = daily_data[current_date]['last']
+            start_balance = daily_data[current_date]['first']
 
 
 
@@ -521,218 +521,107 @@ class DailyBalanceView(BinanceAPIView):
     def get_profit_summary(self, daily_profits, latest_balance):
         if not daily_profits:
             return {
-                '1_day': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
-                          'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}},
-                '7_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
-                           'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}},
-                '30_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
-                            'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}},
-                'total': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'investment': 0, 'profit_rate': 0},
-                          'friend': {'balance': 0, 'investment': 0, 'profit_rate': 0}}
+                '1_day': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+                          'friend': {'balance': 0, 'profit_rate': 0}},
+                '7_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+                           'friend': {'balance': 0, 'profit_rate': 0}},
+                '30_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+                            'friend': {'balance': 0, 'profit_rate': 0}},
+                'total': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
+                          'friend': {'balance': 0, 'profit_rate': 0}}
             }
 
         kst = pytz.timezone('Asia/Seoul')
         today = timezone.now().astimezone(kst).date()
 
-        # Helper function to find the index of the closest date in daily_profits
-        def find_closest_index(target_date):
-            for idx, profit_data in enumerate(daily_profits):
-                if date.fromisoformat(profit_data['date']) >= target_date:
-                    return idx
-            return len(daily_profits) - 1  # Return the last index if date not found
+        def get_period_data(days=None):
+            if days is None or days == 0:
+                # 'total'의 경우, 각 투자자의 초기 투자 금액을 직접 사용
+                you_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU)
+                friend_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
 
-        # Get the latest investor data
-        latest_investor_data = daily_profits[-1]
+                start_balance_you = you_initial_investment
+                start_balance_friend = friend_initial_investment
+            else:
+                target_date = today - timedelta(days=days)
+                start_data = next(
+                    (p for p in reversed(daily_profits) if date.fromisoformat(p['date']) <= target_date),
+                    daily_profits[0]
+                )
+                start_balance_you = start_data['you']['balance']
+                start_balance_friend = start_data['friend']['balance']
 
-        # 1-day profit rate (today)
-        one_day_index = find_closest_index(today)
-        one_day_data = daily_profits[one_day_index]
+            end_data = daily_profits[-1]
+            end_balance_you = end_data['you']['balance']
+            end_balance_friend = end_data['friend']['balance']
+
+            you_profit_rate = self.calculate_profit_rate(start_balance_you, end_balance_you)
+            friend_profit_rate = self.calculate_profit_rate(start_balance_friend, end_balance_friend)
+
+            return {
+                'you': {
+                    'startBalance': start_balance_you,
+                    'endBalance': end_balance_you,
+                    'profit_rate': you_profit_rate
+                },
+                'friend': {
+                    'startBalance': start_balance_friend,
+                    'endBalance': end_balance_friend,
+                    'profit_rate': friend_profit_rate
+                }
+            }
+
+        # 1일 수익률 (오늘)
         today_earliest = next((p for p in daily_profits if date.fromisoformat(p['date']) == today), None)
         one_day_profit = self.calculate_profit_rate(today_earliest['balance'], latest_balance) if today_earliest else 0
+        one_day_data = get_period_data(1)
 
-        # 7-day profit rate
+        # 7일 수익률
         seven_days_ago = today - timedelta(days=7)
-        seven_day_index = find_closest_index(seven_days_ago)
-        seven_day_data = daily_profits[seven_day_index]
         seven_day_start = self.find_closest_date(daily_profits, seven_days_ago)
         seven_day_profit = self.calculate_profit_rate(seven_day_start['balance'], latest_balance)
+        seven_day_data = get_period_data(7)
 
-
-        # 30-day profit rate
+        # 30일 수익률
         thirty_days_ago = today - timedelta(days=30)
-        thirty_day_index = find_closest_index(thirty_days_ago)
-        thirty_day_data = daily_profits[thirty_day_index]
-        thirty_day_profit_rate = daily_profits[thirty_day_index]['profit_rate']
         thirty_day_start = self.find_closest_date(daily_profits, thirty_days_ago)
         thirty_day_profit = self.calculate_profit_rate(thirty_day_start['balance'], latest_balance)
+        thirty_day_data = get_period_data(30)
 
+        # 총 수익률
+        # 총 수익률 계산 시 최초 투자 금액만 사용
+        total_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU) + \
+                                   self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
 
-        # Total profit rate
-        total_profit = self.calculate_profit_rate(daily_profits[0]['balance'], latest_balance)
+        total_profit = self.calculate_profit_rate(total_initial_investment, latest_balance)
+        total_data = get_period_data()
 
         return {
             '1_day': {
                 'profit_rate': one_day_profit,
-                'balance':  today_earliest['balance'] if today_earliest else 0,
-                'you': {
-                    'balance': one_day_data['you']['balance'],
-                    'investment': one_day_data['you']['investment'],
-                    'profit_rate': one_day_data['you']['profit_rate']
-                },
-                'friend': {
-                    'balance': one_day_data['friend']['balance'],
-                    'investment': one_day_data['friend']['investment'],
-                    'profit_rate': one_day_data['friend']['profit_rate']
-                }
+                'balance': today_earliest['balance'] if today_earliest else 0,
+                'you': one_day_data['you'],
+                'friend': one_day_data['friend']
             },
             '7_days': {
                 'profit_rate': seven_day_profit,
                 'balance': seven_day_start['balance'],
-                'you': {
-                    'balance': seven_day_data['you']['balance'],
-                    'investment': seven_day_data['you']['investment'],
-                    'profit_rate': seven_day_data['you']['profit_rate']
-                },
-                'friend': {
-                    'balance': seven_day_data['friend']['balance'],
-                    'investment': seven_day_data['friend']['investment'],
-                    'profit_rate': seven_day_data['friend']['profit_rate']
-                }
+                'you': seven_day_data['you'],
+                'friend': seven_day_data['friend']
             },
             '30_days': {
                 'profit_rate': thirty_day_profit,
                 'balance': thirty_day_start['balance'],
-                'you': {
-                    'balance': thirty_day_data['you']['balance'],
-                    'investment': thirty_day_data['you']['investment'],
-                    'profit_rate': thirty_day_data['you']['profit_rate']
-                },
-                'friend': {
-                    'balance': thirty_day_data['friend']['balance'],
-                    'investment': thirty_day_data['friend']['investment'],
-                    'profit_rate': thirty_day_data['friend']['profit_rate']
-                }
+                'you': thirty_day_data['you'],
+                'friend': thirty_day_data['friend']
             },
             'total': {
-                'profit_rate':  total_profit,
+                'profit_rate': total_profit,
                 'balance': daily_profits[0]['balance'],
-                'you': {
-                    'balance': latest_investor_data['you']['balance'],
-                    'investment': latest_investor_data['you']['investment'],
-                    'profit_rate': latest_investor_data['you']['profit_rate']
-                },
-                'friend': {
-                    'balance': latest_investor_data['friend']['balance'],
-                    'investment': latest_investor_data['friend']['investment'],
-                    'profit_rate': latest_investor_data['friend']['profit_rate']
-                }
+                'you': total_data['you'],
+                'friend': total_data['friend']
             }
         }
-
-    # def get_profit_summary(self, daily_profits, latest_balance):
-    #     if not daily_profits:
-    #         return {
-    #             '1_day': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
-    #                       'friend': {'balance': 0, 'profit_rate': 0}},
-    #             '7_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
-    #                        'friend': {'balance': 0, 'profit_rate': 0}},
-    #             '30_days': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
-    #                         'friend': {'balance': 0, 'profit_rate': 0}},
-    #             'total': {'profit_rate': 0, 'balance': 0, 'you': {'balance': 0, 'profit_rate': 0},
-    #                       'friend': {'balance': 0, 'profit_rate': 0}}
-    #         }
-    #
-    #     kst = pytz.timezone('Asia/Seoul')
-    #     today = timezone.now().astimezone(kst).date()
-    #
-    #     def get_period_data(days=None):
-    #         if days is None or days == 0:
-    #             # 'total'의 경우, 각 투자자의 초기 투자 금액을 직접 사용
-    #             you_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU)
-    #             friend_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
-    #
-    #             start_balance_you = you_initial_investment
-    #             start_balance_friend = friend_initial_investment
-    #         else:
-    #             target_date = today - timedelta(days=days)
-    #             start_data = next(
-    #                 (p for p in reversed(daily_profits) if date.fromisoformat(p['date']) <= target_date),
-    #                 daily_profits[0]
-    #             )
-    #             start_balance_you = start_data['you']['balance']
-    #             start_balance_friend = start_data['friend']['balance']
-    #
-    #         end_data = daily_profits[-1]
-    #         end_balance_you = end_data['you']['balance']
-    #         end_balance_friend = end_data['friend']['balance']
-    #
-    #         you_profit_rate = self.calculate_profit_rate(start_balance_you, end_balance_you)
-    #         friend_profit_rate = self.calculate_profit_rate(start_balance_friend, end_balance_friend)
-    #
-    #         return {
-    #             'you': {
-    #                 'startBalance': start_balance_you,
-    #                 'endBalance': end_balance_you,
-    #                 'profit_rate': you_profit_rate
-    #             },
-    #             'friend': {
-    #                 'startBalance': start_balance_friend,
-    #                 'endBalance': end_balance_friend,
-    #                 'profit_rate': friend_profit_rate
-    #             }
-    #         }
-    #
-    #     # 1일 수익률 (오늘)
-    #     today_earliest = next((p for p in daily_profits if date.fromisoformat(p['date']) == today), None)
-    #     one_day_profit = self.calculate_profit_rate(today_earliest['balance'], latest_balance) if today_earliest else 0
-    #     one_day_data = get_period_data(1)
-    #
-    #     # 7일 수익률
-    #     seven_days_ago = today - timedelta(days=7)
-    #     seven_day_start = self.find_closest_date(daily_profits, seven_days_ago)
-    #     seven_day_profit = self.calculate_profit_rate(seven_day_start['balance'], latest_balance)
-    #     seven_day_data = get_period_data(7)
-    #
-    #     # 30일 수익률
-    #     thirty_days_ago = today - timedelta(days=30)
-    #     thirty_day_start = self.find_closest_date(daily_profits, thirty_days_ago)
-    #     thirty_day_profit = self.calculate_profit_rate(thirty_day_start['balance'], latest_balance)
-    #     thirty_day_data = get_period_data(30)
-    #
-    #     # 총 수익률
-    #     # 총 수익률 계산 시 최초 투자 금액만 사용
-    #     total_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU) + \
-    #                                self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
-    #
-    #     total_profit = self.calculate_profit_rate(total_initial_investment, latest_balance)
-    #     total_data = get_period_data()
-    #
-    #     return {
-    #         '1_day': {
-    #             'profit_rate': one_day_profit,
-    #             'balance': today_earliest['balance'] if today_earliest else 0,
-    #             'you': one_day_data['you'],
-    #             'friend': one_day_data['friend']
-    #         },
-    #         '7_days': {
-    #             'profit_rate': seven_day_profit,
-    #             'balance': seven_day_start['balance'],
-    #             'you': seven_day_data['you'],
-    #             'friend': seven_day_data['friend']
-    #         },
-    #         '30_days': {
-    #             'profit_rate': thirty_day_profit,
-    #             'balance': thirty_day_start['balance'],
-    #             'you': thirty_day_data['you'],
-    #             'friend': thirty_day_data['friend']
-    #         },
-    #         'total': {
-    #             'profit_rate': total_profit,
-    #             'balance': daily_profits[0]['balance'],
-    #             'you': total_data['you'],
-    #             'friend': total_data['friend']
-    #         }
-    #     }
 
     def find_closest_date(self, daily_profits, target_date):
         return min(daily_profits, key=lambda x: abs(date.fromisoformat(x['date']) - target_date))
