@@ -655,7 +655,7 @@ class TrendLinesAPIView(APIView):
             # 기존 trend_line 딕셔너리에 새로운 정보 추가
             # 기존 trend_line 딕셔너리에 새로운 정보 추가
             trend_line.update({
-                'CurrentPrice': current_candle['Close'],
+                'CurrentPrice': price_on_line,
                 'Difference': current_candle['Close'] - price_on_line,
                 'PreviousState': previous_state,
                 'CurrentState': current_state,
