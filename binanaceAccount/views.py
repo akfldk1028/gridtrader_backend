@@ -330,6 +330,7 @@ class CloseOrderView(BinanceAPIView):
 class InvestorType(Enum):
     YOU = "you"
     FRIEND = "friend"
+    FRIEND2 = "SK"
 
 class TransactionType(Enum):
     DEPOSIT = "deposit"
@@ -394,6 +395,9 @@ class DailyBalanceView(BinanceAPIView):
             Transaction(date(2024, 9, 29), InvestorType.FRIEND, TransactionType.DEPOSIT, 72))
         self.investment_tracker.add_transaction(
             Transaction(date(2024, 9, 29), InvestorType.YOU, TransactionType.DEPOSIT, 36))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 10, 2), InvestorType.FRIEND2, TransactionType.DEPOSIT, 490))
+
 
     def get_balance(self, balance_data):
         balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
@@ -434,8 +438,11 @@ class DailyBalanceView(BinanceAPIView):
 
         prev_you_investment = 0
         prev_friend_investment = 0
+        prev_friend2_investment = 0
         prev_you_balance = 0
         prev_friend_balance = 0
+        prev_friend2_balance = 0
+
 
         for i, current_date in enumerate(sorted_dates):
             if i < len(sorted_dates) - 1:
@@ -454,32 +461,36 @@ class DailyBalanceView(BinanceAPIView):
             # 현재 날짜의 총 투자금 계산
             you_total_investment = self.investment_tracker.get_investment_amount(InvestorType.YOU, current_date)
             friend_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND, current_date)
+            friend2_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND2, current_date)
 
             # 새로운 투자금 계산
             you_new_investment = you_total_investment - prev_you_investment
             friend_new_investment = friend_total_investment - prev_friend_investment
+            friend2_new_investment = friend2_total_investment - prev_friend2_investment
 
             # 이전 잔액에 새 투자금 추가
             you_balance = prev_you_balance + you_new_investment
             friend_balance = prev_friend_balance + friend_new_investment
+            friend2_balance = prev_friend2_balance + friend2_new_investment
 
             # 총 투자금 및 비율 계산
-            total_balance = you_balance + friend_balance
+            total_balance = you_balance + friend_balance + friend2_balance
             you_ratio = you_balance / total_balance if total_balance > 0 else 0
             friend_ratio = friend_balance / total_balance if total_balance > 0 else 0
+            friend2_ratio = friend2_balance / total_balance if total_balance > 0 else 0
 
             # 현재 잔액을 비율에 따라 분배
             you_balance = end_balance * you_ratio
             friend_balance = end_balance * friend_ratio
+            friend2_balance = end_balance * friend2_ratio
             # you_balance = start_balance * you_ratio
             # friend_balance = start_balance * friend_ratio
 
 
             # 수정된 profit_rate 계산
-            you_profit_rate = self.investment_tracker.calculate_profit_rate(you_total_investment, you_balance,
-                                                                            you_total_investment)
-            friend_profit_rate = self.investment_tracker.calculate_profit_rate(friend_total_investment, friend_balance,
-                                                                               friend_total_investment)
+            you_profit_rate = self.investment_tracker.calculate_profit_rate(you_total_investment, you_balance, you_total_investment)
+            friend_profit_rate = self.investment_tracker.calculate_profit_rate(friend_total_investment, friend_balance, friend_total_investment)
+            friend2_profit_rate = self.investment_tracker.calculate_profit_rate(friend2_total_investment, friend2_balance, friend2_total_investment)
 
             daily_profits.append({
                 'date': current_date.strftime('%Y-%m-%d'),
@@ -495,14 +506,21 @@ class DailyBalanceView(BinanceAPIView):
                     'balance': friend_balance,
                     'investment': friend_total_investment,
                     'profit_rate': friend_profit_rate
+                },
+                'friend2': {
+                    'balance': friend2_balance,
+                    'investment': friend2_total_investment,
+                    'profit_rate': friend2_profit_rate
                 }
             })
 
             # 다음 반복을 위해 현재 값을 이전 값으로 저장
             prev_you_investment = you_total_investment
             prev_friend_investment = friend_total_investment
+            prev_friend2_investment = friend2_total_investment
             prev_you_balance = you_balance
             prev_friend_balance = friend_balance
+            prev_friend2_balance = friend2_balance
 
         return daily_profits, latest_balance
 
@@ -534,9 +552,12 @@ class DailyBalanceView(BinanceAPIView):
                 # 'total'의 경우, 각 투자자의 초기 투자 금액을 직접 사용
                 you_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU)
                 friend_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND)
+                friend2_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND2)
 
                 start_balance_you = you_initial_investment
                 start_balance_friend = friend_initial_investment
+                start_balance_friend2 = friend2_initial_investment
+
             else:
                 target_date = today - timedelta(days=days)
                 start_data = next(
@@ -545,13 +566,16 @@ class DailyBalanceView(BinanceAPIView):
                 )
                 start_balance_you = start_data['you']['balance']
                 start_balance_friend = start_data['friend']['balance']
+                start_balance_friend2 = start_data['friend2']['balance']
 
             end_data = daily_profits[-1]
             end_balance_you = end_data['you']['balance']
             end_balance_friend = end_data['friend']['balance']
+            end_balance_friend2 = end_data['friend2']['balance']
 
             you_profit_rate = self.calculate_profit_rate(start_balance_you, end_balance_you)
             friend_profit_rate = self.calculate_profit_rate(start_balance_friend, end_balance_friend)
+            friend2_profit_rate = self.calculate_profit_rate(start_balance_friend2, end_balance_friend2)
 
             return {
                 'you': {
@@ -563,6 +587,11 @@ class DailyBalanceView(BinanceAPIView):
                     'startBalance': start_balance_friend,
                     'endBalance': end_balance_friend,
                     'profit_rate': friend_profit_rate
+                },
+                'friend2': {
+                    'startBalance': start_balance_friend2,
+                    'endBalance': end_balance_friend2,
+                    'profit_rate': friend2_profit_rate
                 }
             }
 
@@ -596,25 +625,33 @@ class DailyBalanceView(BinanceAPIView):
                 'profit_rate': one_day_profit,
                 'balance': today_earliest['balance'] if today_earliest else 0,
                 'you': one_day_data['you'],
-                'friend': one_day_data['friend']
+                'friend': one_day_data['friend'],
+                'friend2': one_day_data['friend2']
+
             },
             '7_days': {
                 'profit_rate': seven_day_profit,
                 'balance': seven_day_start['balance'],
                 'you': seven_day_data['you'],
-                'friend': seven_day_data['friend']
+                'friend': seven_day_data['friend'],
+                'friend2': seven_day_data['friend2']
+
             },
             '30_days': {
                 'profit_rate': thirty_day_profit,
                 'balance': thirty_day_start['balance'],
                 'you': thirty_day_data['you'],
-                'friend': thirty_day_data['friend']
+                'friend': thirty_day_data['friend'],
+                'friend2': thirty_day_data['friend2']
+
             },
             'total': {
                 'profit_rate': total_profit,
                 'balance': daily_profits[0]['balance'],
                 'you': total_data['you'],
-                'friend': total_data['friend']
+                'friend': total_data['friend'],
+                'friend2': total_data['friend2']
+
             }
         }
 
