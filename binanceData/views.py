@@ -25,6 +25,9 @@ from functools import lru_cache
 from django.core.cache import caches
 import json
 from pandas import Timestamp
+from datetime import datetime, timezone
+
+
 class KRXStockDataAPIView(APIView):
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     def get(self, request, symbol, start_date, end_date, interval='D'):
@@ -91,6 +94,7 @@ class KRXStockDataAPIView(APIView):
         except requests.RequestException as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class BinanceChartDataAPIView(APIView):
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def get(self, request, symbol, interval):
@@ -148,7 +152,6 @@ class BinanceChartDataAPIView(APIView):
         return Response(response_data)
 
 
-
 class TrendLineDataRetrieveView(APIView):
     cache_name = 'default'  # TrendLinesAPIView와 동일한 캐시 사용
     cache_key_prefix = 'trend_line_data'
@@ -171,7 +174,8 @@ class TrendLineDataRetrieveView(APIView):
             else:
                 return Response({"error": "No data found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": f"Failed to retrieve data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": f"Failed to retrieve data: {str(e)}"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class TrendLinesAPIView(APIView):
@@ -187,6 +191,7 @@ class TrendLinesAPIView(APIView):
 
     def get_cache_key(self, symbol, interval):
         return f"{self.cache_key_prefix}:{symbol}:{interval}"
+
     def get(self, request, symbol, interval):
         try:
 
@@ -195,8 +200,11 @@ class TrendLinesAPIView(APIView):
             stored_data = cache.get(key)
             if stored_data:
                 previous_data = json.loads(stored_data)
-                self.previous_states = {line['id']: line.get('CurrentState') for category, lines in previous_data['trend_lines'].items() for line in lines}
-
+                self.previous_states = {
+                    line['id']: (line.get('CurrentState', ''), None)
+                    for category, lines in previous_data['trend_lines'].items()
+                    for line in lines
+                }
 
             df = self.fetch_binance_data(symbol, interval)
             if df is None or df.empty:
@@ -335,7 +343,6 @@ class TrendLinesAPIView(APIView):
         except Exception as e:
             print(f"Error in get_historical_extremes: {e}")
             return None
-
 
     def fetch_binance_data(self, symbol, interval):
         binance_api_url = "https://api.binance.com/api/v3/klines"
@@ -498,7 +505,6 @@ class TrendLinesAPIView(APIView):
         # 절편 계산
         intercept = start_price - slope * start_time.timestamp()
 
-
         opposite_type = 'Low' if line_type == 'High' else 'High'
         current_pivot = next(p for p in pivot_points if p['Index'] == end_idx and p['Type'] == line_type)
         prev_pivot = next((p for p in reversed(pivot_points) if p['Type'] == opposite_type and p['Index'] < end_idx),
@@ -560,6 +566,7 @@ class TrendLinesAPIView(APIView):
                 'RelativeDiff': float(next_relative_diff)
             }
         }
+
     def get_current_price(self, symbol):
         try:
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
@@ -594,7 +601,6 @@ class TrendLinesAPIView(APIView):
             'Close']
         previous_low, previous_high = previous_candle['Low'], previous_candle['High']
 
-
         is_above = current_close > price_on_line
         is_below = current_close < price_on_line
 
@@ -622,51 +628,145 @@ class TrendLinesAPIView(APIView):
 
     def check_current_price_against_trend_lines(self, df, trend_lines, symbol, interval):
         if len(df) < 2:
-            return trend_lines  # 최소 2개의 캔들이 필요합니다
+            return trend_lines
 
         current_candle = df.iloc[-1]
         previous_candle = df.iloc[-2]
-
+        current_time = current_candle['Open Time']  # 현재 캔들의 시작 시간을 사용
 
         for trend_line in trend_lines:
             trend_line_id = trend_line['id']
-
             price_on_line = trend_line['CurrentPrice']
-            threshold = 0.001 * price_on_line  # 0.1% 임계값
-            current_state = self.get_price_state(current_candle, previous_candle, trend_line, threshold, price_on_line)
+            threshold = 0.001 * price_on_line
 
-            previous_state = self.previous_states.get(trend_line_id, '')  # 기본값으로 빈 문자열 사용
+            # 이전 상태와 마지막 업데이트 시간 가져오기
+            previous_data = self.previous_states.get(trend_line_id, ('', None))
+            if isinstance(previous_data, tuple) and len(previous_data) == 2:
+                previous_state, last_update = previous_data
+            else:
+                previous_state, last_update = '', None
 
-            trend_strength = 'Neutral'
-            if previous_state != current_state:
-                if current_state == 'Bounce':
-                    trend_strength = 'Bullish'
-                elif current_state == 'Pullback':
-                    trend_strength = 'Bearish'
-                elif current_state == 'Breakout_Up':
-                    trend_strength = 'Very Bullish'
-                elif current_state == 'Breakout_Down':
-                    trend_strength = 'Very Bearish'
-                elif current_state == 'At_Level':
-                    trend_strength = 'Consolidating'
+            # candle_start_time = self.get_candle_start_time(current_time, interval)
 
-            self.previous_states[trend_line_id] = current_state
+            # 새로운 캔들이 시작되었는지 확인
+            if last_update is None or current_time > last_update:
+                current_state = self.get_price_state(current_candle, previous_candle, trend_line, threshold,
+                                                     price_on_line)
 
-            # 기존 trend_line 딕셔너리에 새로운 정보 추가
-            # 기존 trend_line 딕셔너리에 새로운 정보 추가
-            trend_line.update({
-                'CurrentPrice': price_on_line,
-                'Difference': current_candle['Close'] - price_on_line,
-                'PreviousState': previous_state,
-                'CurrentState': current_state,
-                'TrendStrength': trend_strength,
-                'threshold': threshold,
-                'CurrentRole': 'Resistance' if price_on_line > current_candle['Close'] else 'Support',
-                'symbol': symbol,
-                'interval': interval
-            })
+                trend_strength = 'Neutral'
+                if previous_state != current_state:
+                    if current_state == 'Bounce':
+                        trend_strength = 'Bullish'
+                    elif current_state == 'Pullback':
+                        trend_strength = 'Bearish'
+                    elif current_state == 'Breakout_Up':
+                        trend_strength = 'Very Bullish'
+                    elif current_state == 'Breakout_Down':
+                        trend_strength = 'Very Bearish'
+                    elif current_state == 'At_Level':
+                        trend_strength = 'Consolidating'
+
+                    # 상태 업데이트 및 마지막 업데이트 시간 저장
+                self.previous_states[trend_line_id] = (current_state, current_time)
+
+                trend_line.update({
+                    'CurrentPrice': price_on_line,
+                    'Difference': current_candle['Close'] - price_on_line,
+                    'PreviousState': previous_state,
+                    'CurrentState': current_state,
+                    'TrendStrength': trend_strength,
+                    'threshold': threshold,
+                    'CurrentRole': 'Resistance' if price_on_line > current_candle['Close'] else 'Support',
+                    'symbol': symbol,
+                    'interval': interval,
+                    'LastUpdate': current_time.isoformat()
+                })
 
         return trend_lines
+
+    # def check_current_price_against_trend_lines(self, df, trend_lines, symbol, interval):
+    #     if len(df) < 2:
+    #         return trend_lines  # 최소 2개의 캔들이 필요합니다
+    #
+    #     current_candle = df.iloc[-1]
+    #     previous_candle = df.iloc[-2]
+    #
+    #     for trend_line in trend_lines:
+    #         trend_line_id = trend_line['id']
+    #
+    #         price_on_line = trend_line['CurrentPrice']
+    #         threshold = 0.001 * price_on_line  # 0.1% 임계값
+    #         current_state = self.get_price_state(current_candle, previous_candle, trend_line, threshold, price_on_line)
+    #
+    #         previous_state = self.previous_states.get(trend_line_id, '')  # 기본값으로 빈 문자열 사용
+    #         print(f"previous_state {previous_state}")
+    #         print("-------------------")
+    #
+    #         trend_strength = 'Neutral'
+    #         if previous_state != current_state:
+    #             if current_state == 'Bounce':
+    #                 trend_strength = 'Bullish'
+    #             elif current_state == 'Pullback':
+    #                 trend_strength = 'Bearish'
+    #             elif current_state == 'Breakout_Up':
+    #                 trend_strength = 'Very Bullish'
+    #             elif current_state == 'Breakout_Down':
+    #                 trend_strength = 'Very Bearish'
+    #             elif current_state == 'At_Level':
+    #                 trend_strength = 'Consolidating'
+    #
+    #         self.previous_states[trend_line_id] = current_state
+    #
+    #         # 기존 trend_line 딕셔너리에 새로운 정보 추가
+    #         # 기존 trend_line 딕셔너리에 새로운 정보 추가
+    #         trend_line.update({
+    #             'CurrentPrice': price_on_line,
+    #             'Difference': current_candle['Close'] - price_on_line,
+    #             'PreviousState': previous_state,
+    #             'CurrentState': current_state,
+    #             'TrendStrength': trend_strength,
+    #             'threshold': threshold,
+    #             'CurrentRole': 'Resistance' if price_on_line > current_candle['Close'] else 'Support',
+    #             'symbol': symbol,
+    #             'interval': interval,
+    #             'LastUpdate': candle_start_time.isoformat()
+    #
+    #         })
+    #
+    #     return trend_lines
+
+    def get_candle_start_time(self, current_time, interval):
+        from datetime import datetime, timezone, timedelta
+
+        timestamp = int(current_time.timestamp())
+        if interval == '1m':
+            return datetime.fromtimestamp(timestamp - (timestamp % 60), timezone.utc)
+        elif interval == '5m':
+            return datetime.fromtimestamp(timestamp - (timestamp % 300), timezone.utc)
+        elif interval == '15m':
+            return datetime.fromtimestamp(timestamp - (timestamp % 900), timezone.utc)
+        elif interval == '30m':
+            return datetime.fromtimestamp(timestamp - (timestamp % 1800), timezone.utc)
+        elif interval == '1h':
+            return datetime.fromtimestamp(timestamp - (timestamp % 3600), timezone.utc)
+        elif interval == '2h':
+            return datetime.fromtimestamp(timestamp - (timestamp % 7200), timezone.utc)
+        elif interval == '4h':
+            return datetime.fromtimestamp(timestamp - (timestamp % 14400), timezone.utc)
+        elif interval == '6h':
+            return datetime.fromtimestamp(timestamp - (timestamp % 21600), timezone.utc)
+        elif interval == '1d':
+            return datetime.fromtimestamp(timestamp - (timestamp % 86400), timezone.utc)
+        elif interval == '3d':
+            return datetime.fromtimestamp(timestamp - (timestamp % 259200), timezone.utc)
+        elif interval == '1w':
+            return datetime.fromtimestamp(timestamp - (timestamp % 604800), timezone.utc)
+        elif interval == '1M':
+            # 월의 경우 정확한 계산이 복잡하므로 대략적으로 30일로 계산
+            return datetime.fromtimestamp(timestamp - (timestamp % 2592000), timezone.utc)
+        else:
+            return current_time
+
     @staticmethod
     def index_pivot_points(pivot_points: List[Dict]) -> Dict[str, List[Dict]]:
         indexed = defaultdict(list)
@@ -675,6 +775,7 @@ class TrendLinesAPIView(APIView):
         for type_pivots in indexed.values():
             type_pivots.sort(key=lambda p: p['Price'], reverse=True)
         return indexed
+
     def select_top_trend_lines(self, trend_lines, pivot_points, historical_extremes):
         # def find_steepest_pivot_for_trend_line(trend_line: Dict):
         #     prev_slope = abs(trend_line['PrevPivot']['Slope']) if trend_line['PrevPivot'] and trend_line['PrevPivot'][
@@ -718,8 +819,8 @@ class TrendLinesAPIView(APIView):
                 line['CurrentPrice'] = line['Slope'] * time_diff + line['StartPrice']
                 line['CurrentTime'] = reference_time
 
-                print(
-                    f"Debug: StartTime={start_time}, TimeDiff={time_diff}, Slope={line['Slope']}, StartPrice={line['StartPrice']}, CurrentPrice={line['CurrentPrice']}")
+                # print(
+                #     f"Debug: StartTime={start_time}, TimeDiff={time_diff}, Slope={line['Slope']}, StartPrice={line['StartPrice']}, CurrentPrice={line['CurrentPrice']}")
 
             sorted_lines = sorted(lines, key=lambda x: x['MaxRelativePriceDiff'], reverse=True)[:top_n]
 
@@ -730,7 +831,6 @@ class TrendLinesAPIView(APIView):
             result = sorted(sorted_lines, key=lambda x: x['Importance'])[:top_n]
 
             return result
-
 
         # 추세선 분류
         recent_steep_high = [line for line in trend_lines if
@@ -745,7 +845,6 @@ class TrendLinesAPIView(APIView):
                          line['Type'] == 'Low' and line['StartIndex'] == historical_extremes['LongTermLow']['Index']]
         # 각 분류별로 상위 선택
         current_time = pd.Timestamp.now(tz='UTC')
-
 
         top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=6,
                                                     reference_time=current_time)
@@ -766,8 +865,6 @@ class TrendLinesAPIView(APIView):
             'LongTermHigh': top_long_term_high,
             'LongTermLow': top_long_term_low
         }
-
-
 
 
 class BinanceAPIView(APIView):
