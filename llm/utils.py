@@ -379,19 +379,28 @@ def perform_analysis():
         5. **Volume Confirmation**:
            - Check if volume increases as price starts to reverse, which can confirm the reversal.
            - Look for volume spikes that coincide with potential reversal candles.
-
+        6. **Immediate Reversal Signals**:
+           - **Oversold/Overbought Quick Recovery**: Look for rapid recoveries from oversold conditions in RSI or Stochastic.
+           - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
+           - **Short-term Moving Average Crossovers**: 
+             - Current 5MA: {bitcoin_data['15min'][-48:][-1]['MA5']}
+             - Current 10MA: {bitcoin_data['15min'][-48:][-1]['MA10']}
+             - Identify all instances where the 5MA crosses above or below the 10MA within the 48 data points.
+             - Analyze the frequency and significance of these crossovers.
+             
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
         - **Short-term Outlook**: 2-6 hours.
         - **Long-term Outlook**: 4-8 hours.
+         - **Reversal Potential**: High, Medium, or Low based on the combination of all signals.
         - **Potential Reversal Points**: Identify key price levels where a reversal might occur.
         - **Cloud Dynamics**: Summarize the current state of the cloud, including its thickness, direction, and implications for future price movement.
 
         Conclude with:
 
-        Ensure clarity and focus on key indicators to accurately determine market trends.""",
-        expected_output="Concise and accurate Bitcoin market analysis report for the 15-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
+        Ensure clarity and focus on key indicators to accurately determine market trends and potential immediate reversals.""",
+        expected_output="Comprehensive Bitcoin market analysis report for the 15-minute timeframe, emphasizing key technical indicators and potential immediate reversal signals.",
         agent=fifteen_min_analyst
     )
 
