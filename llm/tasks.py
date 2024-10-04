@@ -20,26 +20,16 @@ def setup_bitcoin_analysis_task():
     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
     now = datetime.now()
     next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    next_eth_hour = now.replace(minute=5, second=0, microsecond=0) + timedelta(hours=1)
 
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
     # next_hour = now.replace(hour=16, minute=55, second=0, microsecond=0)
-
-    # 만약 현재 시간이 오늘 오전 9시 10분 이후라면, 다음 날로 설정
     if now > next_hour:
         next_hour += timedelta(days=1)
+    if now > next_eth_hour:
+        next_eth_hour += timedelta(days=1)
 
-
-    # 작업을 정각에 실행하고, 그 후에는 3시간마다 반복
-    # schedule(
-    #     'llm.tasks.run_bitcoin_analysis',
-    #     schedule_type=Schedule.CRON,
-    #     cron='0 */3 * * *',  # 매 3시간마다 정각에 실행
-    #     next_run=next_hour,
-    #     repeats=-1  # 무한 반복
-    # )
-    #     cron="0 3,8,11,15,19,22 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
-    # 10분정도에 걸어놔야할듯?
     schedule(
         'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
@@ -51,7 +41,7 @@ def setup_bitcoin_analysis_task():
         'llm.tasks.run_eth_analysis',
         schedule_type=Schedule.CRON,
         cron="5 8,11,15,20,23 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
-        next_run=next_hour,
+        next_run=next_eth_hour,
         repeats=-1  # 무한 반복
     )
     # async_task('llm.tasks.run_bitcoin_analysis')
