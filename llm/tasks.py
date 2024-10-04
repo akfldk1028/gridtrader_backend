@@ -48,37 +48,45 @@ def setup_bitcoin_analysis_task():
     print(f"분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
 
-
 def update_strategy_config():
     try:
-        # 가장 최근의 AnalysisResult 가져오기
-        latest_analysis = AnalysisResult.objects.latest('created_at')
-        if latest_analysis:
-            selected_strategy = latest_analysis.selected_strategy
-            # StrategyConfig 모델에서 설정 찾기 (이미지에서는 name이 '240824'입니다)
-            strategy_config = StrategyConfig.objects.get(name='240824')
+        # StrategyConfig 모델에서 설정 찾기
+        strategy_config = StrategyConfig.objects.get(name='240824')
 
-            # 현재 config 가져오기
-            current_config = strategy_config.config
+        # 현재 config 가져오기
+        current_config = strategy_config.config
 
-            # INIT 내의 setting의 grid_strategy 업데이트
-            if 'INIT' in current_config and 'setting' in current_config['INIT']:
-                current_config['INIT']['setting']['grid_strategy'] = selected_strategy
-            elif 'ETH' in current_config and 'setting' in current_config['ETH']:
-                current_config['ETH']['setting']['grid_strategy'] = selected_strategy
+        # 각 Symbol별로 최신 분석 결과 가져오기
+        symbols = ['BTCUSDT', 'ETHUSDT']
+        for symbol in symbols:
+            latest_analysis = AnalysisResult.objects.filter(symbol=symbol).order_by('-created_at').first()
 
-            # 업데이트된 config 저장
-            strategy_config.config = current_config
-            strategy_config.save()
+            if latest_analysis:
+                selected_strategy = latest_analysis.selected_strategy
 
-            logger.info(f"Updated StrategyConfig grid_strategy to {selected_strategy}")
-        else:
-            logger.warning("No AnalysisResult found")
+                # Symbol에 따라 적절한 설정 업데이트
+                if symbol == 'BTCUSDT':
+                    if 'INIT' in current_config and 'setting' in current_config['INIT']:
+                        current_config['INIT']['setting']['grid_strategy'] = selected_strategy
+                elif symbol == 'ETHUSDT':
+                    if 'ETH' in current_config and 'setting' in current_config['ETH']:
+                        current_config['ETH']['setting']['grid_strategy'] = selected_strategy
+
+                logger.info(f"Updated StrategyConfig grid_strategy for {symbol} to {selected_strategy}")
+            else:
+                logger.warning(f"No AnalysisResult found for {symbol}")
+
+        # 업데이트된 config 저장
+        strategy_config.config = current_config
+        strategy_config.save()
 
     except StrategyConfig.DoesNotExist:
         logger.error("StrategyConfig with name '240824' not found")
     except Exception as e:
         logger.error(f"Error updating StrategyConfig: {str(e)}")
+
+
+
 
 
 # async def run_bitcoin_analysis_async():
