@@ -144,27 +144,31 @@ def run_bitcoin_analysis():
 def run_eth_analysis():
     print("Starting ETH analysis task")
     try:
-        print("Calling perform_analysis function")
+        print("Calling perform_eth_analysis function")
         result = perform_eth_analysis()
-        # result = asyncio.run(perform_analysis())
+
         if result is None:
-            print("Analysis failed▣▣▣▣▣▣▣▣▣▣▣")
+            print("ETH Analysis failed: perform_eth_analysis returned None")
+            logger.error("ETH Analysis failed: perform_eth_analysis returned None")
+            return "ETH Analysis failed: No result returned"
 
         print("Creating AnalysisResult object")
         analysis_result = AnalysisResult.objects.create(
-            symbol=result['symbol'],
-            result_string=result['result_string'],
-            current_price=result['current_price'],
-            price_prediction=result['price_prediction'],
-            confidence=float(result['confidence']) if result['confidence'] else None,
-            selected_strategy=result['selected_strategy'],
-            korean_summary = result['korean_summary'] if 'korean_summary' in result else "",
-            analysis_results_30m = result['analysis_results_30m'],
-            analysis_results_1hour = result['analysis_results_1hour'],
-            analysis_results_daily = result['analysis_results_daily'],
+            symbol=result.get('symbol', 'ETHUSDT'),  # Default to 'ETHUSDT' if not present
+            result_string=result.get('result_string', ''),
+            current_price=result.get('current_price', 0),
+            price_prediction=result.get('price_prediction', ''),
+            confidence=float(result['confidence']) if result.get('confidence') else None,
+            selected_strategy=result.get('selected_strategy', ''),
+            korean_summary=result.get('korean_summary', ''),
+            analysis_results_30m=result.get('analysis_results_30m', ''),
+            analysis_results_1hour=result.get('analysis_results_1hour', ''),
+            analysis_results_daily=result.get('analysis_results_daily', ''),
         )
         update_strategy_config()
-        return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
+        return f"ETH Analysis completed successfully. AnalysisResult id: {analysis_result.id}"
     except Exception as e:
-        print(f"Error in run_bitcoin_analysis task: {str(e)}")
-        raise
+        error_message = f"Error in run_eth_analysis task: {str(e)}"
+        print(error_message)
+        logger.error(error_message)
+        return error_message
