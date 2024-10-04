@@ -297,7 +297,7 @@ def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
 # TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
 # 기존 get_current_bitcoin_price 함수 내용...
 
-def perform_analysis():
+def perform_eth_analysis():
     config = get_strategy_config()
     if not config:
         print("Strategy configuration is invalid.")
@@ -384,8 +384,8 @@ def perform_analysis():
            - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
            - **Short-term Moving Average Crossovers**: 
              - Current 5MA: {bitcoin_data['15min'][-48:][-1]['MA5']}
-             - Current 10MA: {bitcoin_data['15min'][-48:][-1]['MA10']}
-             - Identify all instances where the 5MA crosses above or below the 10MA within the 48 data points.
+             - Current 20MA: {bitcoin_data['15min'][-48:][-1]['MA20']}
+             - Identify all instances where the 5MA crosses above or below the 20MA within the 48 data points.
              - Analyze the frequency and significance of these crossovers.
              
         Conclude with:

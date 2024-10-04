@@ -19,7 +19,7 @@ from binanceData.views import BinanceLLMChartDataAPIView
 from rest_framework.response import Response
 
 # Binance 클라이언트 초기화
-symbol = "BTCUSDT"
+symbol = "ETHUSDT"
 
 # binance_api_key = settings.BINANCE_API_KEY
 # binance_api_secret = settings.BINANCE_API_SECRET
@@ -34,15 +34,6 @@ def get_crypto_news():
     return news_data[:30]  # 최근 10개의 뉴스만 반환
 
 
-# from langchain.chat_models import ChatOpenAI
-# # from langchain_openai import ChatOpenAI
-# # 파이썬버젼이 딸려서
-# custom_llm = ChatOpenAI(
-#     model="gpt-4o-mini",  # 또는 원하는 다른 모델
-#     temperature=0.7,
-#     max_tokens=16000,
-# )
-
 news_analyst = Agent(
     role='Crypto News Trend Analyst',
     goal='Analyze recent cryptocurrency news to predict short-term and long-term Bitcoin price trends',
@@ -54,15 +45,7 @@ news_analyst = Agent(
 
 )
 
-# fifteen_min_analyst = Agent(
-#     role=f'15-Minute {symbol} Market Analyst',
-#     goal='Analyze Bitcoin market trends and patterns in 15-minute timeframe',
-#     backstory="""You are an experienced cryptocurrency market analyst specializing in very short-term Bitcoin analysis.
-#     Your expertise lies in technical analysis and identifying market trends in 15-minute charts.
-#     You are known for your quick analysis and ability to spot rapid market changes.""",
-#     verbose=True,
-#     allow_delegation=False,
-# )
+
 
 fifteen_min_analyst = Agent(
     role=f'15-Minute Market Analyst',
@@ -108,16 +91,6 @@ daily_analyst = Agent(
 
 )
 
-# daily_analyst = Agent(
-#     role=f'Daily {symbol} Market Analyst',
-#     goal='Analyze Bitcoin market trends and patterns in 1-day timeframe',
-#     backstory="""You are an experienced cryptocurrency market analyst specializing in medium to long-term Bitcoin analysis.
-#     Your expertise lies in technical analysis and identifying market trends in daily charts.
-#     You are known for your cautious approach, always considering multiple market scenarios.""",
-#     verbose=True,
-#     allow_delegation=False,
-#
-# )
 
 strategist = Agent(
     role='Grid Trading Strategist',
@@ -152,15 +125,7 @@ price_predictor = Agent(
     allow_delegation=False,
 )
 
-# price_predictor = Agent(
-#     role=f'{symbol} Price Predictor',
-#     goal='Predict the future price movement of Bitcoin and provide a confidence level',
-#     backstory="""You are an expert in price prediction for cryptocurrencies, especially Bitcoin.
-#     You use a combination of technical analysis, market sentiment, and historical patterns to make educated guesses about future price movements.
-#     You are known for your conservative estimates and rarely give extremely high confidence levels.""",
-#     verbose=True,
-#     allow_delegation=False,
-# )
+
 
 korean_summarizer = Agent(
     role='Korean Market Summarizer',
@@ -204,13 +169,7 @@ def extract_strategy(text):
     return None
 
 
-# def get_current_bitcoin_price(vt_symbol):
-#     try:
-#         ticker = client.get_symbol_ticker(symbol=vt_symbol)
-#         return float(ticker['price'])
-#     except BinanceAPIException as e:
-#         print(f"Error fetching current Bitcoin price: {e}")
-#         return None
+
 def get_current_bitcoin_price(vt_symbol):
     try:
         url = f"https://api.binance.com/api/v3/ticker/price?symbol={vt_symbol}"
@@ -225,7 +184,7 @@ def get_current_bitcoin_price(vt_symbol):
 def get_strategy_config(strategy_name='240824'):
     try:
         strategy_config = StrategyConfig.objects.get(name=strategy_name)
-        first_config = strategy_config.config.get('INIT', {})
+        first_config = strategy_config.config.get('ETH', {})
         vt_symbol = first_config.get('vt_symbol', '')
         symbol = vt_symbol.split('.')[0] if vt_symbol else ''
         grid_strategy = first_config.get('setting', {}).get('grid_strategy')
@@ -245,33 +204,6 @@ def get_strategy_config(strategy_name='240824'):
         print(f"Unexpected error in get_strategy_config: {str(e)}")
 
 
-# def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
-#     # APIRequestFactory 사용
-#     factory = APIRequestFactory()
-#     request = factory.get('/', {'symbol': symbol})
-#     try:
-#         # 뷰 클래스의 인스턴스 생성
-#         LLMChartData = BinanceLLMChartDataAPIView()
-#         response = LLMChartData.get(request)
-#
-#         # Response 객체 확인
-#         if isinstance(response, Response):
-#             # DRF Response 객체인 경우
-#             if response.status_code == 200:
-#                 return response.data
-#             else:
-#                 raise Exception(f"Error: {response.status_code}, {response.data}")
-#         else:
-#             # 일반 Django HttpResponse 객체인 경우 (드문 경우)
-#             if response.status_code == 200:
-#                 import json
-#                 return json.loads(response.content)
-#             else:
-#                 raise Exception(f"Error: {response.status_code}, {response.content}")
-#
-#     except Exception as e:
-#         print(f"Error occurred while fetching Binance chart data: {e}")
-#         return None
 
 def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
     import time
@@ -314,29 +246,6 @@ def perform_analysis():
         print("Failed to fetch bitcoin data.")
         return None
 
-    # task_news = Task(
-    #     description=f"""Analyze the following recent cryptocurrency news items and determine their potential impact on Bitcoin's price trend:
-    #     {[{
-    #         'title': news['title'],
-    #         'content': news['body'],
-    #     } for news in get_crypto_news()]}
-    #
-    #     1. Quickly review all news items, focusing on their potential impact on Bitcoin's price.
-    #     2. Identify key themes or events that could significantly influence Bitcoin's price.
-    #     3. Based on the overall sentiment of the news, determine:
-    #        a) The likely short-term trend (next 24-48 hours): Bullish, Bearish, or Neutral
-    #        b) The potential long-term trend (next 1-2 weeks): Bullish, Bearish, or Neutral
-    #
-    #     Provide a concise summary (3-5 sentences) explaining your trend predictions, referencing the most impactful news items.
-    #
-    #     End your analysis with two lines:
-    #     "NEWS_Short-term trend: [Bullish/Bearish/Neutral]"
-    #     "NEWS_Long-term trend: [Bullish/Bearish/Neutral]"
-    #     """,
-    #     expected_output="Concise analysis of Bitcoin's likely price trends based on recent news, with clear short-term and long-term trend predictions.",
-    #     agent=news_analyst
-    # )
-
     task_15min = Task(
         description=f"""Analyze the Bitcoin market using the latest 12 hours of 15-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['15min'][-48:]}
@@ -364,7 +273,7 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['15min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['15min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-            
+
         4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
            - **RSI Analysis**: 
              - Look for RSI({bitcoin_data['15min'][-48:][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
@@ -379,19 +288,28 @@ def perform_analysis():
         5. **Volume Confirmation**:
            - Check if volume increases as price starts to reverse, which can confirm the reversal.
            - Look for volume spikes that coincide with potential reversal candles.
+        6. **Immediate Reversal Signals**:
+           - **Oversold/Overbought Quick Recovery**: Look for rapid recoveries from oversold conditions in RSI or Stochastic.
+           - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
+           - **Short-term Moving Average Crossovers**: 
+             - Current 5MA: {bitcoin_data['15min'][-48:][-1]['MA5']}
+             - Current 20MA: {bitcoin_data['15min'][-48:][-1]['MA20']}
+             - Identify all instances where the 5MA crosses above or below the 20MA within the 48 data points.
+             - Analyze the frequency and significance of these crossovers.
 
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
         - **Short-term Outlook**: 2-6 hours.
         - **Long-term Outlook**: 4-8 hours.
+         - **Reversal Potential**: High, Medium, or Low based on the combination of all signals.
         - **Potential Reversal Points**: Identify key price levels where a reversal might occur.
         - **Cloud Dynamics**: Summarize the current state of the cloud, including its thickness, direction, and implications for future price movement.
 
         Conclude with:
 
-        Ensure clarity and focus on key indicators to accurately determine market trends.""",
-        expected_output="Concise and accurate Bitcoin market analysis report for the 15-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
+        Ensure clarity and focus on key indicators to accurately determine market trends and potential immediate reversals.""",
+        expected_output="Comprehensive Bitcoin market analysis report for the 15-minute timeframe, emphasizing key technical indicators and potential immediate reversal signals.",
         agent=fifteen_min_analyst
     )
 
@@ -549,56 +467,7 @@ def perform_analysis():
         """,
         agent=hourly_analyst
     )
-    # 태스크 생성
-    # task1 = Task(
-    #     description=f"""Use the latest 72 hours of hourly data to analyze the Bitcoin market. The data is sorted from oldest to most recent, and each data point has the following structure:
-    #     {bitcoin_data['hourly'][-72:]}
-    #
-    #     **Important:**
-    #     - The **last row** of the data (`{bitcoin_data['hourly'][-72:][-1]}`) is the **most recent data**.
-    #     - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
-    #
-    #     Focus on:
-    #     1. **Price Trends**: Identify upward or downward trends starting from the latest price.
-    #     2. **Volume Changes**: Compare recent volumes with earlier ones to gauge market interest.
-    #     3. **Ichimoku Cloud Indicators**:
-    #         - **Kumo (Cloud) Position**: Is the price ({bitcoin_data['hourly'][-1]['close']}) above or below the cloud (Senkou Span A: {bitcoin_data['hourly'][-1]['Senkou_Span_A']}, Senkou Span B: {bitcoin_data['hourly'][-1]['Senkou_Span_B']})?
-    #         - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
-    #         - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
-    #         - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
-    #         - **Cloud (Kumo) Analysis**:
-    #             - Price vs Cloud: {bitcoin_data['hourly'][-1]['close']} vs {max(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (bottom)
-    #             - Price-cloud interaction: Support at top or resistance at bottom?
-    #             - Instances of price piercing cloud without closing outside (strong support/resistance).
-    #             - Potential breakouts/breakdowns through the cloud.
-    #             - Cloud Thickness: Current {abs(bitcoin_data['hourly'][-1]['Senkou_Span_A'] - bitcoin_data['hourly'][-1]['Senkou_Span_B'])}, Previous {abs(bitcoin_data['hourly'][-2]['Senkou_Span_A'] - bitcoin_data['hourly'][-2]['Senkou_Span_B'])}
-    #             - Interpret thickness: Thick (strong trend, volatile) vs Thin (weak trend, easier breakouts)
-    #             - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
-    #             - Analyze cloud type and thickness for overall trend strength and future movement.
-    #
-    #
-    #     4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**:
-    #        - **RSI Analysis**:
-    #          - Look for RSI({bitcoin_data['hourly'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
-    #          - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
-    #        - **Stochastic Oscillator Analysis**:
-    #          - Use '%K'({bitcoin_data['hourly'][-1]['%K']}) and '%D'({bitcoin_data['hourly'][-1]['%D']}) fields.
-    #          - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
-    #          - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
-    #        - **Combined RSI and Stochastic Analysis**:
-    #          - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
-    #          - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
-    #     5. **Technical Patterns**: Detect formations like Head and Shoulders, Double Tops/Bottoms, etc.
-    #
-    #     Conclude with:
-    #     - **Market Sentiment**: Bullish, Bearish, or Neutral based on the above indicators.
-    #     - **Short-term Outlook**: 12-24 hours.
-    #     - **Long-term Outlook**: 1-3 days.
-    #
-    #     Ensure clarity and focus on key indicators to accurately determine market trends.""",
-    #     expected_output="Concise and accurate Bitcoin market analysis report for the 1-hour timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
-    #     agent=hourly_analyst
-    # )
+
 
     task2 = Task(
         description=f"""Analyze the Bitcoin market using the latest 20 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
@@ -692,57 +561,7 @@ def perform_analysis():
         """,
         agent=daily_analyst
     )
-    # task2 = Task(
-    #     description=f"""Analyze the Bitcoin market using the latest 20 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
-    #     {bitcoin_data['daily'][-120:]}
-    #
-    #     **Important:**
-    #     - The **last row** of the data (`{bitcoin_data['daily'][-120:][-1]}`) is the **most recent data**.
-    #     - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
-    #
-    #     Focus on:
-    #     1. **Price Trends & Key Levels**: Identify upward or downward trends and significant support/resistance levels.
-    #     2. **Volume Patterns**: Detect significant volume spikes and their correlation with price movements.
-    #     3. **Ichimoku Cloud Indicators**:
-    #         - Price vs Cloud: {bitcoin_data['daily'][-1]['close']} vs {max(bitcoin_data['daily'][-1]['Senkou_Span_A'], bitcoin_data['daily'][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['daily'][-1]['Senkou_Span_A'], bitcoin_data['daily'][-1]['Senkou_Span_B'])} (bottom)
-    #         - Senkou Span A ({bitcoin_data['daily'][-1]['Senkou_Span_A']}) vs B ({bitcoin_data['daily'][-1]['Senkou_Span_B']})
-    #           Check for recent crossovers indicating potential trend changes.
-    #         - Tenkan-sen ({bitcoin_data['daily'][-1]['Tenkan_sen']}) vs Kijun-sen ({bitcoin_data['daily'][-1]['Kijun_sen']})
-    #           Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
-    #         - Chikou Span ({bitcoin_data['daily'][-1]['Chikou_Span']}) vs Price ({bitcoin_data['daily'][-1]['close']})
-    #         - **Cloud (Kumo) Analysis**:
-    #             - Price-cloud interaction: Support at top or resistance at bottom?
-    #             - Instances of price piercing cloud without closing outside (strong support/resistance).
-    #             - Potential breakouts/breakdowns through the cloud.
-    #             - Cloud Thickness: Current {abs(bitcoin_data['daily'][-1]['Senkou_Span_A'] - bitcoin_data['daily'][-1]['Senkou_Span_B'])}, Previous {abs(bitcoin_data['daily'][-2]['Senkou_Span_A'] - bitcoin_data['daily'][-2]['Senkou_Span_B'])}
-    #             - Interpret thickness: Thick (strong trend, volatile) vs Thin (weak trend, easier breakouts)
-    #             - Thickness changes over time for potential trend shifts.
-    #             - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
-    #             - Analyze cloud type and thickness for overall trend strength and future movement.
-    #
-    #
-    #     4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**:
-    #        - **RSI Analysis**:
-    #          - Look for RSI({bitcoin_data['daily'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
-    #          - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
-    #        - **Stochastic Oscillator Analysis**:
-    #          - Use '%K'({bitcoin_data['daily'][-1]['%K']}) and '%D'({bitcoin_data['daily'][-1]['%D']}) fields.
-    #          - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
-    #          - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
-    #        - **Combined RSI and Stochastic Analysis**:
-    #          - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
-    #          - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
-    #
-    #
-    #     Conclude with:
-    #     - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
-    #     - **Short-term Outlook**: 1-3 days.
-    #     - **Long-term Outlook**: 3-7 days.
-    #
-    #     Ensure clarity and focus on key indicators to accurately determine market trends.""",
-    #     expected_output="Concise and accurate Bitcoin market analysis report for the 1-day timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
-    #     agent=daily_analyst
-    # )
+
 
     bitcoin_analysis = Crew(
         agents=[fifteen_min_analyst, thirty_min_analyst, hourly_analyst, daily_analyst],
@@ -881,10 +700,6 @@ def perform_analysis():
 
     print("-----------------------------------------------------")
     print(results)  # results.raw)
-    # print(results.raw)
-    # print(results.tasks_output)
-    # print(type(results.tasks_output))
-    # <class 'list'>
     print("-----------------------------------------------------")
 
     task_results = {
