@@ -799,7 +799,8 @@ class TrendLinesAPIView(APIView):
         def process_trend_lines(lines,
                                 reverse_order: bool = False,
                                 top_n: int = 5,
-                                reference_time: Optional[pd.Timestamp] = None):
+                                reference_time: Optional[pd.Timestamp] = None,
+                                is_long_term: bool = False):
             if reference_time is None:
                 reference_time = pd.Timestamp.now(tz='UTC')
             elif reference_time.tzinfo is None:
@@ -825,7 +826,7 @@ class TrendLinesAPIView(APIView):
             sorted_lines = sorted(lines, key=lambda x: x['MaxRelativePriceDiff'], reverse=True)[:top_n]
 
             for rank, line in enumerate(sorted_lines, start=1):
-                line['Importance'] = rank
+                line['Importance'] = 5 if is_long_term else rank
 
             # 중요도(순위)를 기준으로 정렬
             result = sorted(sorted_lines, key=lambda x: x['Importance'])[:top_n]
@@ -851,8 +852,9 @@ class TrendLinesAPIView(APIView):
         top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=6,
                                                    reference_time=current_time)
         top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1,
-                                                 reference_time=current_time)
-        top_long_term_low = process_trend_lines(long_term_low, reverse_order=True, top_n=1, reference_time=current_time)
+                                                 reference_time=current_time, is_long_term=True)
+        top_long_term_low = process_trend_lines(long_term_low, reverse_order=True, top_n=1, reference_time=current_time,
+                                                is_long_term=True)
         # 빈 배열 처리 (필요에 따라 기본값을 None 또는 다른 값으로 변경)
         top_recent_steep_high = top_recent_steep_high if top_recent_steep_high else []
         top_recent_steep_low = top_recent_steep_low if top_recent_steep_low else []
