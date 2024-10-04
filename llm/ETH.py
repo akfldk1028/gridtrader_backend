@@ -229,7 +229,7 @@ def get_bitcoin_data_from_api(symbol, max_retries=5, retry_delay=1):
 # TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
 # 기존 get_current_bitcoin_price 함수 내용...
 
-def perform_analysis():
+def perform_eth_analysis():
     config = get_strategy_config()
     if not config:
         print("Strategy configuration is invalid.")
