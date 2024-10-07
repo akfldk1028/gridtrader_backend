@@ -759,10 +759,11 @@ def perform_analysis():
            - 1-3 days: Weight 3
            - 3-7 days: Weight 4
 
-           For each timeframe:
-           - If the direction is 'Up', add the full confidence to the 'Up' direction.
-           - If the direction is 'Down', add the full confidence to the 'Down' direction.
-           - If the direction is 'Neutral', add half of the confidence to both 'Up' and 'Down' directions.
+           Calculation method:
+           - For 'Up' direction: 
+             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
+           - For 'Down' direction: 
+             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
 
         2. Consistency Check:
            - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 10%.
