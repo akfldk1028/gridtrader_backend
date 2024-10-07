@@ -249,6 +249,8 @@ def perform_eth_analysis():
     task_15min = Task(
         description=f"""Analyze the Bitcoin market using the latest 12 hours of 15-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['15min'][-48:]}
+        
+        **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
 
         **Important:**
         - The **last row** of the data (`{bitcoin_data['15min'][-48:][-1]}`) is the **most recent data**.
@@ -316,6 +318,8 @@ def perform_eth_analysis():
     task_30min = Task(
         description=f"""Analyze the Bitcoin market using the latest 24 hours of 30-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['30min'][-48:]}
+        
+        **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
 
         **Important:**
         - The **last row** of the data (`{bitcoin_data['30min'][-48:][-1]}`) is the **most recent data**.
@@ -377,6 +381,8 @@ def perform_eth_analysis():
     task1 = Task(
         description=f"""Use the latest 72 hours of hourly data to analyze the Bitcoin market. The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['hourly'][-72:]}
+        
+        **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
 
         **Important:**
         - The **last row** of the data (`{bitcoin_data['hourly'][-72:][-1]}`) is the **most recent data**.
@@ -472,6 +478,8 @@ def perform_eth_analysis():
     task2 = Task(
         description=f"""Analyze the Bitcoin market using the latest 20 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['daily'][-120:]}
+        
+        **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
 
         **Important:**
         - The **last row** of the data (`{bitcoin_data['daily'][-120:][-1]}`) is the **most recent data**.
@@ -627,6 +635,8 @@ def perform_eth_analysis():
              "2-6 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "6-24 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "1-3 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
+            "3-7 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
+
         """,
         expected_output="Accurate, forward-looking Bitcoin price predictions with directional outcomes, confidence levels, and specific price targets for short-term, medium-term, and longer-term timeframes, emphasizing predictive analysis and potential future market behavior.",
         agent=price_predictor
@@ -636,11 +646,17 @@ def perform_eth_analysis():
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
 
     task4 = Task(
-        description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **15-minute, 30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
+        description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators.
 
         **Guidelines:**
+        1. Weighted Timeframe Analysis:
+           Calculate a weighted average confidence for each direction (Up/Down/Neutral) using the following weights:
+           - 2-6 hours: Weight 1
+           - 6-24 hours: Weight 2
+           - 1-3 days: Weight 3
+           - 3-7 days: Weight 4
 
-        1. Ichimoku Cloud Analysis:
+        2. Ichimoku Cloud Analysis:
            - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
            - If the price is above the cloud or the cloud is providing support:
                - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
@@ -650,38 +666,43 @@ def perform_eth_analysis():
                - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
                - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
 
-        2. Strategy Selection Criteria:
+        3. Strategy Selection Criteria:
            - LongGrid:
-               - Base case: Select if the combined average confidence across all timeframes is 'Up' with a confidence level of 70% or higher.
-               - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a confidence level of 60% or higher.
+               - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
+               - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a weighted average confidence of 60% or higher for 'Up' direction.
            - ShortGrid:
-               - Base case: Select if the combined average confidence across all timeframes is 'Down' with a confidence level of 70% or higher.
-               - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a confidence level of 60% or higher.
+               - Base case: Select if the weighted average confidence for 'Down' direction is 70% or higher.
+               - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a weighted average confidence of 60% or higher for 'Down' direction.
            - RegularGrid:
-               - Select if predictions are mixed or the combined average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
+               - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
 
-        3. Handling Conflicting Signals:
-           - When signals conflict across timeframes, weigh them based on their respective confidence levels and the overall market trend.
-           - Consider the 6-hour timeframe as equally important to shorter timeframes for a more balanced analysis.
+        4. Consistency Check:
+           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 7%.
+           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 5%.
 
-        4. Overall Trend Consideration:
+        5. Distinguish between Trend Reversal and Pullback:
+           - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
+           - Consider the strength and duration of the current trend when making this assessment.
+
+        6. Overall Trend Consideration:
            - Factor in the general market sentiment and trend from the 6-hour analysis when making the final decision.
            - Pay special attention to the cloud dynamics in the 6-hour timeframe for longer-term trend indication.
 
-        5. Maximize Profit:
+        7. Maximize Profit Potential:
            - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
-           - Consider the potential for trend continuation vs. reversal based on cloud analysis.
-
-        Decision Rules:
-        - Select LongGrid if the conditions generally favor an upward trend and meet the criteria specified in point 2.
-        - Select ShortGrid if the conditions generally favor a downward trend and meet the criteria specified in point 2.
-        - Select RegularGrid if the market shows significant uncertainty or lacks a clear directional bias.
+           - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
 
         **Output Format:**
 
-        Provide a brief explanation of your decision, including key factors from the Ichimoku Cloud analysis. Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
+        Provide a brief explanation of your decision, including:
+        1. The weighted average confidence for each direction (Up/Down/Neutral)
+        2. Key factors from the Ichimoku Cloud analysis
+        3. Whether recent movements are likely a trend reversal or a pullback
+        4. The final selected strategy and its confidence level after all adjustments
+
+        Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
         """,
-        expected_output="""A concise explanation of the grid trading strategy recommendation, highlighting key Ichimoku Cloud insights, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
+        expected_output="""A concise explanation of the grid trading strategy recommendation, including weighted average confidences, key Ichimoku Cloud insights, trend reversal vs pullback assessment, and the final strategy selection with confidence level, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )
 

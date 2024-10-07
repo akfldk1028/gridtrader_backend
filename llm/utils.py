@@ -749,7 +749,7 @@ def perform_analysis():
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
 
     task4 = Task(
-        description="""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from the **15-minute, 30-minute and 1-hour timeframes**, including Ichimoku Cloud signals and technical indicators.
+        description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators.
 
         **Guidelines:**
         1. Weighted Timeframe Analysis:
@@ -781,7 +781,7 @@ def perform_analysis():
 
         4. Consistency Check:
            - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 7%.
-           - If the two longest timeframes (1-hour and 6-hour) show the same direction, increase the confidence in the selected strategy by 5%.
+           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 5%.
        
         5. Distinguish between Trend Reversal and Pullback:
            - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
