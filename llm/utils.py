@@ -766,15 +766,15 @@ def perform_analysis():
              Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
 
         2. Consistency Check:
-           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 10%.
-           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 7%.
+           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 7%.
+           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 5%.
 
         3. Ichimoku Cloud Analysis:
            - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
            - If the price is above the cloud or the cloud is providing support:
-               - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
+               - Increase the probability of LongGrid by 3% (e.g., from 65% to 70%)
            - If the price is below the cloud or the cloud is acting as resistance:
-               - Increase the probability of ShortGrid by 5% (e.g., from 65% to 70%)
+               - Increase the probability of ShortGrid by 3% (e.g., from 65% to 70%)
            - Consider cloud thickness:
                - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
                - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
