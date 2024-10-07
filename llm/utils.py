@@ -753,13 +753,22 @@ def perform_analysis():
 
         **Guidelines:**
         1. Weighted Timeframe Analysis:
-           Calculate a weighted average confidence for each direction (Up/Down/Neutral) using the following weights:
+           Calculate a weighted average confidence for each direction (Up/Down) using the following weights:
            - 2-6 hours: Weight 1
            - 6-24 hours: Weight 2
            - 1-3 days: Weight 3
            - 3-7 days: Weight 4
 
-        2. Ichimoku Cloud Analysis:
+           For each timeframe:
+           - If the direction is 'Up', add the full confidence to the 'Up' direction.
+           - If the direction is 'Down', add the full confidence to the 'Down' direction.
+           - If the direction is 'Neutral', add half of the confidence to both 'Up' and 'Down' directions.
+
+        2. Consistency Check:
+           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 10%.
+           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 7%.
+
+        3. Ichimoku Cloud Analysis:
            - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
            - If the price is above the cloud or the cloud is providing support:
                - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
@@ -769,7 +778,7 @@ def perform_analysis():
                - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
                - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
 
-        3. Strategy Selection Criteria:
+        4. Strategy Selection Criteria:
            - LongGrid:
                - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
                - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a weighted average confidence of 60% or higher for 'Up' direction.
@@ -779,26 +788,22 @@ def perform_analysis():
            - RegularGrid:
                - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
 
-        4. Consistency Check:
-           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 7%.
-           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 5%.
-       
         5. Distinguish between Trend Reversal and Pullback:
            - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
            - Consider the strength and duration of the current trend when making this assessment.
-        
+
         6. Overall Trend Consideration:
            - Factor in the general market sentiment and trend from the 6-hour analysis when making the final decision.
            - Pay special attention to the cloud dynamics in the 6-hour timeframe for longer-term trend indication.
-    
+
         7. Maximize Profit Potential:
            - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
            - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
-    
+
         **Output Format:**
-    
+
         Provide a brief explanation of your decision, including:
-        1. The weighted average confidence for each direction (Up/Down/Neutral)
+        1. The weighted average confidence for each direction (Up/Down)
         2. Key factors from the Ichimoku Cloud analysis
         3. Whether recent movements are likely a trend reversal or a pullback
         4. The final selected strategy and its confidence level after all adjustments
