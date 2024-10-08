@@ -94,13 +94,17 @@ daily_analyst = Agent(
 
 strategist = Agent(
     role='Grid Trading Strategist',
-    goal='Determine the most suitable grid trading strategy based on market analysis',
-    backstory="""You are a seasoned trading strategist with deep knowledge of various grid trading techniques.
-    You excel at matching market conditions with appropriate trading strategies.
-    You are known for your adaptive approach, often recommending a mix of strategies or regular grid trading in uncertain markets.""",
+    goal='Determine the most suitable grid trading strategy based on comprehensive market analysis and technical indicators',
+    backstory="""You are a seasoned trading strategist with deep knowledge of various grid trading techniques, 
+    particularly specializing in Bitcoin markets. Your expertise includes analyzing multiple timeframes, 
+    interpreting Ichimoku Cloud signals, and distinguishing between trend reversals and pullbacks. 
+    You excel at matching market conditions with appropriate trading strategies, considering factors 
+    such as weighted timeframe analysis, consistency checks, and overall market trends. 
+    You are known for your adaptive approach, often recommending a mix of strategies or regular grid 
+    trading in uncertain markets, while confidently choosing directional strategies when clear trends emerge. 
+    Your decisions are always backed by thorough analysis and clear explanations.""",
     verbose=True,
     allow_delegation=False,
-
 )
 
 price_predictor = Agent(
@@ -661,9 +665,9 @@ def perform_eth_analysis():
              Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
            - For 'Down' direction: 
              Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
-        
+
         2. Consistency Check:
-           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 10%.
+           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 12%.
            - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 7%.
 
         3. Ichimoku Cloud Analysis:
@@ -711,7 +715,6 @@ def perform_eth_analysis():
         expected_output="""A concise explanation of the grid trading strategy recommendation, including weighted average confidences, key Ichimoku Cloud insights, trend reversal vs pullback assessment, and the final strategy selection with confidence level, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )
-
     # Crew 인스턴스화
     crew = Crew(
         agents=[price_predictor, strategist],
