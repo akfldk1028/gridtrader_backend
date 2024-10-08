@@ -788,7 +788,7 @@ def perform_analysis():
                - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
                - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a weighted average confidence of 60% or higher for 'Up' direction.
            - ShortGrid:
-               - Base case: Select if the weighted average confidence for 'Down' direction is 70% or higher.
+               - Base case: Select if the weighted average confidence for 'Down' direction is 75% or higher.
                - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a weighted average confidence of 60% or higher for 'Down' direction.
            - RegularGrid:
                - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
