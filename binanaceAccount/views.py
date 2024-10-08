@@ -646,11 +646,7 @@ class DailyBalanceView(BinanceAPIView):
 
         # 총 수익률
         # 총 수익률 계산 시 최초 투자 금액만 사용
-        total_initial_investment = self.investment_tracker.get_initial_investment_amount(InvestorType.YOU) + \
-                                   self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND) + \
-                                   self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND2) + \
-                                   self.investment_tracker.get_initial_investment_amount(InvestorType.FRIEND3)
-
+        total_initial_investment = 149.58
         total_profit = self.calculate_profit_rate(total_initial_investment, latest_balance)
         total_data = get_period_data()
 
