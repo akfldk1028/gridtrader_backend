@@ -404,6 +404,13 @@ class DailyBalanceView(BinanceAPIView):
             Transaction(date(2024, 9, 29), InvestorType.YOU, TransactionType.DEPOSIT, 36))
         self.investment_tracker.add_transaction(
             Transaction(date(2024, 10, 2), InvestorType.FRIEND2, TransactionType.DEPOSIT, 490))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 10, 9), InvestorType.YOU, TransactionType.DEPOSIT, 210))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 10, 9), InvestorType.FRIEND2, TransactionType.DEPOSIT, 140))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2024, 10, 9), InvestorType.FRIEND3, TransactionType.DEPOSIT, 350))
+
 
     def get_balance(self, balance_data):
         balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
