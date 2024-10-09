@@ -385,7 +385,7 @@ def perform_eth_analysis():
     task1 = Task(
         description=f"""Use the latest 72 hours of hourly data to analyze the Bitcoin market. The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['hourly'][-72:]}
-        
+
         **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
 
         **Important:**
@@ -400,7 +400,7 @@ def perform_eth_analysis():
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
             - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
-            - **Cloud (Kumo) Analysis**: 
+            - **Cloud (Kumo) Analysis**:
                 - Price vs Cloud: {bitcoin_data['hourly'][-1]['close']} vs {max(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (bottom)
                 - Price-cloud interaction: Support at top or resistance at bottom?
                 - Instances of price piercing cloud without closing outside (strong support/resistance).
@@ -410,17 +410,18 @@ def perform_eth_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
-           - **RSI Analysis**: 
+
+        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**:
+           - **RSI Analysis**:
              - Look for RSI({bitcoin_data['hourly'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
              - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
            - **Stochastic Oscillator Analysis**:
-             - Use '%K'({bitcoin_data['hourly'][-1]['%K']}) and '%D'({bitcoin_data['hourly'][-1]['%D']}) fields. 
+             - Use '%K'({bitcoin_data['hourly'][-1]['%K']}) and '%D'({bitcoin_data['hourly'][-1]['%D']}) fields.
              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
            - **Combined RSI and Stochastic Analysis**:
              - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
-             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction. 
+             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
         5. **Technical Patterns**: Detect formations like Head and Shoulders, Double Tops/Bottoms, etc.
 
         Conclude with:
@@ -428,66 +429,23 @@ def perform_eth_analysis():
         - **Short-term Outlook**: 12-24 hours.
         - **Long-term Outlook**: 1-3 days.
 
-        Ensure clarity and focus on key indicators to accurately determine market trends.
-
-        After completing your detailed analysis, provide a concise summary in the following JSON format:
-
-        {{
-          "market_trend": "Overall market trend (bullish/bearish/neutral)",
-          "key_levels": {{
-            "support": [List 2-3 key support levels],
-            "resistance": [List 2-3 key resistance levels]
-          }},
-          "ichimoku_signals": [List 3-5 most significant Ichimoku signals],
-          "rsi_stochastic": {{
-            "rsi_status": "Current RSI status (overbought/oversold/neutral)",
-            "stochastic_status": "Current Stochastic status (overbought/oversold/neutral)",
-            "reversal_signals": [List any clear reversal signals]
-          }},
-          "technical_patterns": [List any significant technical patterns observed],
-          "volume_trend": "Overall volume trend (increasing/decreasing/stable)",
-          "outlook": {{
-            "short_term": "Short-term outlook (12-24 hours)",
-            "long_term": "Long-term outlook (1-3 days)"
-          }}
-        }}
-
-        Ensure your summary captures the most critical insights from your detailed analysis.
-        """,
-        expected_output="""
-        {
-          "market_trend": "bullish/bearish/neutral",
-          "key_levels": {
-            "support": [level1, level2, level3],
-            "resistance": [level1, level2, level3]
-          },
-          "ichimoku_signals": ["signal1", "signal2", "signal3", "signal4", "signal5"],
-          "rsi_stochastic": {
-            "rsi_status": "overbought/oversold/neutral",
-            "stochastic_status": "overbought/oversold/neutral",
-            "reversal_signals": ["signal1", "signal2"]
-          },
-          "technical_patterns": ["pattern1", "pattern2"],
-          "volume_trend": "increasing/decreasing/stable",
-          "outlook": {
-            "short_term": "bullish/bearish/neutral",
-            "long_term": "bullish/bearish/neutral"
-          }
-        }
-        """,
+        Ensure clarity and focus on key indicators to accurately determine market trends.""",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 1-hour timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
         agent=hourly_analyst
     )
 
-
     task2 = Task(
-        description=f"""Analyze the Bitcoin market using the latest 20 days of 6-hourly data, The data is sorted from oldest to most recent, and each data point has the following structure:
-        {bitcoin_data['daily'][-120:]}
-        
+        description=f"""Analyze the Bitcoin market using the latest 30 days of 6-hourly data, with a strong emphasis on identifying and characterizing the current trend. The data is sorted from oldest to most recent, and each data point has the following structure:
+        {bitcoin_data['daily'][-180:]}
+
         **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
 
         **Important:**
-        - The **last row** of the data (`{bitcoin_data['daily'][-120:][-1]}`) is the **most recent data**.
-        - When starting the analysis, begin with the last data point and proceed to analyze previous data points. 
+        - The **last row** of the data (`{bitcoin_data['daily'][-180:][-1]}`) is the **most recent data**.
+        - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
+        - Determine the primary trend (bullish, bearish, or neutral) based on the overall price movement over the 30-day period.
+        - Identify any potential trend reversals or continuations in the most recent data points.
+
 
         Focus on:
         1. **Price Trends & Key Levels**: Identify upward or downward trends and significant support/resistance levels.
@@ -499,7 +457,7 @@ def perform_eth_analysis():
             - Tenkan-sen ({bitcoin_data['daily'][-1]['Tenkan_sen']}) vs Kijun-sen ({bitcoin_data['daily'][-1]['Kijun_sen']})
               Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
             - Chikou Span ({bitcoin_data['daily'][-1]['Chikou_Span']}) vs Price ({bitcoin_data['daily'][-1]['close']})
-            - **Cloud (Kumo) Analysis**: 
+            - **Cloud (Kumo) Analysis**:
                 - Price-cloud interaction: Support at top or resistance at bottom?
                 - Instances of price piercing cloud without closing outside (strong support/resistance).
                 - Potential breakouts/breakdowns through the cloud.
@@ -509,71 +467,29 @@ def perform_eth_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**: 
-           - **RSI Analysis**: 
+
+        4. **RSI and Stochastic Oscillator Analysis for Reversal Signals**:
+           - **RSI Analysis**:
              - Look for RSI({bitcoin_data['daily'][-1]['RSI']}) values below 30 (oversold) or above 70 (overbought).
              - Identify potential bullish divergence (price making lower lows while RSI makes higher lows) or bearish divergence (price making higher highs while RSI makes lower highs).
            - **Stochastic Oscillator Analysis**:
-             - Use '%K'({bitcoin_data['daily'][-1]['%K']}) and '%D'({bitcoin_data['daily'][-1]['%D']}) fields. 
+             - Use '%K'({bitcoin_data['daily'][-1]['%K']}) and '%D'({bitcoin_data['daily'][-1]['%D']}) fields.
              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
            - **Combined RSI and Stochastic Analysis**:
              - Strong reversal signal: When both RSI and Stochastic indicate oversold/overbought conditions simultaneously.
-             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction. 
+             - Confirmation: Look for RSI starting to move away from oversold/overbought levels while Stochastic shows a crossover in the same direction.
+
 
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Short-term Outlook**: 1-3 days.
         - **Long-term Outlook**: 3-7 days.
 
-        Ensure clarity and focus on key indicators to accurately determine market trends.
-
-        After completing your detailed analysis, provide a concise summary in the following JSON format:
-
-        {{
-          "market_trend": "Overall market trend (bullish/bearish/neutral)",
-          "key_levels": {{
-            "support": [List 2-3 key support levels],
-            "resistance": [List 2-3 key resistance levels]
-          }},
-          "volume_analysis": "Brief summary of volume patterns and their significance",
-          "ichimoku_signals": [List 3-5 most significant Ichimoku signals],
-          "rsi_stochastic": {{
-            "rsi_status": "Current RSI status (overbought/oversold/neutral)",
-            "stochastic_status": "Current Stochastic status (overbought/oversold/neutral)",
-            "reversal_signals": [List any clear reversal signals]
-          }},
-          "outlook": {{
-            "short_term": "Short-term outlook (1-3 days)",
-            "long_term": "Long-term outlook (3-7 days)"
-          }}
-        }}
-
-        Ensure your summary captures the most critical insights from your detailed analysis.
-        """,
-        expected_output="""
-        {
-          "market_trend": "bullish/bearish/neutral",
-          "key_levels": {
-            "support": [level1, level2, level3],
-            "resistance": [level1, level2, level3]
-          },
-          "volume_analysis": "Brief summary of volume patterns",
-          "ichimoku_signals": ["signal1", "signal2", "signal3", "signal4", "signal5"],
-          "rsi_stochastic": {
-            "rsi_status": "overbought/oversold/neutral",
-            "stochastic_status": "overbought/oversold/neutral",
-            "reversal_signals": ["signal1", "signal2"]
-          },
-          "outlook": {
-            "short_term": "bullish/bearish/neutral",
-            "long_term": "bullish/bearish/neutral"
-          }
-        }
-        """,
+        Ensure clarity and focus on key indicators to accurately determine market trends.""",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 1-day timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
         agent=daily_analyst
     )
-
 
     bitcoin_analysis = Crew(
         agents=[fifteen_min_analyst, thirty_min_analyst, hourly_analyst, daily_analyst],
@@ -587,26 +503,26 @@ def perform_eth_analysis():
     analysis_results['30min'] = analysis_crew.tasks_output[1]
     analysis_results['1hour'] = analysis_crew.tasks_output[2]
     analysis_results['daily'] = analysis_crew.tasks_output[3]
-
     task3 = Task(
-        description=f"""Based on the analyses from the **15-minute, 30-minute and 1-hour timeframes**, forecast Bitcoin price movements for the next:
+        description=f"""Based on the analyses from the **15-minute, 30-minute , 1-hour, 6-hour timeframes**, forecast Bitcoin price movements for the next:
 
         **15-minute Analysis**:
         {analysis_results['15min']}
-        
+
         **30-minute Analysis**:
         {analysis_results['30min']}
-        
+
         **1-hour Analysis**:
         {analysis_results['1hour']}
-        
+
         **6-hour Analysis**:
         {analysis_results['daily']}
 
         1. **2-6 hours (Very Short-term)**
         2. **6-24 hours (Short-term)**
         3. **1-3 days (Medium-term)**
-        
+        4. **3-7 days (Long-term)**
+
         **CRITICAL FOCUS: PREDICTIVE ANALYSIS**
         Your primary goal is to provide accurate, forward-looking price predictions. Emphasis should be on identifying potential future price movements rather than summarizing past performance. Use the provided analyses as a foundation, but focus on extrapolating future trends and potential price targets.
 
@@ -639,7 +555,7 @@ def perform_eth_analysis():
              "2-6 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "6-24 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "1-3 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
-            "3-7 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
+             "3-7 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
 
         """,
         expected_output="Accurate, forward-looking Bitcoin price predictions with directional outcomes, confidence levels, and specific price targets for short-term, medium-term, and longer-term timeframes, emphasizing predictive analysis and potential future market behavior.",
@@ -662,9 +578,9 @@ def perform_eth_analysis():
 
            Calculation method:
            - For 'Up' direction: 
-             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
+             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / 10
            - For 'Down' direction: 
-             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
+             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / 10
 
         2. Consistency Check:
            - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 12%.

@@ -765,9 +765,9 @@ def perform_analysis():
 
            Calculation method:
            - For 'Up' direction: 
-             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
+             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / 10
            - For 'Down' direction: 
-             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / Total sum of weights
+             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / 10
 
         2. Consistency Check:
            - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 12%.
