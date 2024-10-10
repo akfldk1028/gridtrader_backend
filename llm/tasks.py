@@ -14,14 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 def setup_bitcoin_analysis_task():
-    #TODO 장기적관점엣 보는거 뭐 하루에한번하는걸로 한번 만들어야할듯? 뉴스만? 기술 1일 3일 결론도출해서 내 메인 AI에 음.. 한번씩만넣어야하나 ? 퍼센트를 나눠서?TASK
+    # TODO 장기적관점엣 보는거 뭐 하루에한번하는걸로 한번 만들어야할듯? 뉴스만? 기술 1일 3일 결론도출해서 내 메인 AI에 음.. 한번씩만넣어야하나 ? 퍼센트를 나눠서?TASK
     # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
 
     Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
+    Schedule.objects.filter(func='llm.tasks.run_eth_analysis').delete()
+
     now = datetime.now()
     next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
     next_eth_hour = now.replace(minute=5, second=0, microsecond=0) + timedelta(hours=1)
-
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
     # next_hour = now.replace(hour=16, minute=55, second=0, microsecond=0)
@@ -33,19 +34,19 @@ def setup_bitcoin_analysis_task():
     schedule(
         'llm.tasks.run_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron="0 4,8,11,15,20,23 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+        cron="0 0,4,8,11,15,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
         next_run=next_hour,
         repeats=-1  # 무한 반복
     )
     schedule(
         'llm.tasks.run_eth_analysis',
         schedule_type=Schedule.CRON,
-        cron="5 4,8,11,15,20,23 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+        cron="5 0,4,8,11,15,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
         next_run=next_eth_hour,
         repeats=-1  # 무한 반복
     )
     # async_task('llm.tasks.run_bitcoin_analysis')
-    print(f"분석 작업이 { next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
+    print(f"분석 작업이 {next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
 
 
 def update_strategy_config():
@@ -86,9 +87,6 @@ def update_strategy_config():
         logger.error(f"Error updating StrategyConfig: {str(e)}")
 
 
-
-
-
 # async def run_bitcoin_analysis_async():
 #     print("Starting Bitcoin analysis task")
 #     try:
@@ -111,7 +109,6 @@ def update_strategy_config():
 #         raise
 
 
-
 def run_bitcoin_analysis():
     print("Starting Bitcoin analysis task")
     try:
@@ -129,10 +126,10 @@ def run_bitcoin_analysis():
             price_prediction=result['price_prediction'],
             confidence=float(result['confidence']) if result['confidence'] else None,
             selected_strategy=result['selected_strategy'],
-            korean_summary = result['korean_summary'] if 'korean_summary' in result else "",
-            analysis_results_30m = result['analysis_results_30m'],
-            analysis_results_1hour = result['analysis_results_1hour'],
-            analysis_results_daily = result['analysis_results_daily'],
+            korean_summary=result['korean_summary'] if 'korean_summary' in result else "",
+            analysis_results_30m=result['analysis_results_30m'],
+            analysis_results_1hour=result['analysis_results_1hour'],
+            analysis_results_daily=result['analysis_results_daily'],
         )
         update_strategy_config()
         return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
