@@ -847,9 +847,9 @@ class TrendLinesAPIView(APIView):
         # 각 분류별로 상위 선택
         current_time = pd.Timestamp.now(tz='UTC')
 
-        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=6,
+        top_recent_steep_high = process_trend_lines(recent_steep_high, reverse_order=True, top_n=5,
                                                     reference_time=current_time)
-        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=6,
+        top_recent_steep_low = process_trend_lines(recent_steep_low, reverse_order=True, top_n=5,
                                                    reference_time=current_time)
         top_long_term_high = process_trend_lines(long_term_high, reverse_order=True, top_n=1,
                                                  reference_time=current_time, is_long_term=True)
