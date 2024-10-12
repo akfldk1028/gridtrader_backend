@@ -71,7 +71,7 @@ thirty_min_analyst = Agent(
 
 hourly_analyst = Agent(
     role=f'Hourly {symbol} Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 1-hour timeframe, with emphasis on Ichimoku Cloud indicators',
+    goal='Analyze Bitcoin market trends and patterns in 2-hour timeframe, with emphasis on Ichimoku Cloud indicators',
     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
     Your expertise lies in technical analysis and identifying market trends in hourly charts.
     You are particularly skilled in interpreting Ichimoku Cloud indicators to predict market movements.
@@ -383,7 +383,7 @@ def perform_eth_analysis():
     )
 
     task1 = Task(
-        description=f"""Use the latest 72 hours of hourly data to analyze the Bitcoin market. The data is sorted from oldest to most recent, and each data point has the following structure:
+        description=f"""Use the latest 144 hours of hourly data to analyze the Bitcoin market. The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['hourly'][-72:]}
 
         **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
@@ -512,7 +512,7 @@ def perform_eth_analysis():
         **30-minute Analysis**:
         {analysis_results['30min']}
 
-        **1-hour Analysis**:
+        **2-hour Analysis**:
         {analysis_results['1hour']}
 
         **6-hour Analysis**:
@@ -610,11 +610,7 @@ def perform_eth_analysis():
            - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
            - Consider the strength and duration of the current trend when making this assessment.
 
-        6. Overall Trend Consideration:
-           - Factor in the general market sentiment and trend from the 6-hour analysis when making the final decision.
-           - Pay special attention to the cloud dynamics in the 6-hour timeframe for longer-term trend indication.
-
-        7. Maximize Profit Potential:
+        6. Maximize Profit Potential:
            - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
            - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
 
@@ -665,7 +661,7 @@ def perform_eth_analysis():
         description=f"""Summarize the following Bitcoin market analysis in Korean:
         1. 15-minute Analysis: {task_results['15min_analysis']}
         2. 30-Minute Analysis: {task_results['30min_analysis']}
-        3. Hourly Analysis: {task_results['hourly_analysis']}
+        3. 2-Hourly Analysis: {task_results['hourly_analysis']}
         4. 6-Hourly Analysis: {task_results['daily_analysis']}
         5. Price Prediction: {task_results['price_prediction']}
         6. Strategy Recommendation: {task_results['strategy_recommendation']}
@@ -674,9 +670,9 @@ def perform_eth_analysis():
         Confidence: {confidence}%
 
         Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
-        The 30-minute, hourly, and 6-hourly analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
+        The 30-minute, 2-hourly, and 6-hourly analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
 
-        **Additionally, include a summary of the Ichimoku Cloud analysis based on the data from the 30-minute, hourly, and 6-hourly analyses.**
+        **Additionally, include a summary of the Ichimoku Cloud analysis based on the data from the 30-minute, 2-hourly, and 6-hourly analyses.**
 
         Translate the final conclusion and selected strategy as follows:
 
