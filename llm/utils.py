@@ -408,7 +408,6 @@ def perform_analysis():
             - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['15min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['15min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['15min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['15min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
-            - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['15min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['15min'][-48:][-1]['close']}).
             - **Cloud (Kumo) Analysis**: 
                 - Price vs Cloud: {bitcoin_data['15min'][-48:][-1]['close']} vs {max(bitcoin_data['15min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['15min'][-48:][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['15min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['15min'][-48:][-1]['Senkou_Span_B'])} (bottom)
                 - Analyze price-cloud interaction: Support at top or resistance at bottom?
@@ -420,10 +419,11 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['15min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['15min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        5. **Volume Confirmation**:
+        4. **Volume Confirmation**:
            - Check if volume increases as price starts to reverse, which can confirm the reversal.
-           - Look for volume spikes that coincide with potential reversal candles.
-        6. **Immediate Reversal Signals**:
+           - Look for volume spikes that coincide with potential reversal trends.
+           
+        5. **Immediate Reversal Signals**:
            - **Oversold/Overbought Quick Recovery**: Look for rapid recoveries from oversold conditions in RSI or Stochastic.
            - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
            - **Short-term Moving Average Crossovers**: 
@@ -474,7 +474,6 @@ def perform_analysis():
             - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['30min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['30min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
-            - **Chikou Span Position**: If available, check if 'Chikou_Span' ({bitcoin_data['30min'][-48:][-1]['Chikou_Span']}) is above or below the current 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}).
             - **Cloud (Kumo) Analysis**: 
                 - Price vs Cloud: {bitcoin_data['30min'][-48:][-1]['close']} vs {max(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])} (bottom)
                 - Analyze price-cloud interaction: Support at top or resistance at bottom?
@@ -486,14 +485,13 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        5. **Volume Confirmation**:
+        4. **Volume Confirmation**:
            - Check if volume increases as price starts to reverse, which can confirm the reversal.
-           - Look for volume spikes that coincide with potential reversal candles.
-
-        6. **Price Action Patterns**:
-           - Identify reversal candlestick patterns such as hammer, inverted hammer, engulfing patterns, or doji in oversold/overbought conditions.
-           - Look for double bottoms or double tops that might indicate a potential reversal.
-
+           - Look for volume spikes that coincide with potential reversal trends.
+        5. **Immediate Reversal Signals**:
+           - **Oversold/Overbought Quick Recovery**: Look for rapid recoveries from oversold conditions in RSI or Stochastic.
+           - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
+           
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
@@ -598,7 +596,6 @@ def perform_analysis():
             - **Kumo (Cloud) Position**: Is the price ({bitcoin_data['hourly'][-1]['close']}) above or below the cloud (Senkou Span A: {bitcoin_data['hourly'][-1]['Senkou_Span_A']}, Senkou Span B: {bitcoin_data['hourly'][-1]['Senkou_Span_B']})?
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
-            - **Chikou Span**: Position relative to the current price. Chikou Span: {bitcoin_data['hourly'][-1]['Chikou_Span']}, Current price: {bitcoin_data['hourly'][-1]['close']}.
             - **Cloud (Kumo) Analysis**:
                 - Price vs Cloud: {bitcoin_data['hourly'][-1]['close']} vs {max(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (bottom)
                 - Price-cloud interaction: Support at top or resistance at bottom?
@@ -609,7 +606,10 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-
+        4. **Volume Confirmation**:
+           - Check if volume increases as price starts to reverse, which can confirm the reversal.
+           - Look for volume spikes that coincide with potential reversal trends.
+           
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the above indicators.
         - **Short-term Outlook**: 12-24 hours.
@@ -651,7 +651,6 @@ def perform_analysis():
               Check for recent crossovers indicating potential trend changes.
             - Tenkan-sen ({bitcoin_data['daily'][-1]['Tenkan_sen']}) vs Kijun-sen ({bitcoin_data['daily'][-1]['Kijun_sen']})
               Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
-            - Chikou Span ({bitcoin_data['daily'][-1]['Chikou_Span']}) vs Price ({bitcoin_data['daily'][-1]['close']})
             - **Cloud (Kumo) Analysis**:
                 - Price-cloud interaction: Support at top or resistance at bottom?
                 - Instances of price piercing cloud without closing outside (strong support/resistance).
@@ -661,7 +660,11 @@ def perform_analysis():
                 - Thickness changes over time for potential trend shifts.
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
-
+                
+        4. **Volume Confirmation**:
+           - Check if volume increases as price starts to reverse, which can confirm the reversal.
+           - Look for volume spikes that coincide with potential reversal trends.
+           
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Short-term Outlook**: 1-3 days.
