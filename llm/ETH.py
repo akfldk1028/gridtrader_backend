@@ -323,10 +323,10 @@ def perform_eth_analysis():
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
 
         **Extremely Important Support/Resistance Levels (Trendline Prices):**
-          RecentSteepHigh: {trendline_prices_str['15m']['RecentSteepHigh']}
-          RecentSteepLow: {trendline_prices_str['15m']['RecentSteepLow']}
-          LongTermHigh: {trendline_prices_str['15m']['LongTermHigh']}
-          LongTermLow: {trendline_prices_str['15m']['LongTermLow']}
+        - RecentSteepHigh: {', '.join(trendline_prices_str['15m']['RecentSteepHigh'])}
+        - RecentSteepLow: {', '.join(trendline_prices_str['15m']['RecentSteepLow'])}
+        - LongTermHigh: {', '.join(trendline_prices_str['15m']['LongTermHigh'])}
+        - LongTermLow: {', '.join(trendline_prices_str['15m']['LongTermLow'])}
 
           Analyze price interactions with these specific levels in detail. Identify any breakouts or breakdowns, noting their timing and strength. Determine if each level is currently acting as support or resistance. 
           Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
@@ -389,10 +389,11 @@ def perform_eth_analysis():
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
 
         **Extremely Important Support/Resistance Levels (Trendline Prices):**
-          RecentSteepHigh: {trendline_prices_str['30m']['RecentSteepHigh']}
-          RecentSteepLow: {trendline_prices_str['30m']['RecentSteepLow']}
-          LongTermHigh: {trendline_prices_str['30m']['LongTermHigh']}
-          LongTermLow: {trendline_prices_str['30m']['LongTermLow']}
+        - RecentSteepHigh: {', '.join(trendline_prices_str['30m']['RecentSteepHigh'])}
+        - RecentSteepLow: {', '.join(trendline_prices_str['30m']['RecentSteepLow'])}
+        - LongTermHigh: {', '.join(trendline_prices_str['30m']['LongTermHigh'])}
+        - LongTermLow: {', '.join(trendline_prices_str['30m']['LongTermLow'])}
+          
 
           Analyze price interactions with these specific levels in detail. Identify any breakouts or breakdowns, noting their timing and strength. Determine if each level is currently acting as support or resistance. 
           Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
@@ -449,10 +450,11 @@ def perform_eth_analysis():
         - When starting the analysis, begin with the last data point and proceed to analyze previous data points.
 
         **Extremely Important Support/Resistance Levels (Trendline Prices):**
-          RecentSteepHigh: {trendline_prices_str['2h']['RecentSteepHigh']}
-          RecentSteepLow: {trendline_prices_str['2h']['RecentSteepLow']}
-          LongTermHigh: {trendline_prices_str['2h']['LongTermHigh']}
-          LongTermLow: {trendline_prices_str['2h']['LongTermLow']}
+        - RecentSteepHigh: {', '.join(trendline_prices_str['2h']['RecentSteepHigh'])}
+        - RecentSteepLow: {', '.join(trendline_prices_str['2h']['RecentSteepLow'])}
+        - LongTermHigh: {', '.join(trendline_prices_str['2h']['LongTermHigh'])}
+        - LongTermLow: {', '.join(trendline_prices_str['2h']['LongTermLow'])}
+          
 
           Analyze price interactions with these specific levels in detail. Identify any breakouts or breakdowns, noting their timing and strength. Determine if each level is currently acting as support or resistance. 
           Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
@@ -499,10 +501,10 @@ def perform_eth_analysis():
         - Identify any potential trend reversals or continuations in the most recent data points.
 
         **Extremely Important Support/Resistance Levels (Trendline Prices):**
-          RecentSteepHigh: {trendline_prices_str['6h']['RecentSteepHigh']}
-          RecentSteepLow: {trendline_prices_str['6h']['RecentSteepLow']}
-          LongTermHigh: {trendline_prices_str['6h']['LongTermHigh']}
-          LongTermLow: {trendline_prices_str['6h']['LongTermLow']}
+        - RecentSteepHigh: {', '.join(trendline_prices_str['6h']['RecentSteepHigh'])}
+        - RecentSteepLow: {', '.join(trendline_prices_str['6h']['RecentSteepLow'])}
+        - LongTermHigh: {', '.join(trendline_prices_str['6h']['LongTermHigh'])}
+        - LongTermLow: {', '.join(trendline_prices_str['6h']['LongTermLow'])}
 
           Analyze price interactions with these specific levels in detail. Identify any breakouts or breakdowns, noting their timing and strength. Determine if each level is currently acting as support or resistance. 
           Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
@@ -556,15 +558,39 @@ def perform_eth_analysis():
 
         **15-minute Analysis**:
         {analysis_results['15min']}
-
+        Critical Trendline Prices (Support/Resistance):
+            RecentSteepHigh: {', '.join(trendline_prices_str['15m']['RecentSteepHigh'])}
+            RecentSteepLow: {', '.join(trendline_prices_str['15m']['RecentSteepLow'])}
+            LongTermHigh: {', '.join(trendline_prices_str['15m']['LongTermHigh'])}
+            LongTermLow: {', '.join(trendline_prices_str['15m']['LongTermLow'])}
+                    
         **30-minute Analysis**:
         {analysis_results['30min']}
-
+        Critical Trendline Prices (Support/Resistance):
+            RecentSteepHigh: {', '.join(trendline_prices_str['30m']['RecentSteepHigh'])}
+            RecentSteepLow: {', '.join(trendline_prices_str['30m']['RecentSteepLow'])}
+            LongTermHigh: {', '.join(trendline_prices_str['30m']['LongTermHigh'])}
+            LongTermLow: {', '.join(trendline_prices_str['30m']['LongTermLow'])}
+                    
         **2-hour Analysis**:
         {analysis_results['1hour']}
+        Critical Trendline Prices (Support/Resistance):
+            RecentSteepHigh: {', '.join(trendline_prices_str['2h']['RecentSteepHigh'])}
+            RecentSteepLow: {', '.join(trendline_prices_str['2h']['RecentSteepLow'])}
+            LongTermHigh: {', '.join(trendline_prices_str['2h']['LongTermHigh'])}
+            LongTermLow: {', '.join(trendline_prices_str['2h']['LongTermLow'])}
 
+            
         **6-hour Analysis**:
         {analysis_results['daily']}
+        Critical Trendline Prices (Support/Resistance):
+            RecentSteepHigh: {', '.join(trendline_prices_str['6h']['RecentSteepHigh'])}
+            RecentSteepLow: {', '.join(trendline_prices_str['6h']['RecentSteepLow'])}
+            LongTermHigh: {', '.join(trendline_prices_str['6h']['LongTermHigh'])}
+            LongTermLow: {', '.join(trendline_prices_str['6h']['LongTermLow'])}
+               
+        Analyze price interactions with these specific levels in detail. Identify any breakouts or breakdowns, noting their timing and strength. Determine if each level is currently acting as support or resistance. Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
+
 
         1. **2-6 hours (Very Short-term)**
         2. **6-24 hours (Short-term)**

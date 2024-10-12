@@ -980,15 +980,15 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 period = 20
                 multiplier = 2.0
                 df["MA"] = df["close"].rolling(window=period).mean()
-                df["STD"] = df["close"].rolling(window=period).std()
-                df["Upper"] = df["MA"] + (df["STD"] * multiplier)
-                df["Lower"] = df["MA"] - (df["STD"] * multiplier)
+                # df["STD"] = df["close"].rolling(window=period).std()
+                # df["Upper"] = df["MA"] + (df["STD"] * multiplier)
+                # df["Lower"] = df["MA"] - (df["STD"] * multiplier)
 
                 # MACD
-                exp1 = df['close'].ewm(span=12, adjust=False).mean()
-                exp2 = df['close'].ewm(span=26, adjust=False).mean()
-                df['MACD'] = exp1 - exp2
-                df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+                # exp1 = df['close'].ewm(span=12, adjust=False).mean()
+                # exp2 = df['close'].ewm(span=26, adjust=False).mean()
+                # df['MACD'] = exp1 - exp2
+                # df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
 
                 StochasticRSI(df)
                 RSIAnalyzer(df)
