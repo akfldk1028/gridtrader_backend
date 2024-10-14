@@ -779,10 +779,10 @@ def perform_analysis():
         **Guidelines:**
         1. Weighted Timeframe Analysis:
            Calculate a weighted average confidence for each direction (Up/Down) using the following weights:
-           - 2-6 hours: Weight 1
-           - 6-24 hours: Weight 2
+           - 2-6 hours: Weight 2
+           - 6-24 hours: Weight 3
            - 1-3 days: Weight 3
-           - 3-7 days: Weight 4
+           - 3-7 days: Weight 2
 
            Calculation method:
            - For 'Up' direction: 
@@ -800,6 +800,8 @@ def perform_analysis():
                - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
            - If the price is below the cloud or the cloud is acting as resistance:
                - Increase the probability of ShortGrid by 5% (e.g., from 65% to 70%)
+            - If the price is within the cloud:
+               - Increase the probability of RegularGrid by 5%
            - Consider cloud thickness:
                - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
                - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
@@ -812,12 +814,20 @@ def perform_analysis():
                - Base case: Select if the weighted average confidence for 'Down' direction is 75% or higher.
                - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a weighted average confidence of 60% or higher for 'Down' direction.
            - RegularGrid:
-               - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
-
+               - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid.
+               - Also select if the weighted average confidence for 'Neutral' direction is 50% or higher.
+               - If the price is within the cloud, lower the threshold for selecting RegularGrid to 40% 'Neutral' confidence.
+               
+               
         5. Distinguish between Trend Reversal and Pullback:
            - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
-           - Consider the strength and duration of the current trend when making this assessment.
-
+           - Consider the following criteria:
+             a) Price breaking through major support/resistance levels identified in the trendline analysis
+             d) Volume: Significant increase in volume during potential reversal moves
+           - If at least two of these criteria are met, consider it a potential trend reversal
+           - Otherwise, treat it as a pullback within the existing trend
+           
+           
         6. Maximize Profit Potential:
            - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
            - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
