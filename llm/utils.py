@@ -809,10 +809,8 @@ def perform_analysis():
         4. Strategy Selection Criteria:
            - LongGrid:
                - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
-               - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a weighted average confidence of 60% or higher for 'Up' direction.
            - ShortGrid:
                - Base case: Select if the weighted average confidence for 'Down' direction is 75% or higher.
-               - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a weighted average confidence of 60% or higher for 'Down' direction.
            - RegularGrid:
                - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid.
                - Also select if the weighted average confidence for 'Neutral' direction is 50% or higher.
@@ -840,8 +838,9 @@ def perform_analysis():
         3. Whether recent movements are likely a trend reversal or a pullback
         4. The final selected strategy and its confidence level after all adjustments
 
+
         Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
-        """,
+        IMPORTANT: ShortGrid must ONLY be selected if the 'Down' direction confidence is 75% or higher, regardless of Ichimoku Cloud conditions.        """,
         expected_output="""A concise explanation of the grid trading strategy recommendation, including weighted average confidences, key Ichimoku Cloud insights, trend reversal vs pullback assessment, and the final strategy selection with confidence level, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )

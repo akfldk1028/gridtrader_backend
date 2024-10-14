@@ -676,17 +676,19 @@ def perform_eth_analysis():
         4. Strategy Selection Criteria:
            - LongGrid:
                - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
-               - Cloud-adjusted case: If the price is above the cloud or the cloud is providing support, select LongGrid with a weighted average confidence of 60% or higher for 'Up' direction.
            - ShortGrid:
                - Base case: Select if the weighted average confidence for 'Down' direction is 70% or higher.
-               - Cloud-adjusted case: If the price is below the cloud or the cloud is acting as resistance, select ShortGrid with a weighted average confidence of 60% or higher for 'Down' direction.
            - RegularGrid:
                - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
 
         5. Distinguish between Trend Reversal and Pullback:
            - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
-           - Consider the strength and duration of the current trend when making this assessment.
-
+           - Consider the following criteria:
+             a) Price breaking through major support/resistance levels identified in the trendline analysis
+             d) Volume: Significant increase in volume during potential reversal moves
+           - If at least two of these criteria are met, consider it a potential trend reversal
+           - Otherwise, treat it as a pullback within the existing trend
+           
         6. Maximize Profit Potential:
            - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
            - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
