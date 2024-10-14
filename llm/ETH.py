@@ -675,7 +675,7 @@ def perform_eth_analysis():
 
         4. Strategy Selection Criteria:
            - LongGrid:
-               - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
+               - Base case: Select if the weighted average confidence for 'Up' direction is 65% or higher.
            - ShortGrid:
                - Base case: Select if the weighted average confidence for 'Down' direction is 70% or higher.
            - RegularGrid:

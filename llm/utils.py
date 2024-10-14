@@ -808,14 +808,14 @@ def perform_analysis():
 
         4. Strategy Selection Criteria:
            - LongGrid:
-               - Base case: Select if the weighted average confidence for 'Up' direction is 70% or higher.
+               - Base case: Select if the weighted average confidence for 'Up' direction is 65% or higher.
            - ShortGrid:
                - Base case: Select if the weighted average confidence for 'Down' direction is 75% or higher.
            - RegularGrid:
                - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid.
                - Also select if the weighted average confidence for 'Neutral' direction is 50% or higher.
-               - If the price is within the cloud, lower the threshold for selecting RegularGrid to 40% 'Neutral' confidence.
-               
+               - If the price is within the cloud, lower the threshold for selecting RegularGrid to 45% 'Neutral' confidence.
+    
                
         5. Distinguish between Trend Reversal and Pullback:
            - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
