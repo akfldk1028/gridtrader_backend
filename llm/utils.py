@@ -822,12 +822,6 @@ def perform_analysis():
            - For upward movements, be slightly more open to considering them as potential trend continuations or reversals from a downtrend.
            - In cases of uncertainty, assume it's a pullback and maintain the current strategy.
 
-        6. Risk Management:
-           - Always prioritize capital preservation over potential gains.
-           - Any strategy change should be gradual to minimize risk.
-           - Implement appropriate stop-loss orders for both LongGrid and ShortGrid strategies, with potentially tighter stops for ShortGrid.
-           - For LongGrid, consider using wider stop-losses or trailing stops to allow for short-term volatility while capturing long-term trends.
-
         **Output Format:**
 
         Provide a brief explanation of your decision, including:
