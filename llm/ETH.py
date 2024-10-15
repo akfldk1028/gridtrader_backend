@@ -357,12 +357,6 @@ def perform_eth_analysis():
              - Current 20MA: {bitcoin_data['15min'][-48:][-1]['MA20']}
              - Identify all instances where the 5MA crosses above or below the 20MA within the 48 data points.
              - Analyze the frequency and significance of these crossovers.
-             
-        5. **Stochastic Oscillator Analysis RSI **:
-            - **Stochastic Oscillator Analysis**:
-              - Use '%K'({bitcoin_data['15min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['15min'][-48:][-1]['%D']}) fields.
-              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
-              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
 
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
