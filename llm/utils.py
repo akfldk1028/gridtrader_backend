@@ -419,11 +419,7 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['15min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['15min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        4. **Volume Confirmation**:
-           - Check if volume increases as price starts to reverse, which can confirm the reversal.
-           - Look for volume spikes that coincide with potential reversal trends.
-           
-        5. **Immediate Reversal Signals**:
+        4. **Immediate Reversal Signals**:
            - **Oversold/Overbought Quick Recovery**: Look for rapid recoveries from oversold conditions in RSI or Stochastic.
            - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
            - **Short-term Moving Average Crossovers**: 
@@ -432,6 +428,12 @@ def perform_analysis():
              - Identify all instances where the 5MA crosses above or below the 20MA within the 48 data points.
              - Analyze the frequency and significance of these crossovers.
              
+        5. **Stochastic Oscillator Analysis RSI **:
+            - **Stochastic Oscillator Analysis**:
+              - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields.
+              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
@@ -470,7 +472,9 @@ def perform_analysis():
         Focus on:
         1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
         2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
-        3. **Ichimoku Cloud Indicators**:
+        3. **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
+
+        4. **Ichimoku Cloud Indicators**:
             - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['30min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['30min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
             - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
             - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
@@ -485,13 +489,13 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        4. **Volume Confirmation**:
-           - Check if volume increases as price starts to reverse, which can confirm the reversal.
-           - Look for volume spikes that coincide with potential reversal trends.
-        5. **Immediate Reversal Signals**:
-           - **Oversold/Overbought Quick Recovery**: Look for rapid recoveries from oversold conditions in RSI or Stochastic.
-           - **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
-           
+        5. **Stochastic Oscillator Analysis RSI **:
+            - **Stochastic Oscillator Analysis**:
+              - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields.
+              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+
+   
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Reversal Potential**: High, Medium, or Low based on the combination of RSI, Stochastic, volume, and price action signals.
@@ -590,25 +594,32 @@ def perform_analysis():
           Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
 
         Focus on:
-        1. **Price Trends**: Identify upward or downward trends starting from the latest price.
-        2. **Volume Changes**: Compare recent volumes with earlier ones to gauge market interest.
-        3. **Ichimoku Cloud Indicators**:
-            - **Kumo (Cloud) Position**: Is the price ({bitcoin_data['hourly'][-1]['close']}) above or below the cloud (Senkou Span A: {bitcoin_data['hourly'][-1]['Senkou_Span_A']}, Senkou Span B: {bitcoin_data['hourly'][-1]['Senkou_Span_B']})?
-            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['hourly'][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['hourly'][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
-            - **Tenkan-sen vs. Kijun-sen**: Look for crossovers (Bullish or Bearish signals). Tenkan-sen: {bitcoin_data['hourly'][-1]['Tenkan_sen']}, Kijun-sen: {bitcoin_data['hourly'][-1]['Kijun_sen']}.
-            - **Cloud (Kumo) Analysis**:
-                - Price vs Cloud: {bitcoin_data['hourly'][-1]['close']} vs {max(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['hourly'][-1]['Senkou_Span_A'], bitcoin_data['hourly'][-1]['Senkou_Span_B'])} (bottom)
-                - Price-cloud interaction: Support at top or resistance at bottom?
-                - Instances of price piercing cloud without closing outside (strong support/resistance).
-                - Potential breakouts/breakdowns through the cloud.
-                - Cloud Thickness: Current {abs(bitcoin_data['hourly'][-1]['Senkou_Span_A'] - bitcoin_data['hourly'][-1]['Senkou_Span_B'])}, Previous {abs(bitcoin_data['hourly'][-2]['Senkou_Span_A'] - bitcoin_data['hourly'][-2]['Senkou_Span_B'])}
+        1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
+        2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
+        3. **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
+
+        4. **Ichimoku Cloud Indicators**:
+            - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['30min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['30min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
+            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
+            - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
+            - **Cloud (Kumo) Analysis**: 
+                - Price vs Cloud: {bitcoin_data['30min'][-48:][-1]['close']} vs {max(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])} (bottom)
+                - Analyze price-cloud interaction: Support at top or resistance at bottom?
+                - Identify instances of price piercing cloud without closing outside (strong support/resistance).
+                - Look for potential breakouts/breakdowns through the cloud.
+                - Cloud Thickness: Current {abs(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] - bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])}, Previous {abs(bitcoin_data['30min'][-48:][-2]['Senkou_Span_A'] - bitcoin_data['30min'][-48:][-2]['Senkou_Span_B'])}
                 - Interpret thickness: Thick (strong trend, volatile) vs Thin (weak trend, easier breakouts)
-                - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
+                - Observe thickness changes over time for potential trend shifts.
+                - Cloud Type: {'Bullish (Yang)' if bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        4. **Volume Confirmation**:
-           - Check if volume increases as price starts to reverse, which can confirm the reversal.
-           - Look for volume spikes that coincide with potential reversal trends.
+        5. **Stochastic Oscillator Analysis RSI **:
+            - **Stochastic Oscillator Analysis**:
+              - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields.
+              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+
+ 
            
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the above indicators.
@@ -643,28 +654,31 @@ def perform_analysis():
           Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
 
         Focus on:
-        1. **Price Trends & Key Levels**: Identify upward or downward trends and significant support/resistance levels.
-        2. **Volume Patterns**: Detect significant volume spikes and their correlation with price movements.
-        3. **Ichimoku Cloud Indicators**:
-            - Price vs Cloud: {bitcoin_data['daily'][-1]['close']} vs {max(bitcoin_data['daily'][-1]['Senkou_Span_A'], bitcoin_data['daily'][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['daily'][-1]['Senkou_Span_A'], bitcoin_data['daily'][-1]['Senkou_Span_B'])} (bottom)
-            - Senkou Span A ({bitcoin_data['daily'][-1]['Senkou_Span_A']}) vs B ({bitcoin_data['daily'][-1]['Senkou_Span_B']})
-              Check for recent crossovers indicating potential trend changes.
-            - Tenkan-sen ({bitcoin_data['daily'][-1]['Tenkan_sen']}) vs Kijun-sen ({bitcoin_data['daily'][-1]['Kijun_sen']})
-              Identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
-            - **Cloud (Kumo) Analysis**:
-                - Price-cloud interaction: Support at top or resistance at bottom?
-                - Instances of price piercing cloud without closing outside (strong support/resistance).
-                - Potential breakouts/breakdowns through the cloud.
-                - Cloud Thickness: Current {abs(bitcoin_data['daily'][-1]['Senkou_Span_A'] - bitcoin_data['daily'][-1]['Senkou_Span_B'])}, Previous {abs(bitcoin_data['daily'][-2]['Senkou_Span_A'] - bitcoin_data['daily'][-2]['Senkou_Span_B'])}
+        1. **Price Trends & Formations**: Identify upward or downward trends and any emerging trend patterns.
+        2. **Volume Patterns**: Detect volume changes and their correlation with price movements.
+        3. **Volume Spikes**: Identify sudden increases in volume after a price drop, which might signal a reversal.
+
+        4. **Ichimoku Cloud Indicators**:
+            - **Tenkan-sen & Kijun-sen Crossovers**: Compare 'Tenkan_sen' ({bitcoin_data['30min'][-48:][-1]['Tenkan_sen']}) and 'Kijun_sen' ({bitcoin_data['30min'][-48:][-1]['Kijun_sen']}) values to identify bullish (Tenkan > Kijun) or bearish (Tenkan < Kijun) signals.
+            - **Senkou Span A vs B**: Compare Senkou Span A ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and Senkou Span B ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}). Check if they have recently crossed over, indicating a potential trend change.
+            - **Price vs. Senkou Span A & B**: Compare 'close' price ({bitcoin_data['30min'][-48:][-1]['close']}) with 'Senkou_Span_A' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_A']}) and 'Senkou_Span_B' ({bitcoin_data['30min'][-48:][-1]['Senkou_Span_B']}) to determine if the price is above or below the cloud.
+            - **Cloud (Kumo) Analysis**: 
+                - Price vs Cloud: {bitcoin_data['30min'][-48:][-1]['close']} vs {max(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])} (top) / {min(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'], bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])} (bottom)
+                - Analyze price-cloud interaction: Support at top or resistance at bottom?
+                - Identify instances of price piercing cloud without closing outside (strong support/resistance).
+                - Look for potential breakouts/breakdowns through the cloud.
+                - Cloud Thickness: Current {abs(bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] - bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'])}, Previous {abs(bitcoin_data['30min'][-48:][-2]['Senkou_Span_A'] - bitcoin_data['30min'][-48:][-2]['Senkou_Span_B'])}
                 - Interpret thickness: Thick (strong trend, volatile) vs Thin (weak trend, easier breakouts)
-                - Thickness changes over time for potential trend shifts.
-                - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
+                - Observe thickness changes over time for potential trend shifts.
+                - Cloud Type: {'Bullish (Yang)' if bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
-                
-        4. **Volume Confirmation**:
-           - Check if volume increases as price starts to reverse, which can confirm the reversal.
-           - Look for volume spikes that coincide with potential reversal trends.
-           
+
+        5. **Stochastic Oscillator Analysis RSI **:
+            - **Stochastic Oscillator Analysis**:
+              - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields.
+              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
+              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+   
         Conclude with:
         - **Market Sentiment**: Bullish, Bearish, or Neutral based on the indicators.
         - **Short-term Outlook**: 1-3 days.
@@ -774,76 +788,134 @@ def perform_analysis():
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
 
     task4 = Task(
-        description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators.
+        description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators. 
+
+        **IMPORTANT: The current trading system is already employing a grid trading strategy for both buying and selling. Any change in strategy should be made conservatively and only when there is very strong evidence to support it.**
 
         **Guidelines:**
-        1. Weighted Timeframe Analysis:
-           Calculate a weighted average confidence for each direction (Up/Down) using the following weights:
-           - 2-6 hours: Weight 2
-           - 6-24 hours: Weight 3
-           - 1-3 days: Weight 3
-           - 3-7 days: Weight 2
-
-           Calculation method:
-           - For 'Up' direction: 
-             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / 10
-           - For 'Down' direction: 
-             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / 10
+        1. Timeframe Analysis:
+           - Evaluate the predictions for each timeframe (2-6 hours, 6-24 hours, 1-3 days, 3-7 days).
+           - Place more emphasis on longer timeframes (1-3 days and 3-7 days) as they indicate more stable trends.
+           - Look for consistent patterns across multiple timeframes.
 
         2. Consistency Check:
-           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 12%.
-           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 7%.
+           - If all timeframes show the same direction (all 'Up' or all 'Down'), consider it a strong signal.
+           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, consider it a moderate signal.
+           - Mixed signals across timeframes suggest maintaining the current strategy.
 
         3. Ichimoku Cloud Analysis:
-           - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
-           - If the price is above the cloud or the cloud is providing support:
-               - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
-           - If the price is below the cloud or the cloud is acting as resistance:
-               - Increase the probability of ShortGrid by 5% (e.g., from 65% to 70%)
-            - If the price is within the cloud:
-               - Increase the probability of RegularGrid by 5%
-           - Consider cloud thickness:
-               - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
-               - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
+           - Analyze the position of the price relative to the Ichimoku Cloud across all timeframes.
+           - Consider cloud thickness as an indicator of trend strength.
+           - Price consistently above or below the cloud across multiple timeframes may suggest a potential strategy shift.
+           - Price within the cloud suggests maintaining the current strategy.
 
         4. Strategy Selection Criteria:
-           - LongGrid:
-               - Base case: Select if the weighted average confidence for 'Up' direction is 65% or higher.
-           - ShortGrid:
-               - Base case: Select if the weighted average confidence for 'Down' direction is 75% or higher.
            - RegularGrid:
-               - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid.
-               - Also select if the weighted average confidence for 'Neutral' direction is 50% or higher.
-               - If the price is within the cloud, lower the threshold for selecting RegularGrid to 45% 'Neutral' confidence.
-    
-               
-        5. Distinguish between Trend Reversal and Pullback:
-           - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
-           - Consider the following criteria:
-             a) Price breaking through major support/resistance levels identified in the trendline analysis
-             d) Volume: Significant increase in volume during potential reversal moves
-           - If at least two of these criteria are met, consider it a potential trend reversal
-           - Otherwise, treat it as a pullback within the existing trend
-           
-           
-        6. Maximize Profit Potential:
-           - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
-           - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
+               - This should be the default strategy unless there is overwhelming evidence for a change.
+               - Maintain RegularGrid if there are mixed signals or uncertainty.
+           - LongGrid:
+               - Consider only if there is a very strong and consistent upward trend across multiple timeframes.
+               - Require confirmation from Ichimoku Cloud (price consistently above the cloud) and other technical indicators.
+           - ShortGrid:
+               - Consider only if there is a very strong and consistent downward trend across multiple timeframes.
+               - Require confirmation from Ichimoku Cloud (price consistently below the cloud) and other technical indicators.
+               - The threshold for ShortGrid should be higher than LongGrid due to Bitcoin's historical upward bias.
+
+        5. Trend Reversal vs. Pullback:
+           - Be extremely cautious in distinguishing between true reversals and temporary pullbacks.
+           - Require multiple, strong confirmations before considering a trend reversal.
+           - In cases of uncertainty, assume it's a pullback and maintain the current strategy.
+
+        6. Risk Management:
+           - Always prioritize capital preservation over potential gains.
+           - Any strategy change should be gradual to minimize risk.
 
         **Output Format:**
 
         Provide a brief explanation of your decision, including:
-        1. The weighted average confidence for each direction (Up/Down)
-        2. Key factors from the Ichimoku Cloud analysis
-        3. Whether recent movements are likely a trend reversal or a pullback
-        4. The final selected strategy and its confidence level after all adjustments
-
+        1. A summary of the trends observed across different timeframes
+        2. Key insights from the Ichimoku Cloud analysis
+        3. Assessment of whether recent movements suggest a potential trend change or are likely just a pullback
+        4. The final selected strategy with a clear explanation of why it was chosen or why the current strategy is being maintained
 
         Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
-        IMPORTANT: ShortGrid must ONLY be selected if the 'Down' direction confidence is 75% or higher, regardless of Ichimoku Cloud conditions.        """,
-        expected_output="""A concise explanation of the grid trading strategy recommendation, including weighted average confidences, key Ichimoku Cloud insights, trend reversal vs pullback assessment, and the final strategy selection with confidence level, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
+
+        IMPORTANT: RegularGrid should be the default choice. Only recommend a change to LongGrid or ShortGrid if there is overwhelming evidence across multiple indicators and timeframes to support such a shift. Always err on the side of caution.
+        """,
+        expected_output="""A concise explanation of the grid trading strategy recommendation, including a summary of trends, key Ichimoku Cloud insights, trend assessment, and the final strategy selection with a clear rationale, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )
+    # task4 = Task(
+    #     description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators.
+    #
+    #     **Guidelines:**
+    #     1. Weighted Timeframe Analysis:
+    #        Calculate a weighted average confidence for each direction (Up/Down) using the following weights:
+    #        - 2-6 hours: Weight 2
+    #        - 6-24 hours: Weight 3
+    #        - 1-3 days: Weight 3
+    #        - 3-7 days: Weight 2
+    #
+    #        Calculation method:
+    #        - For 'Up' direction:
+    #          Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / 10
+    #        - For 'Down' direction:
+    #          Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / 10
+    #
+    #     2. Consistency Check:
+    #        - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 12%.
+    #        - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 7%.
+    #
+    #     3. Ichimoku Cloud Analysis:
+    #        - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
+    #        - If the price is above the cloud or the cloud is providing support:
+    #            - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
+    #        - If the price is below the cloud or the cloud is acting as resistance:
+    #            - Increase the probability of ShortGrid by 5% (e.g., from 65% to 70%)
+    #         - If the price is within the cloud:
+    #            - Increase the probability of RegularGrid by 5%
+    #        - Consider cloud thickness:
+    #            - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
+    #            - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
+    #
+    #     4. Strategy Selection Criteria:
+    #        - LongGrid:
+    #            - Base case: Select if the weighted average confidence for 'Up' direction is 65% or higher.
+    #        - ShortGrid:
+    #            - Base case: Select if the weighted average confidence for 'Down' direction is 75% or higher.
+    #        - RegularGrid:
+    #            - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid.
+    #            - Also select if the weighted average confidence for 'Neutral' direction is 50% or higher.
+    #            - If the price is within the cloud, lower the threshold for selecting RegularGrid to 45% 'Neutral' confidence.
+    #
+    #
+    #     5. Distinguish between Trend Reversal and Pullback:
+    #        - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
+    #        - Consider the following criteria:
+    #          a) Price breaking through major support/resistance levels identified in the trendline analysis
+    #          d) Volume: Significant increase in volume during potential reversal moves
+    #        - If at least two of these criteria are met, consider it a potential trend reversal
+    #        - Otherwise, treat it as a pullback within the existing trend
+    #
+    #
+    #     6. Maximize Profit Potential:
+    #        - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
+    #        - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
+    #
+    #     **Output Format:**
+    #
+    #     Provide a brief explanation of your decision, including:
+    #     1. The weighted average confidence for each direction (Up/Down)
+    #     2. Key factors from the Ichimoku Cloud analysis
+    #     3. Whether recent movements are likely a trend reversal or a pullback
+    #     4. The final selected strategy and its confidence level after all adjustments
+    #
+    #
+    #     Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
+    #     IMPORTANT: ShortGrid must ONLY be selected if the 'Down' direction confidence is 75% or higher, regardless of Ichimoku Cloud conditions.        """,
+    #     expected_output="""A concise explanation of the grid trading strategy recommendation, including weighted average confidences, key Ichimoku Cloud insights, trend reversal vs pullback assessment, and the final strategy selection with confidence level, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
+    #     agent=strategist
+    # )
 
     # Crew 인스턴스화
     crew = Crew(
