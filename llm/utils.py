@@ -784,17 +784,19 @@ def perform_analysis():
     task4 = Task(
         description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators. 
 
-        **IMPORTANT: The current trading system is already employing a grid trading strategy for both buying and selling. Any change in strategy should be made conservatively and only when there is very strong evidence to support it.**
+        **IMPORTANT: The current trading system is already employing a grid trading strategy for both buying and selling. Any change in strategy should be made conservatively and only when there is strong evidence to support it. Be aware that Bitcoin exhibits high volatility and can have sharp movements in both upward and downward directions. However, considering Bitcoin's historical long-term upward trend, we should have a slight bias towards long positions.**
 
         **Guidelines:**
         1. Timeframe Analysis:
            - Evaluate the predictions for each timeframe (2-6 hours, 6-24 hours, 1-3 days, 3-7 days).
            - Place more emphasis on longer timeframes (1-3 days and 3-7 days) as they indicate more stable trends.
            - Look for consistent patterns across multiple timeframes.
+           - Pay close attention to shorter timeframes for potential rapid price changes in either direction.
 
         2. Consistency Check:
            - If all timeframes show the same direction (all 'Up' or all 'Down'), consider it a strong signal.
            - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, consider it a moderate signal.
+           - Be alert to divergences between short-term and long-term trends, as they may indicate potential reversals.
            - Mixed signals across timeframes suggest maintaining the current strategy.
 
         3. Ichimoku Cloud Analysis:
@@ -805,40 +807,43 @@ def perform_analysis():
 
         4. Strategy Selection Criteria:
            - RegularGrid:
-               - This should be the default strategy unless there is overwhelming evidence for a change.
+               - This should be the default strategy unless there is strong evidence for a change.
                - Maintain RegularGrid if there are mixed signals or uncertainty.
            - LongGrid:
-               - Consider only if there is a very strong and consistent upward trend across multiple timeframes.
-               - Require confirmation from Ichimoku Cloud (price consistently above the cloud) and other technical indicators.
+               - Consider if there is a moderate to strong upward trend across multiple timeframes.
+               - The threshold for LongGrid should be slightly lower than for ShortGrid, reflecting the long-term upward bias.
            - ShortGrid:
-               - Consider only if there is a very strong and consistent downward trend across multiple timeframes.
-               - Require confirmation from Ichimoku Cloud (price consistently below the cloud) and other technical indicators.
-               - The threshold for ShortGrid should be higher than LongGrid due to Bitcoin's historical upward bias.
+               - Consider only if there is a very strong and consistent downward trend across all timeframes.
+               - Require more confirmations and a higher threshold of certainty compared to LongGrid.
 
         5. Trend Reversal vs. Pullback:
-           - Be extremely cautious in distinguishing between true reversals and temporary pullbacks.
-           - Require multiple, strong confirmations before considering a trend reversal.
+           - Be cautious in distinguishing between true reversals and temporary pullbacks.
+           - For downward movements, require multiple, strong confirmations before considering a trend reversal.
+           - For upward movements, be slightly more open to considering them as potential trend continuations or reversals from a downtrend.
            - In cases of uncertainty, assume it's a pullback and maintain the current strategy.
 
         6. Risk Management:
            - Always prioritize capital preservation over potential gains.
            - Any strategy change should be gradual to minimize risk.
+           - Implement appropriate stop-loss orders for both LongGrid and ShortGrid strategies, with potentially tighter stops for ShortGrid.
+           - For LongGrid, consider using wider stop-losses or trailing stops to allow for short-term volatility while capturing long-term trends.
 
         **Output Format:**
 
         Provide a brief explanation of your decision, including:
-        1. A summary of the trends observed across different timeframes
-        2. Key insights from the Ichimoku Cloud analysis
-        3. Assessment of whether recent movements suggest a potential trend change or are likely just a pullback
+        1. A summary of the trends observed across different timeframes, with attention to potential sharp movements in both directions
+        2. Key insights from the Ichimoku Cloud analysis, noting signs of increasing momentum in either direction
+        3. Assessment of whether recent movements suggest a potential trend change or are likely just a pullback, considering Bitcoin's high volatility and long-term upward bias
         4. The final selected strategy with a clear explanation of why it was chosen or why the current strategy is being maintained
 
         Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
 
-        IMPORTANT: RegularGrid should be the default choice. Only recommend a change to LongGrid or ShortGrid if there is overwhelming evidence across multiple indicators and timeframes to support such a shift. Always err on the side of caution.
+        IMPORTANT: While RegularGrid should still be the default choice, be slightly more responsive to potential LongGrid scenarios. Maintain a higher threshold for ShortGrid recommendations. Always err on the side of caution, but remember the long-term upward bias of Bitcoin.
         """,
-        expected_output="""A concise explanation of the grid trading strategy recommendation, including a summary of trends, key Ichimoku Cloud insights, trend assessment, and the final strategy selection with a clear rationale, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
+        expected_output="""A concise explanation of the grid trading strategy recommendation, including a summary of trends (with focus on potential sharp movements in both directions and long-term upward bias), key Ichimoku Cloud insights, trend assessment considering Bitcoin's characteristics, and the final strategy selection with a clear rationale, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )
+
     # task4 = Task(
     #     description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators.
     #
