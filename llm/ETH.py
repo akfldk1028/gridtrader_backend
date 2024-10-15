@@ -651,70 +651,64 @@ def perform_eth_analysis():
 
     # - ** Focus  on  Short - Term   Timeframes **: Use the  15 - minute, 30 - minute and 1 - hour     analyses as the    primary    basis   for all predictions.
 
+
     task4 = Task(
-        description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators.
+        description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators. 
+
+        **IMPORTANT: The current trading system is already employing a grid trading strategy for both buying and selling. Any change in strategy should be made conservatively and only when there is strong evidence to support it. Be aware that Bitcoin exhibits high volatility and can have sharp movements in both upward and downward directions. However, considering Bitcoin's historical long-term upward trend, we should have a slight bias towards long positions.**
 
         **Guidelines:**
-        1. Weighted Timeframe Analysis:
-           Calculate a weighted average confidence for each direction (Up/Down) using the following weights:
-           - 2-6 hours: Weight 1
-           - 6-24 hours: Weight 2
-           - 1-3 days: Weight 3
-           - 3-7 days: Weight 4
-
-           Calculation method:
-           - For 'Up' direction: 
-             Sum (confidence * weight for 'Up' predictions + half of confidence * weight for 'Neutral' predictions) / 10
-           - For 'Down' direction: 
-             Sum (confidence * weight for 'Down' predictions + half of confidence * weight for 'Neutral' predictions) / 10
+        1. Timeframe Analysis:
+           - Evaluate the predictions for each timeframe (2-6 hours, 6-24 hours, 1-3 days, 3-7 days).
+           - Place more emphasis on longer timeframes (1-3 days and 3-7 days) as they indicate more stable trends.
+           - Look for consistent patterns across multiple timeframes.
+           - Pay close attention to shorter timeframes for potential rapid price changes in either direction.
 
         2. Consistency Check:
-           - If all timeframes show the same direction (all 'Up' or all 'Down'), increase the confidence in the selected strategy by 12%.
-           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, increase the confidence in the selected strategy by 7%.
+           - If all timeframes show the same direction (all 'Up' or all 'Down'), consider it a strong signal.
+           - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, consider it a moderate signal.
+           - Be alert to divergences between short-term and long-term trends, as they may indicate potential reversals.
+           - Mixed signals across timeframes suggest maintaining the current strategy.
 
         3. Ichimoku Cloud Analysis:
-           - Analyze the position and thickness of the Ichimoku Cloud across all timeframes.
-           - If the price is above the cloud or the cloud is providing support:
-               - Increase the probability of LongGrid by 5% (e.g., from 65% to 70%)
-           - If the price is below the cloud or the cloud is acting as resistance:
-               - Increase the probability of ShortGrid by 5% (e.g., from 65% to 70%)
-           - Consider cloud thickness:
-               - Thick cloud: Suggests stronger support/resistance and potentially more stable trends
-               - Thin cloud: Indicates potential for easier breakouts/breakdowns and trend changes
+           - Analyze the position of the price relative to the Ichimoku Cloud across all timeframes.
+           - Consider cloud thickness as an indicator of trend strength.
+           - Price consistently above or below the cloud across multiple timeframes may suggest a potential strategy shift.
+           - Price within the cloud suggests maintaining the current strategy.
 
         4. Strategy Selection Criteria:
-           - LongGrid:
-               - Base case: Select if the weighted average confidence for 'Up' direction is 65% or higher.
-           - ShortGrid:
-               - Base case: Select if the weighted average confidence for 'Down' direction is 70% or higher.
            - RegularGrid:
-               - Select if predictions are mixed or the weighted average confidence is below the specified thresholds for both LongGrid and ShortGrid, even after cloud adjustments.
+               - This should be the default strategy unless there is strong evidence for a change.
+               - Maintain RegularGrid if there are mixed signals or uncertainty.
+           - LongGrid:
+               - Consider if there is a moderate to strong upward trend across multiple timeframes.
+               - The threshold for LongGrid should be slightly lower than for ShortGrid, reflecting the long-term upward bias.
+           - ShortGrid:
+               - Consider only if there is a very strong and consistent downward trend across all timeframes.
+               - Require more confirmations and a higher threshold of certainty compared to LongGrid.
 
-        5. Distinguish between Trend Reversal and Pullback:
-           - Carefully assess whether recent price movements indicate a true reversal or merely a pullback within the existing trend.
-           - Consider the following criteria:
-             a) Price breaking through major support/resistance levels identified in the trendline analysis
-             d) Volume: Significant increase in volume during potential reversal moves
-           - If at least two of these criteria are met, consider it a potential trend reversal
-           - Otherwise, treat it as a pullback within the existing trend
-           
-        6. Maximize Profit Potential:
-           - Choose the strategy that best aligns with the overall market direction and has the highest probability of profit.
-           - Consider the potential for trend continuation vs. reversal based on cloud analysis and other technical indicators.
+        5. Trend Reversal vs. Pullback:
+           - Be cautious in distinguishing between true reversals and temporary pullbacks.
+           - For downward movements, require multiple, strong confirmations before considering a trend reversal.
+           - For upward movements, be slightly more open to considering them as potential trend continuations or reversals from a downtrend.
+           - In cases of uncertainty, assume it's a pullback and maintain the current strategy.
 
         **Output Format:**
 
         Provide a brief explanation of your decision, including:
-        1. The weighted average confidence for each direction (Up/Down)
-        2. Key factors from the Ichimoku Cloud analysis
-        3. Whether recent movements are likely a trend reversal or a pullback
-        4. The final selected strategy and its confidence level after all adjustments
+        1. A summary of the trends observed across different timeframes, with attention to potential sharp movements in both directions
+        2. Key insights from the Ichimoku Cloud analysis, noting signs of increasing momentum in either direction
+        3. Assessment of whether recent movements suggest a potential trend change or are likely just a pullback, considering Bitcoin's high volatility and long-term upward bias
+        4. The final selected strategy with a clear explanation of why it was chosen or why the current strategy is being maintained
 
         Then, at the end of your response, provide a single word: 'RegularGrid', 'ShortGrid', or 'LongGrid'.
+
+        IMPORTANT: While RegularGrid should still be the default choice, be slightly more responsive to potential LongGrid scenarios. Maintain a higher threshold for ShortGrid recommendations. Always err on the side of caution, but remember the long-term upward bias of Bitcoin.
         """,
-        expected_output="""A concise explanation of the grid trading strategy recommendation, including weighted average confidences, key Ichimoku Cloud insights, trend reversal vs pullback assessment, and the final strategy selection with confidence level, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
+        expected_output="""A concise explanation of the grid trading strategy recommendation, including a summary of trends (with focus on potential sharp movements in both directions and long-term upward bias), key Ichimoku Cloud insights, trend assessment considering Bitcoin's characteristics, and the final strategy selection with a clear rationale, followed by the chosen strategy: 'RegularGrid', 'ShortGrid', or 'LongGrid'.""",
         agent=strategist
     )
+
     # Crew 인스턴스화
     crew = Crew(
         agents=[price_predictor, strategist],
