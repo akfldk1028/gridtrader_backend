@@ -793,6 +793,9 @@ def perform_analysis():
            - Look for consistent patterns across multiple timeframes.
            - Pay close attention to shorter timeframes for potential rapid price changes in either direction.
 
+
+
+
         2. Consistency Check:
            - If all timeframes show the same direction (all 'Up' or all 'Down'), consider it a strong signal.
            - If the two longest timeframes (1-3 days and 3-7 days) show the same direction, consider it a moderate signal.
