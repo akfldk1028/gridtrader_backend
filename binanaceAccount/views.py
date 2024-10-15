@@ -415,7 +415,7 @@ class DailyBalanceView(BinanceAPIView):
         self.investment_tracker.add_transaction(
             Transaction(date(2024, 10, 16), InvestorType.FRIEND3, TransactionType.WITHDRAWAL, 350))
         self.investment_tracker.add_transaction(
-            Transaction(date(2024, 10, 16), InvestorType.FRIEND2, TransactionType.WITHDRAWAL, 60))
+            Transaction(date(2024, 10, 16), InvestorType.FRIEND2, TransactionType.WITHDRAWAL, 40))
 
 
     def get_balance(self, balance_data):
