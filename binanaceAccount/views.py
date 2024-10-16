@@ -463,10 +463,10 @@ class DailyBalanceView(BinanceAPIView):
         prev_you_investment = 0
         prev_friend_investment = 0
         prev_friend2_investment = 0
+        prev_friend3_investment = 0
         prev_you_balance = 0
         prev_friend_balance = 0
         prev_friend2_balance = 0
-        prev_friend3_investment = 0
         prev_friend3_balance = 0
 
         for i, current_date in enumerate(sorted_dates):
@@ -478,7 +478,7 @@ class DailyBalanceView(BinanceAPIView):
 
             start_balance = daily_data[current_date]['first']
 
-            # 전체 profit_rate 계산 (기존 방식 유지)
+            # 전체 profit_rate 계산
             total_profit_rate = self.calculate_profit_rate(start_balance, end_balance)
 
             # 현재 날짜의 총 투자금 계산
@@ -497,23 +497,19 @@ class DailyBalanceView(BinanceAPIView):
             you_balance = prev_you_balance + you_new_investment
             friend_balance = prev_friend_balance + friend_new_investment
             friend2_balance = prev_friend2_balance + friend2_new_investment
-            friend3_balance = prev_friend3_balance + friend3_new_investment
+            friend3_balance = max(0, prev_friend3_balance + friend3_new_investment)  # Friend3의 잔액이 0 미만이 되지 않도록 함
 
-            # 총 투자금 및 비율 계산
-            total_balance = you_balance + friend_balance + friend2_balance + friend3_balance
+            # 총 투자금 및 비율 계산 (Friend3 제외)
+            total_balance = you_balance + friend_balance + friend2_balance
             you_ratio = you_balance / total_balance if total_balance > 0 else 0
             friend_ratio = friend_balance / total_balance if total_balance > 0 else 0
             friend2_ratio = friend2_balance / total_balance if total_balance > 0 else 0
-            friend3_ratio = friend3_balance / total_balance if total_balance > 0 else 0
 
-            # 현재 잔액을 비율에 따라 분배
+            # 현재 잔액을 비율에 따라 분배 (Friend3 제외)
             you_balance = end_balance * you_ratio
             friend_balance = end_balance * friend_ratio
             friend2_balance = end_balance * friend2_ratio
-            friend3_balance = end_balance * friend3_ratio
-
-            # you_balance = start_balance * you_ratio
-            # friend_balance = start_balance * friend_ratio
+            friend3_balance = 0 if friend3_total_investment <= 0 else friend3_balance  # Friend3가 완전히 출금한 경우 0으로 설정
 
             # 수정된 profit_rate 계산
             you_profit_rate = self.investment_tracker.calculate_profit_rate(you_total_investment, you_balance,
@@ -558,13 +554,142 @@ class DailyBalanceView(BinanceAPIView):
             prev_you_investment = you_total_investment
             prev_friend_investment = friend_total_investment
             prev_friend2_investment = friend2_total_investment
+            prev_friend3_investment = friend3_total_investment
             prev_you_balance = you_balance
             prev_friend_balance = friend_balance
             prev_friend2_balance = friend2_balance
-            prev_friend3_investment = friend3_total_investment
             prev_friend3_balance = friend3_balance
 
         return daily_profits, latest_balance
+    # def get_daily_profits(self, days=30):
+    #     kst = pytz.timezone('Asia/Seoul')
+    #     end_date = timezone.now().astimezone(kst).date()
+    #     start_date = end_date - timedelta(days=days)
+    #
+    #     balances = DailyBalance.objects.filter(created_at__date__gte=start_date).order_by('created_at')
+    #
+    #     daily_data = {}
+    #     for balance in balances:
+    #         date = balance.created_at.astimezone(kst).date()
+    #         balance_value = self.get_balance(balance.futures_balance)
+    #         if date not in daily_data:
+    #             daily_data[date] = {'first': balance_value, 'last': balance_value,
+    #                                 'timestamp': balance.created_at.astimezone(kst)}
+    #         else:
+    #             if balance.created_at.astimezone(kst) < daily_data[date]['timestamp']:
+    #                 daily_data[date]['first'] = balance_value
+    #                 daily_data[date]['timestamp'] = balance.created_at.astimezone(kst)
+    #             daily_data[date]['last'] = balance_value
+    #
+    #     daily_profits = []
+    #     sorted_dates = sorted(daily_data.keys())
+    #     latest_balance = self.get_latest_balance()
+    #
+    #     prev_you_investment = 0
+    #     prev_friend_investment = 0
+    #     prev_friend2_investment = 0
+    #     prev_you_balance = 0
+    #     prev_friend_balance = 0
+    #     prev_friend2_balance = 0
+    #     prev_friend3_investment = 0
+    #     prev_friend3_balance = 0
+    #
+    #     for i, current_date in enumerate(sorted_dates):
+    #         if i < len(sorted_dates) - 1:
+    #             next_date = sorted_dates[i + 1]
+    #             end_balance = daily_data[next_date]['first']
+    #         else:
+    #             end_balance = latest_balance if latest_balance is not None else daily_data[current_date]['last']
+    #
+    #         start_balance = daily_data[current_date]['first']
+    #
+    #         # 전체 profit_rate 계산 (기존 방식 유지)
+    #         total_profit_rate = self.calculate_profit_rate(start_balance, end_balance)
+    #
+    #         # 현재 날짜의 총 투자금 계산
+    #         you_total_investment = self.investment_tracker.get_investment_amount(InvestorType.YOU, current_date)
+    #         friend_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND, current_date)
+    #         friend2_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND2, current_date)
+    #         friend3_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND3, current_date)
+    #
+    #         # 새로운 투자금 계산
+    #         you_new_investment = you_total_investment - prev_you_investment
+    #         friend_new_investment = friend_total_investment - prev_friend_investment
+    #         friend2_new_investment = friend2_total_investment - prev_friend2_investment
+    #         friend3_new_investment = friend3_total_investment - prev_friend3_investment
+    #
+    #         # 이전 잔액에 새 투자금 추가
+    #         you_balance = prev_you_balance + you_new_investment
+    #         friend_balance = prev_friend_balance + friend_new_investment
+    #         friend2_balance = prev_friend2_balance + friend2_new_investment
+    #         friend3_balance = prev_friend3_balance + friend3_new_investment
+    #
+    #         # 총 투자금 및 비율 계산
+    #         total_balance = you_balance + friend_balance + friend2_balance + friend3_balance
+    #         you_ratio = you_balance / total_balance if total_balance > 0 else 0
+    #         friend_ratio = friend_balance / total_balance if total_balance > 0 else 0
+    #         friend2_ratio = friend2_balance / total_balance if total_balance > 0 else 0
+    #         friend3_ratio = friend3_balance / total_balance if total_balance > 0 else 0
+    #
+    #         # 현재 잔액을 비율에 따라 분배
+    #         you_balance = end_balance * you_ratio
+    #         friend_balance = end_balance * friend_ratio
+    #         friend2_balance = end_balance * friend2_ratio
+    #         friend3_balance = end_balance * friend3_ratio
+    #
+    #         # you_balance = start_balance * you_ratio
+    #         # friend_balance = start_balance * friend_ratio
+    #
+    #         # 수정된 profit_rate 계산
+    #         you_profit_rate = self.investment_tracker.calculate_profit_rate(you_total_investment, you_balance,
+    #                                                                         you_total_investment)
+    #         friend_profit_rate = self.investment_tracker.calculate_profit_rate(friend_total_investment, friend_balance,
+    #                                                                            friend_total_investment)
+    #         friend2_profit_rate = self.investment_tracker.calculate_profit_rate(friend2_total_investment,
+    #                                                                             friend2_balance,
+    #                                                                             friend2_total_investment)
+    #         friend3_profit_rate = self.investment_tracker.calculate_profit_rate(friend3_total_investment,
+    #                                                                             friend3_balance,
+    #                                                                             friend3_total_investment)
+    #
+    #         daily_profits.append({
+    #             'date': current_date.strftime('%Y-%m-%d'),
+    #             'timestamp': daily_data[current_date]['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+    #             'balance': start_balance,
+    #             'profit_rate': total_profit_rate,
+    #             'you': {
+    #                 'balance': you_balance,
+    #                 'investment': you_total_investment,
+    #                 'profit_rate': you_profit_rate
+    #             },
+    #             'friend': {
+    #                 'balance': friend_balance,
+    #                 'investment': friend_total_investment,
+    #                 'profit_rate': friend_profit_rate
+    #             },
+    #             'friend2': {
+    #                 'balance': friend2_balance,
+    #                 'investment': friend2_total_investment,
+    #                 'profit_rate': friend2_profit_rate
+    #             },
+    #             'friend3': {
+    #                 'balance': friend3_balance,
+    #                 'investment': friend3_total_investment,
+    #                 'profit_rate': friend3_profit_rate
+    #             }
+    #         })
+    #
+    #         # 다음 반복을 위해 현재 값을 이전 값으로 저장
+    #         prev_you_investment = you_total_investment
+    #         prev_friend_investment = friend_total_investment
+    #         prev_friend2_investment = friend2_total_investment
+    #         prev_you_balance = you_balance
+    #         prev_friend_balance = friend_balance
+    #         prev_friend2_balance = friend2_balance
+    #         prev_friend3_investment = friend3_total_investment
+    #         prev_friend3_balance = friend3_balance
+    #
+    #     return daily_profits, latest_balance
 
     def calculate_profit_rate(self, start_balance: float, end_balance: float) -> float:
         if start_balance == 0:
