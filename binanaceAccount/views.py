@@ -345,15 +345,26 @@ class Transaction:
     investor: InvestorType
     type: TransactionType
     amount: float
+    guaranteed_amount: float = 0  # 새로운 필드 추가
 
 
 class InvestmentTracker:
     def __init__(self):
         self.transactions: List[Transaction] = []
+        self.guaranteed_amounts: Dict[InvestorType, float] = {}
 
     def add_transaction(self, transaction: Transaction):
         self.transactions.append(transaction)
-        self.transactions.sort(key=lambda x: x.date)  # 날짜순으로 정렬
+        self.transactions.sort(key=lambda x: x.date)
+
+        if transaction.type == TransactionType.WITHDRAWAL:
+            actual_amount = transaction.amount
+            guaranteed_amount = transaction.guaranteed_amount
+            if guaranteed_amount > actual_amount:
+                self.guaranteed_amounts[transaction.investor] = guaranteed_amount - actual_amount
+
+    def get_guaranteed_amount(self, investor: InvestorType) -> float:
+        return self.guaranteed_amounts.get(investor, 0)
 
     def get_investment_amount(self, investor: InvestorType, target_date: date) -> float:
         amount = 0
@@ -413,9 +424,8 @@ class DailyBalanceView(BinanceAPIView):
         self.investment_tracker.add_transaction(
             Transaction(date(2024, 10, 10), InvestorType.FRIEND, TransactionType.DEPOSIT, 36))
         self.investment_tracker.add_transaction(
-            Transaction(date(2024, 10, 16), InvestorType.FRIEND3, TransactionType.WITHDRAWAL, 350))
-        self.investment_tracker.add_transaction(
-            Transaction(date(2024, 10, 16), InvestorType.FRIEND2, TransactionType.WITHDRAWAL, 100))
+            Transaction(date(2024, 10, 16), InvestorType.FRIEND3, TransactionType.WITHDRAWAL, 242, 350))
+
 
 
     def get_balance(self, balance_data):
