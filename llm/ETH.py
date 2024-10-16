@@ -48,10 +48,10 @@ news_analyst = Agent(
 
 
 fifteen_min_analyst = Agent(
-    role=f'15-Minute Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 15-minute timeframe, with emphasis on Ichimoku Cloud indicators',
+    role=f'30-Minute Market Analyst',
+    goal='Analyze Bitcoin market trends and patterns in 30-minute timeframe, with emphasis on Ichimoku Cloud indicators',
     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
-    Your expertise lies in technical analysis and identifying market trends in 15-minute charts.
+    Your expertise lies in technical analysis and identifying market trends in 30-minute charts.
     You are particularly skilled in interpreting Ichimoku Cloud indicators to predict market movements.
    You are known for your quick analysis and ability to spot rapid market changes.""",
     verbose=True,
@@ -59,10 +59,10 @@ fifteen_min_analyst = Agent(
 )
 
 thirty_min_analyst = Agent(
-    role=f'30-Minute Market Analyst',
-    goal='Analyze Bitcoin market trends and patterns in 30-minute timeframe, with emphasis on Ichimoku Cloud indicators',
+    role=f'60-Minute Market Analyst',
+    goal='Analyze Bitcoin market trends and patterns in 60-minute timeframe, with emphasis on Ichimoku Cloud indicators',
     backstory="""You are an experienced cryptocurrency market analyst specializing in short-term Bitcoin analysis.
-    Your expertise lies in technical analysis and identifying market trends in 30-minute charts.
+    Your expertise lies in technical analysis and identifying market trends in 60-minute charts.
     You are particularly skilled in interpreting Ichimoku Cloud indicators to predict market movements.
    You are known for your quick analysis and ability to spot rapid market changes.""",
     verbose=True,
@@ -97,7 +97,7 @@ strategist = Agent(
     goal='Determine the most suitable grid trading strategy based on comprehensive market analysis and technical indicators',
     backstory="""You are a seasoned trading strategist with deep knowledge of various grid trading techniques, 
     particularly specializing in Bitcoin markets. Your expertise includes analyzing multiple timeframes, 
-    interpreting Ichimoku Cloud signals, and distinguishing between trend reversals and pullbacks. 
+    interpreting Ichimoku Cloud signals, Stochastic Oscillator RSI and distinguishing between trend reversals and pullbacks. 
     You excel at matching market conditions with appropriate trading strategies, considering factors 
     such as weighted timeframe analysis, consistency checks, and overall market trends. 
     You are known for your adaptive approach, often recommending a mix of strategies or regular grid 
@@ -113,7 +113,7 @@ price_predictor = Agent(
     backstory="""You are an expert cryptocurrency analyst specializing in multi-timeframe price prediction. Your expertise spans from short-term,medium-term and long-term analyses, allowing you to provide comprehensive price forecasts.
 
     Your key strengths include:
-    1. Synthesizing data from multiple timeframes (15-min, 30-min, 1-hour, 6-hour) to form cohesive price predictions.
+    1. Synthesizing data from multiple timeframes (30-min, 60-min, 2-hour, 6-hour) to form cohesive price predictions.
     2. Utilizing a wide array of technical indicators, with a focus on leading indicators that signal potential future price movements.
     3. Identifying trend continuations, reversals, and breakout patterns across different timeframes.
     4. Incorporating volume analysis and market sentiment to enhance prediction accuracy.
@@ -313,7 +313,7 @@ def perform_eth_analysis():
         return None
 
     task_15min = Task(
-        description=f"""Analyze the Bitcoin market using the latest 12 hours of 15-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        description=f"""Analyze the Bitcoin market using the latest 24 hours of 30-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['15min'][-48:]}
 
         **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
@@ -370,12 +370,12 @@ def perform_eth_analysis():
         Conclude with:
 
         Ensure clarity and focus on key indicators to accurately determine market trends and potential immediate reversals.""",
-        expected_output="Comprehensive Bitcoin market analysis report for the 15-minute timeframe, emphasizing key technical indicators and potential immediate reversal signals.",
+        expected_output="Comprehensive Bitcoin market analysis report for the 30-minute timeframe, emphasizing key technical indicators and potential immediate reversal signals.",
         agent=fifteen_min_analyst
     )
 
     task_30min = Task(
-        description=f"""Analyze the Bitcoin market using the latest 24 hours of 30-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
+        description=f"""Analyze the Bitcoin market using the latest 48 hours of 60-minute data, The data is sorted from oldest to most recent, and each data point has the following structure:
         {bitcoin_data['30min'][-48:]}
 
         **Critical: Distinguish between a genuine trend reversal and a temporary pullback or retracement within the existing trend.**
@@ -437,7 +437,7 @@ def perform_eth_analysis():
         Conclude with:
 
         Ensure clarity and focus on key indicators to accurately determine market trends.""",
-        expected_output="Concise and accurate Bitcoin market analysis report for the 30-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
+        expected_output="Concise and accurate Bitcoin market analysis report for the 60-minute timeframe, emphasizing key Ichimoku Cloud signals and other technical indicators.",
         agent=thirty_min_analyst
     )
 
@@ -620,7 +620,7 @@ def perform_eth_analysis():
                
         Analyze price interactions with these specific levels in detail. Identify any breakouts or breakdowns, noting their timing and strength. Determine if each level is currently acting as support or resistance. Evaluate how closely price is testing these levels if not broken. Look for potential false breakouts or breakdowns. Examine volume patterns as price approaches or interacts with these levels. Consider the implications of these interactions for short-term price movements. Focus analysis exclusively on these trendline prices without referencing other support/resistance levels.
 
-        1. **2-6 hours (Very Short-term)**
+        1. **4-8 hours (Very Short-term)**
         2. **6-24 hours (Short-term)**
         3. **1-3 days (Medium-term)**
         4. **3-7 days (Long-term)**
@@ -654,7 +654,7 @@ def perform_eth_analysis():
         **Output Format:**
 
         End your response with three lines indicating the predicted direction and confidence level for each timeframe:
-             "2-6 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
+             "4-8 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "6-24 hours: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "1-3 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
              "3-7 days: [Up/Down/Neutral] [Confidence]% | Target Range: $[Low] - $[High]"
@@ -675,7 +675,7 @@ def perform_eth_analysis():
 
         **Guidelines:**
         1. Timeframe Analysis:
-           - Evaluate the predictions for each timeframe (2-6 hours, 6-24 hours, 1-3 days, 3-7 days).
+           - Evaluate the predictions for each timeframe (4-8 hours, 6-24 hours, 1-3 days, 3-7 days).
            - Place more emphasis on longer timeframes (1-3 days and 3-7 days) as they indicate more stable trends.
            - Look for consistent patterns across multiple timeframes.
            - Pay close attention to shorter timeframes for potential rapid price changes in either direction.
@@ -757,8 +757,8 @@ def perform_eth_analysis():
     current_price = 0
     korean_summary_task = Task(
         description=f"""Summarize the following Bitcoin market analysis in Korean:
-        1. 15-minute Analysis: {task_results['15min_analysis']}
-        2. 30-Minute Analysis: {task_results['30min_analysis']}
+        1. 30-minute Analysis: {task_results['15min_analysis']}
+        2. 60-Minute Analysis: {task_results['30min_analysis']}
         3. 2-Hourly Analysis: {task_results['hourly_analysis']}
         4. 6-Hourly Analysis: {task_results['daily_analysis']}
         5. Price Prediction: {task_results['price_prediction']}
@@ -768,7 +768,7 @@ def perform_eth_analysis():
         Confidence: {confidence}%
 
         Provide a detailed summary in Korean, highlighting the key points from each analysis. Explain any technical terms if necessary.
-        The 30-minute, 2-hourly, and 6-hourly analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
+        The 30-minute, 1-hourly,  2-hourly, and 6-hourly analyses, as well as the Price Prediction and Probability Assessments must be analyzed and presented separately in detail.
 
         **Additionally, include a summary of the Ichimoku Cloud analysis based on the data from the 30-minute, 2-hourly, and 6-hourly analyses.**
 
@@ -780,14 +780,15 @@ def perform_eth_analysis():
        IMPORTANT: Structure your response clearly and elegantly using the following format:
 
         1. Use Markdown headers (##) for each main section:
-           - 15분 분석
            - 30분 분석
-           - 시간별 분석
+           - 60분 분석
+           - 2시간별 분석
            - 6시간 분석
            - 가격 예측
            - 확률 평가
            - 전략 추천
            - **일목균형표 분석**
+           - **주요 지표**
            - 주요 지표
            - 최종 결론
            - 선택된 전략

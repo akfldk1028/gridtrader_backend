@@ -928,8 +928,8 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
     def get_bitcoin_data(self, symbol):
         try:
-            fifteen_min_candles = self.get_extended_kline_data(symbol, '15m')
-            thirty_min_candles = self.get_extended_kline_data(symbol, '30m')
+            fifteen_min_candles = self.get_extended_kline_data(symbol, '30m')
+            thirty_min_candles = self.get_extended_kline_data(symbol, '1h')
             hourly_candles = self.get_extended_kline_data(symbol, '2h')
             daily_candles = self.get_extended_kline_data(symbol, '6h')
 
@@ -1024,8 +1024,8 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return records
 
             return {
-                '15min': process_candles(fifteen_min_candles, '15min'),
-                '30min': process_candles(thirty_min_candles, '30min'),
+                '15min': process_candles(fifteen_min_candles, '30min'),
+                '30min': process_candles(thirty_min_candles, '1hourly'),
                 'hourly': process_candles(hourly_candles, '2hourly'),
                 'daily': process_candles(daily_candles, '6hourly')
             }
