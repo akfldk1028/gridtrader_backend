@@ -201,11 +201,17 @@ def extract_prediction(selected_strategy, result_string):
 
 
 def extract_strategy(text):
-    strategies = ["RegularGrid", "ShortGrid", "LongGrid"]
-    for strategy in strategies:
-        if strategy in text:
-            return strategy
-    return None
+    strategies = ["LongGrid", "ShortGrid", "RegularGrid"]
+    lines = text.split('\n')
+
+    # 끝에서부터 각 줄을 검토
+    for line in reversed(lines):
+        for strategy in strategies:
+            if strategy in line:
+                return strategy
+
+    # 아무 전략도 찾지 못했을 경우 RegularGrid 반환
+    return "RegularGrid"
 
 
 # def get_current_bitcoin_price(vt_symbol):
