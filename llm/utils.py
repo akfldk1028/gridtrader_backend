@@ -484,11 +484,16 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['30min'][-48:][-1]['Senkou_Span_A'] > bitcoin_data['30min'][-48:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        5. **Stochastic Oscillator Analysis RSI **:
-            - **Stochastic Oscillator Analysis**:
-              - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields.
-              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
-              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+         5. **Stochastic Oscillator RSI Analysis**:
+                - Use '%K'({bitcoin_data['30min'][-48:][-1]['%K']}) and '%D'({bitcoin_data['30min'][-48:][-1]['%D']}) fields.
+                - Look for divergences between the Stochastic Oscillator and price action, which can signal potential trend reversals.
+                - Use Stochastic crossovers as confirmation of trend continuation or potential reversal, especially when they occur in alignment with key support/resistance levels.
+                - Be cautious of false signals in strong trends - the Stochastic can remain in overbought/oversold territories for extended periods during strong trends.
+
+        - **Integrating Stochastic with Other Indicators**:
+            - Compare Stochastic signals with Ichimoku Cloud positions for confirmation or divergence.
+            - Use Stochastic in conjunction with volume analysis to identify stronger potential reversal or continuation signals.
+            - When Stochastic signals align with key trendline prices (support/resistance levels), consider it a stronger indication of potential price movement.
 
    
         Conclude with:
@@ -608,11 +613,16 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['hourly'][-72:][-1]['Senkou_Span_A'] > bitcoin_data['hourly'][-72:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        5. **Stochastic Oscillator Analysis RSI **:
-            - **Stochastic Oscillator Analysis**:
-              - Use '%K'({bitcoin_data['hourly'][-72:][-1]['%K']}) and '%D'({bitcoin_data['hourly'][-72:][-1]['%D']}) fields.
-              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
-              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+         5. **Stochastic Oscillator RSI Analysis**:
+                - Use '%K'({bitcoin_data['hourly'][-72:][-1]['%K']}) and '%D'({bitcoin_data['hourly'][-72:][-1]['%D']}) fields.
+                - Look for divergences between the Stochastic Oscillator and price action, which can signal potential trend reversals.
+                - Use Stochastic crossovers as confirmation of trend continuation or potential reversal, especially when they occur in alignment with key support/resistance levels.
+                - Be cautious of false signals in strong trends - the Stochastic can remain in overbought/oversold territories for extended periods during strong trends.
+
+        - **Integrating Stochastic with Other Indicators**:
+            - Compare Stochastic signals with Ichimoku Cloud positions for confirmation or divergence.
+            - Use Stochastic in conjunction with volume analysis to identify stronger potential reversal or continuation signals.
+            - When Stochastic signals align with key trendline prices (support/resistance levels), consider it a stronger indication of potential price movement.
 
 
         Conclude with:
@@ -666,11 +676,17 @@ def perform_analysis():
                 - Cloud Type: {'Bullish (Yang)' if bitcoin_data['daily'][-180:][-1]['Senkou_Span_A'] > bitcoin_data['daily'][-180:][-1]['Senkou_Span_B'] else 'Bearish (Yin)'}
                 - Analyze cloud type and thickness for overall trend strength and future movement.
 
-        5. **Stochastic Oscillator Analysis RSI **:
-            - **Stochastic Oscillator Analysis**:
-              - Use '%K'({bitcoin_data['daily'][-180:][-1]['%K']}) and '%D'({bitcoin_data['daily'][-180:][-1]['%D']}) fields.
-              - Look for oversold conditions (both %K and %D below 20) or overbought conditions (both above 80).
-              - Identify bullish crossovers (%K crossing above %D) in oversold territory or bearish crossovers in overbought territory.
+         5. **Stochastic Oscillator RSI Analysis**:
+                - Use '%K'({bitcoin_data['daily'][-180:][-1]['%K']}) and '%D'({bitcoin_data['daily'][-180:][-1]['%D']}) fields.
+                - Look for divergences between the Stochastic Oscillator and price action, which can signal potential trend reversals.
+                - Use Stochastic crossovers as confirmation of trend continuation or potential reversal, especially when they occur in alignment with key support/resistance levels.
+                - Be cautious of false signals in strong trends - the Stochastic can remain in overbought/oversold territories for extended periods during strong trends.
+
+        - **Integrating Stochastic with Other Indicators**:
+            - Compare Stochastic signals with Ichimoku Cloud positions for confirmation or divergence.
+            - Use Stochastic in conjunction with volume analysis to identify stronger potential reversal or continuation signals.
+            - When Stochastic signals align with key trendline prices (support/resistance levels), consider it a stronger indication of potential price movement.
+
 
 
         Conclude with:
@@ -750,13 +766,13 @@ def perform_analysis():
         4. **Key Technical Levels**: Highlight crucial future support and resistance levels that may influence price movement.
 
        **Guidelines:**  
+        - **Comprehensive Synthesis**: Integrate findings from all previous analyses, including technical indicators (Ichimoku Cloud,Stochastic Oscillator RSI) and price action patterns.
         - **Balanced Analysis Approach**: Give equal weight to all timeframe analyses for a comprehensive view.
         - **Trend Alignment**: 
             - If trends across timeframes align, increase confidence level.
             - If they conflict, decrease confidence and explain the discrepancy.
         - **Trend Anticipation**: Look for early signs of trend reversals or continuations, such as chart patterns forming or key level tests approaching.
         - **Cross-Timeframe Confirmation**: Seek alignment of predictive signals across multiple timeframes for stronger forecasts.
-        - **Technical Indicator Emphasis**: Pay special attention to Ichimoku Cloud positions, RSI levels, and volume patterns across all timeframes.
         - **Market Sentiment Consideration**: Factor in the overall market sentiment described in each timeframe analysis.
         - **Adaptive Prediction**: 
             - For shorter timeframes, consider immediate market conditions more heavily.
@@ -784,7 +800,7 @@ def perform_analysis():
     task4 = Task(
         description=f"""Determine the most suitable grid trading strategy (**RegularGrid**, **ShortGrid**, **LongGrid**) for Bitcoin based on the predictions from analysis for 2-6 hours, 6-24 hours, 1-3 days, 3-7 days and timeframes, as well as Ichimoku Cloud signals and technical indicators. 
 
-        **IMPORTANT: The current trading system is already employing a grid trading strategy for both buying and selling. Any change in strategy should be made conservatively and only when there is strong evidence to support it. Be aware that Bitcoin exhibits high volatility and can have sharp movements in both upward and downward directions. However, considering Bitcoin's historical long-term upward trend, we should have a slight bias towards long positions.**
+        **IMPORTANT: The current trading system is already employing a grid trading strategy for both buying and selling. Any change in strategy should be made conservatively and only when there is strong evidence to support it. Be aware that Bitcoin exhibits high volatility and can have sharp movements in both upward and downward directions. However, considering Bitcoin's historical trend, we should have a slight bias towards long positions.**
 
         **Guidelines:**
         1. Timeframe Analysis:
