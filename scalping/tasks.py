@@ -1,4 +1,4 @@
-from .models import AnalysisResult
+from .models import TradingRecord  # 올바른 import
 import logging
 from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
