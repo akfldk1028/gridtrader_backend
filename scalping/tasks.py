@@ -15,7 +15,7 @@ def setup_scalping():
     # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
 
     Schedule.objects.filter(func='scalping.tasks.scalping').delete()
-    Schedule.objects.filter(func='scalping.tasks.analyze_coins').delete()
+    # Schedule.objects.filter(func='scalping.tasks.analyze_coins').delete()
 
     now = datetime.now()
     next_run = now + timedelta(minutes=1)
@@ -28,13 +28,13 @@ def setup_scalping():
         next_run=next_run,
         repeats=-1  # 무한 반복
     )
-    schedule(
-        'scalping.tasks.analyze_coins',  # 실행할 함수
-        schedule_type=Schedule.MINUTES,   # 분 단위 실행
-        minutes=10,                       # 10분마다 실행
-        next_run=next_run,               # 다음 실행 시간
-        repeats=-1                       # 무한 반복
-    )
+    # schedule(
+    #     'scalping.tasks.analyze_coins',  # 실행할 함수
+    #     schedule_type=Schedule.MINUTES,   # 분 단위 실행
+    #     minutes=10,                       # 10분마다 실행
+    #     next_run=next_run,               # 다음 실행 시간
+    #     repeats=-1                       # 무한 반복
+    # )
 def scalping():
     try:
         print("Calling perform_analysis function")
