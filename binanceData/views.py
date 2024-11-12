@@ -1130,7 +1130,7 @@ class BinanceScalpingDataView(APIView):
         d = k.rolling(d_period).mean()
         return k, d
 
-    def calculate_rsi(self, df: pd.DataFrame, period: int = 9, ema_period: int = 14) -> pd.Series:
+    def calculate_rsi(self, df: pd.DataFrame, period: int = 12, ema_period: int = 14) -> pd.Series:
         """Calculate RSI indicator using EMA"""
         delta = df["Close"].diff()
         up, down = delta.clip(lower=0), -1 * delta.clip(upper=0)
