@@ -159,7 +159,7 @@ def perform_analysis():
                 reflection = line.split('Trade Reflection:')[1].strip()
 
         # Create and save trading record
-        record = TradingRecord(
+        record = TradingRecord.objects.create(
             timestamp=datetime.now(),
             coin_symbol='BTCUSDT',
             trade_type=action,
@@ -173,7 +173,7 @@ def perform_analysis():
         )
 
         # Save the record
-        record.save()
+        # record.save()
         print(f"Successfully saved trading record - Type: {action}, Ratio: {ratio}%, Price: {current_price}")
 
     except Exception as e:
