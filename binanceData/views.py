@@ -1036,6 +1036,16 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
 
 class BinanceScalpingDataView(APIView):
+
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
+        pd.Series, pd.Series]:
+        """Calculate Bollinger Bands"""
+        ma = df['Close'].rolling(window=period).mean()
+        std = df['Close'].rolling(window=period).std()
+        upper_band = ma + (std * num_std)
+        lower_band = ma - (std * num_std)
+        return upper_band, lower_band
+
     def calculate_rsi(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
         """Calculate RSI indicator"""
         delta = df['Close'].diff()
@@ -1060,7 +1070,7 @@ class BinanceScalpingDataView(APIView):
         ma20 = df['Close'].rolling(window=20).mean()
         return ma5, ma10, ma20
 
-    @method_decorator(cache_page(60))  # Cache for 1 minute for scalping
+    @method_decorator(cache_page(150))  # Cache for 1 minute for scalping
     def get(self, request, symbol: str, interval: str = '1m') -> Response:
         """Get candlestick data with technical indicators for scalping"""
         binance_api_url = "https://api.binance.com/api/v3/klines"
@@ -1093,6 +1103,7 @@ class BinanceScalpingDataView(APIView):
             rsi = self.calculate_rsi(df)
             macd, signal, histogram = self.calculate_macd(df)
             ma5, ma10, ma20 = self.calculate_moving_averages(df)
+            upper_bb, lower_bb = self.calculate_bollinger_bands(df)  # 볼린저 밴드 계산 추가
 
             # 최근 30개 캔들만 사용
             recent_data = []
@@ -1115,6 +1126,10 @@ class BinanceScalpingDataView(APIView):
                             'ma5': float(ma5.iloc[i]) if not pd.isna(ma5.iloc[i]) else None,
                             'ma10': float(ma10.iloc[i]) if not pd.isna(ma10.iloc[i]) else None,
                             'ma20': float(ma20.iloc[i]) if not pd.isna(ma20.iloc[i]) else None
+                        },
+                        'bollinger_bands': {  # 볼린저 밴드 추가
+                            'upper': float(upper_bb.iloc[i]) if not pd.isna(upper_bb.iloc[i]) else None,
+                            'lower': float(lower_bb.iloc[i]) if not pd.isna(lower_bb.iloc[i]) else None
                         }
                     }
                 }

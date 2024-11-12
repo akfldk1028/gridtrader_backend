@@ -115,7 +115,9 @@ def perform_analysis():
         - Moving Averages: MA5={bitcoin_data['current_indicators']['moving_averages']['ma5']}, 
                           MA10={bitcoin_data['current_indicators']['moving_averages']['ma10']}, 
                           MA20={bitcoin_data['current_indicators']['moving_averages']['ma20']}
-
+        - bollinger_bands : Upper={bitcoin_data['current_indicators']['bollinger_bands']['upper']},
+                            Lower={bitcoin_data['current_indicators']['bollinger_bands']['lower']},
+                            
         Price data for the last 30 minutes: {bitcoin_data['1m']}
 
         Provide a detailed trading analysis and recommendation in this exact format:
