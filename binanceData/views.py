@@ -1065,10 +1065,10 @@ class BinanceScalpingDataView(APIView):
 
     def calculate_moving_averages(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate moving averages"""
-        ma5 = df['Close'].rolling(window=5).mean()
-        ma10 = df['Close'].rolling(window=10).mean()
-        ma20 = df['Close'].rolling(window=20).mean()
-        return ma5, ma10, ma20
+        ma7 = df['Close'].rolling(window=7).mean()
+        ma25 = df['Close'].rolling(window=25).mean()
+        ma99 = df['Close'].rolling(window=99).mean()
+        return ma7, ma25, ma99
 
     @method_decorator(cache_page(150))  # Cache for 1 minute for scalping
     def get(self, request, symbol: str, interval: str = '1m') -> Response:
@@ -1102,7 +1102,7 @@ class BinanceScalpingDataView(APIView):
             # 기술적 지표 계산
             rsi = self.calculate_rsi(df)
             macd, signal, histogram = self.calculate_macd(df)
-            ma5, ma10, ma20 = self.calculate_moving_averages(df)
+            ma7, ma25, ma99 = self.calculate_moving_averages(df)
             upper_bb, lower_bb = self.calculate_bollinger_bands(df)  # 볼린저 밴드 계산 추가
 
             # 최근 30개 캔들만 사용
@@ -1123,9 +1123,9 @@ class BinanceScalpingDataView(APIView):
                             'histogram': float(histogram.iloc[i]) if not pd.isna(histogram.iloc[i]) else None
                         },
                         'moving_averages': {
-                            'ma5': float(ma5.iloc[i]) if not pd.isna(ma5.iloc[i]) else None,
-                            'ma10': float(ma10.iloc[i]) if not pd.isna(ma10.iloc[i]) else None,
-                            'ma20': float(ma20.iloc[i]) if not pd.isna(ma20.iloc[i]) else None
+                            'ma7': float(ma7.iloc[i]) if not pd.isna(ma7.iloc[i]) else None,
+                            'ma25': float(ma25.iloc[i]) if not pd.isna(ma25.iloc[i]) else None,
+                            'ma99': float(ma99.iloc[i]) if not pd.isna(ma99.iloc[i]) else None
                         },
                         'bollinger_bands': {  # 볼린저 밴드 추가
                             'upper': float(upper_bb.iloc[i]) if not pd.isna(upper_bb.iloc[i]) else None,

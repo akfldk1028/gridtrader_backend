@@ -55,9 +55,9 @@ def get_bitcoin_data_from_api(symbol, max_retries=3):
                     'MACD': candle['indicators']['macd']['macd'],
                     'MACD_Signal': candle['indicators']['macd']['signal'],
                     'MACD_Histogram': candle['indicators']['macd']['histogram'],
-                    'MA5': candle['indicators']['moving_averages']['ma5'],
-                    'MA10': candle['indicators']['moving_averages']['ma10'],
-                    'MA20': candle['indicators']['moving_averages']['ma20']
+                    'MA7': candle['indicators']['moving_averages']['ma7'],
+                    'MA25': candle['indicators']['moving_averages']['ma25'],
+                    'MA99': candle['indicators']['moving_averages']['ma99']
                 }
                 transformed_data['1m'].append(entry)
 
@@ -118,9 +118,9 @@ def perform_analysis():
         - MACD Signal: {bitcoin_data['current_indicators']['macd']['signal']}
         - MACD Crossover: {"Bearish" if macd_crossover else "No"}
 
-        - Moving Averages: MA5={bitcoin_data['current_indicators']['moving_averages']['ma5']}, 
-                          MA10={bitcoin_data['current_indicators']['moving_averages']['ma10']}, 
-                          MA20={bitcoin_data['current_indicators']['moving_averages']['ma20']}
+        - Moving Averages: MA7={bitcoin_data['current_indicators']['moving_averages']['ma7']}, 
+                          MA25={bitcoin_data['current_indicators']['moving_averages']['ma25']}, 
+                          MA99={bitcoin_data['current_indicators']['moving_averages']['ma99']}
         - bollinger_bands : Upper={bitcoin_data['current_indicators']['bollinger_bands']['upper']},
                             Lower={bitcoin_data['current_indicators']['bollinger_bands']['lower']},
                             
