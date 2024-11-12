@@ -136,46 +136,79 @@ def perform_analysis():
     macd_bullish_cross = prev_macd <= prev_signal and current_macd > current_signal
     macd_bearish_cross = prev_macd >= prev_signal and current_macd < current_signal
 
-    # macd_bullish_cross = current_macd > current_signal
-    # macd_bearish_cross = current_macd < current_signal
+    # MACD > Signal 여부 확인 (매수를 위한 추가 조건)
+    macd_above_signal = current_macd > current_signal
 
+    # 매매 신호 생성 - 더 엄격한 조건 적용
+    is_buy_signal = (
+            current_rsi <= 50 and  # RSI 조건
+            macd_bullish_cross and  # MACD 골든크로스
+            macd_above_signal and  # MACD가 반드시 시그널선 위에 있어야 함
+            fear_greed_index < 50  # 공포 지수 조건
+    )
 
-    # 매매 신호 생성
-    is_buy_signal = (current_rsi <= 50 and macd_bullish_cross)
-    is_sell_signal = (current_rsi > 50 and macd_bearish_cross)
+    is_sell_signal = (
+        (macd_bearish_cross and not macd_above_signal) and  # MACD 조건 (필수)
+        (
+            current_rsi > 50 or                # RSI 조건
+            fear_greed_index >= 50            # 또는 탐욕지수 조건
+        )
+    )
 
-    # MACD 상태 설정
-    macd_state = "neutral"  # 기본값
-    macd_description = "shows upward momentum" if macd_bullish_cross else "indicates a bearish crossover"
+    # MACD 상태 설정 (더 명확한 설명 추가)
+    macd_state = "neutral"
+    if macd_above_signal:
+        macd_state = "bullish"
+        macd_description = "shows upward momentum with MACD above signal line"
+    else:
+        macd_state = "bearish"
+        macd_description = "indicates bearish momentum with MACD below signal line"
 
     analysis_task = Task(
-        description=f"""As a professional scalping trader, analyze these technical indicators:
+        description=f"""As a professional scalping trader, analyze these technical indicators with strict MACD conditions:
 
         TECHNICAL CONDITIONS:
         - RSI: {current_rsi} (50 is the key level)
         - MACD: Current {current_macd}, Signal {current_signal}
+        - MACD Position: {"Above Signal" if macd_above_signal else "Below Signal"} (CRITICAL for BUY signals)
         - MACD Crossover: {"Bullish" if macd_bullish_cross else "Bearish" if macd_bearish_cross else "None"}
-
         - Stochastic K/D: {stoch_k}/{stoch_d}
         - Fear & Greed Index: {fear_greed_index}
         - Volatility: {volatility}%
         - Volume Ratio: {volume_ratio}x
 
-        Based on these indicators, provide analysis in one of these exact formats:
+        TRADING RULES:
+        SELL WHEN:
+        - MACD Death Cross AND MACD below Signal line (REQUIRED)
+        AND EITHER:
+        - RSI > 50
+        OR
+        - Fear Index >= 50
 
-        For BUY Signal (RSI ≤ 50  AND MACD Crossover = Bullish AND Fear Index < 50)):
+        BUY WHEN:
+        - RSI ≤ 50 (REQUIRED)
+        AND EITHER:
+        - MACD Golden Cross with MACD above Signal
+        OR
+        - Fear Index < 50
+
+        Based on these conditions, provide analysis in one of these exact formats:
+
+
+        For BUY Signal (ALL buy conditions must be met):
         "There's a potential upward trend for BTCUSDT. RSI {current_rsi} indicates approach to oversold territory, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
         The price has changed by {price_change:.2f}%. Based on this, a 50% buy position has been initiated."
 
-        For SELL Signal (RSI > 50  AND MACD Crossover = Bearish AND Fear Index >= 50):
+        For SELL Signal:
         "Market indicators for BTCUSDT are showing a downward trend. RSI {current_rsi} suggests approach to overbought levels, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
         The price has changed by {price_change:.2f}%. Consequently, a 50% sell position has been executed."
 
+        IMPORTANT: Never initiate a buy position when MACD is below the signal line.
         Current analysis indicates a {"BUY" if is_buy_signal else "SELL" if is_sell_signal else "HOLD"} signal.
         """,
-        expected_output="A trading analysis using RSI, MACD, and our custom Fear & Greed Index",
+        expected_output="A trading analysis with strict MACD conditions, especially for buy signals",
         agent=quick_analyst
     )
 
