@@ -90,12 +90,12 @@ def get_bitcoin_data_from_api(symbol, max_retries=3):
     return None
 
 
-quick_analyst = Agent(
-    role='Professional Scalping Trader',
-    goal='Maximize profitability through precise scalping trades',
-    backstory="""You are a highly skilled and experienced scalping trader known for your ability to consistently generate profits in volatile markets.
-    Your deep understanding of market dynamics and technical analysis allows you to identify high-probability trading opportunities with precision.
-    You excel at managing risk, setting optimal stop-loss and take-profit levels, and adapting to changing market conditions.""",
+market_analyst = Agent(
+    role='Technical Market Analyst',
+    goal='Analyze market conditions and technical indicators for optimal trading decisions',
+    backstory="""You are an expert technical analyst specialized in cryptocurrency markets.
+    You excel at interpreting multiple technical indicators including RSI overbought/oversold conditions,
+    MACD momentum, and market sentiment indicators to identify high-probability trading opportunities.""",
     verbose=True,
     allow_delegation=False
 )
@@ -106,27 +106,16 @@ def perform_analysis():
     if not bitcoin_data:
         return None
 
+    current_indicators = bitcoin_data['current_indicators']
     current_price = get_current_bitcoin_price("BTCUSDT")
 
-    # Get all indicators from pre-calculated data
-    current_indicators = bitcoin_data['current_indicators']
 
-    # 기본 기술적 지표
+    # 기술적 지표 추출
     current_rsi = current_indicators['rsi']
     current_macd = current_indicators['macd']['macd']
     current_signal = current_indicators['macd']['signal']
-    stoch_k = current_indicators['stochastic']['k']
-    stoch_d = current_indicators['stochastic']['d']
-
-    # 시장 상황 지표 (우리가 계산한 것들)
     fear_greed_index = float(current_indicators['market_conditions']['fear_greed_index'])
     price_change = float(current_indicators['market_conditions']['price_change_24h'])
-    volatility = float(current_indicators['market_conditions']['volatility'])
-    volume_ratio = float(current_indicators['market_conditions']['volume_ratio'])
-
-    # 볼린저 밴드
-    bb_upper = current_indicators['bollinger_bands']['upper']
-    bb_lower = current_indicators['bollinger_bands']['lower']
 
     # MACD 크로스오버 확인
     prev_candle = bitcoin_data['1m'][-2]
@@ -135,89 +124,65 @@ def perform_analysis():
 
     macd_bullish_cross = prev_macd <= prev_signal and current_macd > current_signal
     macd_bearish_cross = prev_macd >= prev_signal and current_macd < current_signal
-
-    # MACD > Signal 여부 확인 (매수를 위한 추가 조건)
     macd_above_signal = current_macd > current_signal
 
-    # 매매 신호 생성 - 더 엄격한 조건 적용
-    is_buy_signal = (
-            current_rsi <= 50 and  # RSI 조건
-            macd_bullish_cross and  # MACD 골든크로스
-            macd_above_signal and  # MACD가 반드시 시그널선 위에 있어야 함
-            fear_greed_index < 50  # 공포 지수 조건
-    )
+    # RSI 상태 판단
+    rsi_state = "neutral"
+    if current_rsi >= 70:
+        rsi_state = "overbought"
+    elif current_rsi <= 30:
+        rsi_state = "oversold"
+    elif current_rsi > 60:
+        rsi_state = "approaching_overbought"
+    elif current_rsi < 40:
+        rsi_state = "approaching_oversold"
 
-    is_sell_signal = (
-        (macd_bearish_cross and not macd_above_signal) and  # MACD 조건 (필수)
-        (
-            current_rsi > 50 or                # RSI 조건
-            fear_greed_index >= 50            # 또는 탐욕지수 조건
-        )
-    )
-
-    # MACD 상태 설정 (더 명확한 설명 추가)
-    macd_state = "neutral"
-    if macd_above_signal:
-        macd_state = "bullish"
-        macd_description = "shows upward momentum with MACD above signal line"
-    else:
-        macd_state = "bearish"
-        macd_description = "indicates bearish momentum with MACD below signal line"
 
     analysis_task = Task(
-        description=f"""As a professional scalping trader, analyze these technical indicators with strict MACD conditions:
+        description=f"""Analyze current market conditions with these technical indicators:
 
-        TECHNICAL CONDITIONS:
-        - RSI: {current_rsi} (50 is the key level)
-        - MACD: Current {current_macd}, Signal {current_signal}
-        - MACD Position: {"Above Signal" if macd_above_signal else "Below Signal"} (CRITICAL for BUY signals)
-        - MACD Crossover: {"Bullish" if macd_bullish_cross else "Bearish" if macd_bearish_cross else "None"}
-        - Stochastic K/D: {stoch_k}/{stoch_d}
-        - Fear & Greed Index: {fear_greed_index}
-        - Volatility: {volatility}%
-        - Volume Ratio: {volume_ratio}x
+        MARKET CONDITIONS:
+        - RSI: {current_rsi:.2f} (State: {rsi_state})
+        - MACD: {current_macd:.6f} (Signal: {current_signal:.6f})
+        - MACD Cross: {"Bullish" if macd_bullish_cross else "Bearish" if macd_bearish_cross else "None"}
+        - Fear & Greed Index: {fear_greed_index:.1f}
+        - Price Change 24h: {price_change:.2f}%
+
 
         TRADING RULES:
-        SELL WHEN:
-        - MACD Death Cross AND MACD below Signal line (REQUIRED)
-        AND EITHER:
-        - RSI > 50
-        OR
-        - Fear Index >= 50
+        SELL Signal (50% Position) when:
+        - RSI approaching or above 70 (overbought)
+        - MACD shows bearish momentum
+        - Extreme Greed conditions
 
-        BUY WHEN:
-        - RSI ≤ 50 (REQUIRED)
-        AND EITHER:
-        - MACD Golden Cross with MACD above Signal
-        OR
-        - Fear Index < 50
+        BUY Signal (50% Position) when:
+        - RSI approaching or below 30 (oversold)
+        - MACD shows bullish momentum
+        - Extreme Fear conditions
 
-        Based on these conditions, provide analysis in one of these exact formats:
+        Provide analysis in following format:
 
 
-        For BUY Signal (ALL buy conditions must be met):
-        "There's a potential upward trend for BTCUSDT. RSI {current_rsi} indicates approach to oversold territory, 
-        while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
-        The price has changed by {price_change:.2f}%. Based on this, a 50% buy position has been initiated."
+        For SELL:
+        "The market is showing signs of potential overbought conditions with RSI at {current_rsi}. 
+        MACD indicates [bearish momentum/divergence]. The Fear & Greed Index at {fear_greed_index:.0f} 
+        suggests extreme greed. Based on these conditions, a 50% sell position is recommended."
 
-        For SELL Signal:
-        "Market indicators for BTCUSDT are showing a downward trend. RSI {current_rsi} suggests approach to overbought levels, 
-        while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
-        The price has changed by {price_change:.2f}%. Consequently, a 50% sell position has been executed."
-
-        IMPORTANT: Never initiate a buy position when MACD is below the signal line.
-        Current analysis indicates a {"BUY" if is_buy_signal else "SELL" if is_sell_signal else "HOLD"} signal.
+        For BUY:
+        "Market conditions show oversold signals with RSI at {current_rsi}. 
+        MACD indicates [bullish momentum/convergence]. The Fear & Greed Index at {fear_greed_index:.0f} 
+        suggests extreme fear. Initiating a 50% buy position."
         """,
-        expected_output="A trading analysis with strict MACD conditions, especially for buy signals",
-        agent=quick_analyst
+        agent=market_analyst
     )
 
     crew = Crew(
-        agents=[quick_analyst],
+        agents=[market_analyst],
         tasks=[analysis_task],
         verbose=True,
         process=Process.sequential
     )
+
 
     result = crew.kickoff()
     result_str = str(result)
@@ -230,10 +195,15 @@ def perform_analysis():
         # AI의 분석 결과에 따라 매매 결정
         # 단순화된 결과 파싱
         result_lower = result_str.lower()
-        if "buy position" in result_lower:
+        if ("buy position" in result_lower and
+            (current_rsi <= 30 or rsi_state == "approaching_oversold") and
+            macd_bullish_cross):
             action = "BUY"
-        elif "sell position" in result_lower:
+        elif ("sell position" in result_lower and
+              (current_rsi >= 70 or rsi_state == "approaching_overbought") and
+              macd_bearish_cross):
             action = "SELL"
+
 
         # if is_buy_signal:
         #     action = "BUY"

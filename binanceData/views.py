@@ -1039,25 +1039,58 @@ class BinanceScalpingDataView(APIView):
 
     def calculate_fear_greed_index(self, df: pd.DataFrame) -> float:
         """
-        Calculate a custom fear and greed index based on technical indicators
+        Calculate an enhanced fear and greed index based on multiple technical indicators
         Range: 0 (Extreme Fear) to 100 (Extreme Greed)
+
+        Components:
+        1. Price Momentum (20%): RSI + Price change rate
+        2. Market Volatility (20%): Bollinger Bands Width + ATR
+        3. Market Volume (20%): Volume + OBV trend
+        4. Market Trend (40%): MACD + Moving Average trends
         """
         try:
-            # 1. Volatility (20%)
+            # 1. Price Momentum (20%)
+            rsi = self.calculate_rsi(df)
+            price_change = ((df['Close'].iloc[-1] - df['Close'].iloc[-20]) / df['Close'].iloc[-20]) * 100
+            momentum_score = (
+                    min(100, max(0, rsi.iloc[-1])) * 0.5 +  # RSI contribution
+                    min(100, max(0, 50 + price_change)) * 0.5  # Price change contribution
+            )
+
+            # 2. Market Volatility (20%)
             bb_upper, bb_lower = self.calculate_bollinger_bands(df)
             bb_width = ((bb_upper - bb_lower) / df['Close'].rolling(20).mean()) * 100
-            volatility_score = min(100, max(0, (bb_width.iloc[-1] / bb_width.mean()) * 50))
 
-            # 2. Market Momentum/Volume (20%)
-            volume_ma = df['Volume'].rolling(window=30).mean()
-            volume_score = min(100, max(0, (df['Volume'].iloc[-1] / volume_ma.iloc[-1]) * 50))
+            # Calculate ATR (Average True Range)
+            tr = pd.DataFrame()
+            tr['h-l'] = df['High'] - df['Low']
+            tr['h-pc'] = abs(df['High'] - df['Close'].shift(1))
+            tr['l-pc'] = abs(df['Low'] - df['Close'].shift(1))
+            atr = tr.max(axis=1).rolling(14).mean()
 
-            # 3. RSI (30%)
-            rsi = self.calculate_rsi(df)
-            rsi_score = float(rsi.iloc[-1])
+            volatility_score = 100 - min(100, max(0,
+                                                  (bb_width.iloc[-1] / bb_width.mean()) * 30 +  # BB contribution
+                                                  (atr.iloc[-1] / atr.mean()) * 70  # ATR contribution
+                                                  ))
 
-            # 4. MACD Trend (30%)
+            # 3. Market Volume (20%)
+            volume_ma = df['Volume'].rolling(window=20).mean()
+            volume_ratio = df['Volume'].iloc[-1] / volume_ma.iloc[-1]
+
+            # Calculate OBV (On Balance Volume)
+            obv = (np.sign(df['Close'].diff()) * df['Volume']).cumsum()
+            obv_trend = (obv.iloc[-1] - obv.iloc[-20]) / abs(obv.iloc[-20]) * 100
+
+            volume_score = min(100, max(0,
+                                        50 + (volume_ratio - 1) * 25 +  # Volume ratio contribution
+                                        obv_trend * 0.5  # OBV trend contribution
+                                        ))
+
+            # 4. Market Trend (40%)
             macd, signal, _ = self.calculate_macd(df)
+            ma7, ma25, ma99, ma200 = self.calculate_moving_averages(df)
+
+            # MACD trend score
             macd_diff = macd - signal
             macd_score = 50  # neutral
             if macd_diff.iloc[-1] > 0:
@@ -1065,18 +1098,31 @@ class BinanceScalpingDataView(APIView):
             else:
                 macd_score = max(0, 50 - abs(macd_diff.iloc[-1] / macd.std() * 25))
 
-            # Weighted average
+            # Moving average trend score
+            ma_score = 50
+            current_price = df['Close'].iloc[-1]
+            if current_price > ma7.iloc[-1] > ma25.iloc[-1]:
+                ma_score = min(100, 75 + (current_price - ma7.iloc[-1]) / current_price * 100)
+            elif current_price < ma7.iloc[-1] < ma25.iloc[-1]:
+                ma_score = max(0, 25 - (ma7.iloc[-1] - current_price) / current_price * 100)
+
+            trend_score = (macd_score * 0.5 + ma_score * 0.5)
+
+            # Final weighted average
             fear_greed_index = (
+                    (momentum_score * 0.2) +
                     (volatility_score * 0.2) +
                     (volume_score * 0.2) +
-                    (rsi_score * 0.3) +
-                    (macd_score * 0.3)
+                    (trend_score * 0.4)
             )
 
             return min(100, max(0, fear_greed_index))
 
-        except Exception:
+        except Exception as e:
+            print(f"Error calculating fear/greed index: {e}")
             return 50  # Default neutral value
+
+
 
     def get_market_conditions(self, df: pd.DataFrame) -> dict:
         """Calculate additional market condition indicators"""
@@ -1173,7 +1219,9 @@ class BinanceScalpingDataView(APIView):
         ma7 = df['Close'].rolling(window=7).mean()
         ma25 = df['Close'].rolling(window=25).mean()
         ma99 = df['Close'].rolling(window=99).mean()
-        return ma7, ma25, ma99
+        ma200 = df['Close'].rolling(window=200).mean()
+
+        return ma7, ma25, ma99, ma200
 
     @method_decorator(cache_page(150))  # Cache for 1 minute for scalping
     def get(self, request, symbol: str, interval: str = '1m') -> Response:
@@ -1207,7 +1255,7 @@ class BinanceScalpingDataView(APIView):
             # 기술적 지표 계산
             rsi = self.calculate_rsi(df)
             macd, signal, histogram = self.calculate_macd(df)
-            ma7, ma25, ma99 = self.calculate_moving_averages(df)
+            ma7, ma25, ma99, ma200 = self.calculate_moving_averages(df)
             upper_bb, lower_bb = self.calculate_bollinger_bands(df)  # 볼린저 밴드 계산 추가
             stoch_k, stoch_d = self.calculate_stochastic(df)  # 스토캐스틱 계산 추가
             fear_greed_index = self.calculate_fear_greed_index(df)
