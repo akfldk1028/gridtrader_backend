@@ -1140,15 +1140,34 @@ class BinanceScalpingDataView(APIView):
         rsi = 100.0 - (100.0 / (1.0 + rs))
         return rsi
 
-    def calculate_macd(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
-        """Calculate MACD indicators"""
-        exp1 = df['Close'].ewm(span=12, adjust=False).mean()
-        exp2 = df['Close'].ewm(span=26, adjust=False).mean()
-        macd = exp1 - exp2
-        signal = macd.ewm(span=9, adjust=False).mean()
-        histogram = macd - signal
-        return macd, signal, histogram
+    def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
+    Tuple[pd.Series, pd.Series, pd.Series]:
+        """
+        Calculate MACD (Moving Average Convergence Divergence)
 
+        Parameters:
+        - df: DataFrame with 'Close' prices
+        - fast_period: Short-term EMA period (default: 12)
+        - slow_period: Long-term EMA period (default: 26)
+        - signal_period: Signal line EMA period (default: 9)
+
+        Returns:
+        - Tuple of (MACD line, Signal line, Histogram)
+        """
+        # Calculate the EMAs
+        fast_ema = df['Close'].ewm(span=fast_period, adjust=True).mean()
+        slow_ema = df['Close'].ewm(span=slow_period, adjust=True).mean()
+
+        # Calculate MACD line
+        macd = fast_ema - slow_ema
+
+        # Calculate Signal line
+        signal = macd.ewm(span=signal_period, adjust=True).mean()
+
+        # Calculate Histogram
+        histogram = macd - signal
+
+        return macd, signal, histogram
     def calculate_moving_averages(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate moving averages"""
         ma7 = df['Close'].rolling(window=7).mean()
@@ -1160,7 +1179,7 @@ class BinanceScalpingDataView(APIView):
     def get(self, request, symbol: str, interval: str = '1m') -> Response:
         """Get candlestick data with technical indicators for scalping"""
         binance_api_url = "https://api.binance.com/api/v3/klines"
-        limit = 500  # 충분한 데이터 포인트
+        limit = 1000  # 충분한 데이터 포인트
 
         try:
             params = {
