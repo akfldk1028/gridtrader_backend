@@ -133,8 +133,12 @@ def perform_analysis():
     prev_macd = prev_candle['MACD']
     prev_signal = prev_candle['MACD_Signal']
 
-    macd_bullish_cross = prev_macd <= prev_signal and current_macd > current_signal
-    macd_bearish_cross = prev_macd >= prev_signal and current_macd < current_signal
+    # macd_bullish_cross = prev_macd <= prev_signal and current_macd > current_signal
+    # macd_bearish_cross = prev_macd >= prev_signal and current_macd < current_signal
+
+    macd_bullish_cross = current_macd > current_signal
+    macd_bearish_cross = current_macd < current_signal
+
 
     # 매매 신호 생성
     is_buy_signal = (current_rsi <= 50 and macd_bullish_cross)
