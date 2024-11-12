@@ -188,10 +188,16 @@ def perform_analysis():
         action = 'HOLD'
 
         # RSI와 MACD 조합으로 매매 결정
-        if is_buy_signal:
+        # AI의 분석 결과에 따라 매매 결정
+        if "buy position has been initiated" in result_str:
             action = "BUY"
-        elif is_sell_signal:
+        elif "sell position has been executed" in result_str:
             action = "SELL"
+
+        # if is_buy_signal:
+        #     action = "BUY"
+        # elif is_sell_signal:
+        #     action = "SELL"
 
         record = TradingRecord.objects.create(
             timestamp=datetime.now(),
