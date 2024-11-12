@@ -1045,14 +1045,22 @@ class BinanceScalpingDataView(APIView):
         upper_band = ma + (std * num_std)
         lower_band = ma - (std * num_std)
         return upper_band, lower_band
-
-    def calculate_rsi(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
-        """Calculate RSI indicator"""
-        delta = df['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        rs = gain / loss
-        return 100 - (100 / (1 + rs))
+    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[pd.Series, pd.Series]:
+        """Calculate Stochastic Oscillator"""
+        high = df['High'].rolling(k_period).max()
+        low = df['Low'].rolling(k_period).min()
+        k = 100 * (df['Close'] - low) / (high - low)
+        d = k.rolling(d_period).mean()
+        return k, d
+    def calculate_rsi(self, df: pd.DataFrame, period: int = 14, ema_period: int = 14) -> pd.Series:
+        """Calculate RSI indicator using EMA"""
+        delta = df["Close"].diff()
+        up, down = delta.clip(lower=0), -1 * delta.clip(upper=0)
+        roll_up = up.ewm(span=period).mean()
+        roll_down = down.ewm(span=period).mean()
+        rs = roll_up / roll_down
+        rsi = 100.0 - (100.0 / (1.0 + rs))
+        return rsi
 
     def calculate_macd(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate MACD indicators"""
@@ -1104,6 +1112,7 @@ class BinanceScalpingDataView(APIView):
             macd, signal, histogram = self.calculate_macd(df)
             ma7, ma25, ma99 = self.calculate_moving_averages(df)
             upper_bb, lower_bb = self.calculate_bollinger_bands(df)  # 볼린저 밴드 계산 추가
+            stoch_k, stoch_d = self.calculate_stochastic(df)  # 스토캐스틱 계산 추가
 
             # 최근 30개 캔들만 사용
             recent_data = []
@@ -1127,9 +1136,9 @@ class BinanceScalpingDataView(APIView):
                             'ma25': float(ma25.iloc[i]) if not pd.isna(ma25.iloc[i]) else None,
                             'ma99': float(ma99.iloc[i]) if not pd.isna(ma99.iloc[i]) else None
                         },
-                        'bollinger_bands': {  # 볼린저 밴드 추가
-                            'upper': float(upper_bb.iloc[i]) if not pd.isna(upper_bb.iloc[i]) else None,
-                            'lower': float(lower_bb.iloc[i]) if not pd.isna(lower_bb.iloc[i]) else None
+                        'stochastic': {  # 스토캐스틱 추가
+                            'k': float(stoch_k.iloc[i]) if not pd.isna(stoch_k.iloc[i]) else None,
+                            'd': float(stoch_d.iloc[i]) if not pd.isna(stoch_d.iloc[i]) else None
                         }
                     }
                 }

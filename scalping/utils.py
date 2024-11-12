@@ -6,6 +6,7 @@ import time
 from .models import TradingRecord
 from decimal import Decimal
 
+
 def get_current_bitcoin_price(vt_symbol):
     try:
         url = f"https://api.binance.com/api/v3/ticker/price?symbol={vt_symbol}"
@@ -57,7 +58,9 @@ def get_bitcoin_data_from_api(symbol, max_retries=3):
                     'MACD_Histogram': candle['indicators']['macd']['histogram'],
                     'MA7': candle['indicators']['moving_averages']['ma7'],
                     'MA25': candle['indicators']['moving_averages']['ma25'],
-                    'MA99': candle['indicators']['moving_averages']['ma99']
+                    'MA99': candle['indicators']['moving_averages']['ma99'],
+                    '%K': candle['indicators']['stochastic']['k'],
+                    '%D': candle['indicators']['stochastic']['d'],
                 }
                 transformed_data['1m'].append(entry)
 
@@ -109,7 +112,6 @@ def perform_analysis():
     if bitcoin_data['current_indicators']['macd']['macd'] < bitcoin_data['current_indicators']['macd']['signal']:
         macd_crossover = True
 
-
     analysis_task = Task(
         description=f"""Analyze the recent Bitcoin market data for high-probability scalping opportunities with a focus on maximizing profitability.
         Latest technical indicators:
@@ -120,10 +122,10 @@ def perform_analysis():
 
         - Moving Averages: MA7={bitcoin_data['current_indicators']['moving_averages']['ma7']}, 
                           MA25={bitcoin_data['current_indicators']['moving_averages']['ma25']}, 
-                          MA99={bitcoin_data['current_indicators']['moving_averages']['ma99']}
-        - bollinger_bands : Upper={bitcoin_data['current_indicators']['bollinger_bands']['upper']},
-                            Lower={bitcoin_data['current_indicators']['bollinger_bands']['lower']},
-                            
+                          MA99={bitcoin_data['current_indicators']['moving_averages']['ma99']},
+        - Stochastic: %K={bitcoin_data['current_indicators']['stochastic']['k']},
+                      %D={bitcoin_data['current_indicators']['stochastic']['d']},
+        
         Price data for the last 30 minutes: {bitcoin_data['1m']}
 
         Provide a detailed trading analysis and recommendation in this exact format:
