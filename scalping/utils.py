@@ -107,47 +107,70 @@ def perform_analysis():
         return None
 
     current_price = get_current_bitcoin_price("BTCUSDT")
-    # MACD 교차 여부 확인
-    macd_crossover = False
-    if bitcoin_data['current_indicators']['macd']['macd'] < bitcoin_data['current_indicators']['macd']['signal']:
-        macd_crossover = True
+
+    # Get all pre-calculated indicators including fear & greed index
+    current_indicators = bitcoin_data['current_indicators']
+
+    fear_greed_index = current_indicators['market_conditions']['fear_greed_index']
+    price_change_24h = current_indicators['market_conditions']['price_change_24h']
+    volatility = current_indicators['market_conditions']['volatility']
+    volume_ratio = current_indicators['market_conditions']['volume_ratio']
+
+    # Get other technical indicators
+    current_macd = current_indicators['macd']['macd']
+    current_signal = current_indicators['macd']['signal']
+    current_rsi = current_indicators['rsi']
+    stoch_k = current_indicators['stochastic']['k']
+    stoch_d = current_indicators['stochastic']['d']
+    bb_upper = current_indicators['bollinger_bands']['upper']
+    bb_lower = current_indicators['bollinger_bands']['lower']
+
+    # Determine market sentiment based on actual fear & greed index
+    if fear_greed_index < 50:
+        market_sentiment = "suggests the market might be overly pessimistic"
+    else:
+        market_sentiment = "implies the market might be overly optimistic"
+
+    # Determine MACD state
+    macd_state = "neutral"
+    if current_macd > current_signal:
+        macd_state = "shows upward momentum"
+    else:
+        macd_state = "indicates a bearish crossover"
 
     analysis_task = Task(
-        description=f"""Analyze the recent Bitcoin market data for high-probability scalping opportunities with a focus on maximizing profitability.
-        Latest technical indicators:
-        - RSI: {bitcoin_data['current_indicators']['rsi']} (Oversold < 30, Overbought > 70)
-        - MACD: {bitcoin_data['current_indicators']['macd']['macd']}
-        - MACD Signal: {bitcoin_data['current_indicators']['macd']['signal']}
-        - MACD Crossover: {"Bearish" if macd_crossover else "No"}
+        description=f"""As a professional scalping trader, analyze these comprehensive market conditions:
 
-        - Moving Averages: MA7={bitcoin_data['current_indicators']['moving_averages']['ma7']}, 
-                          MA25={bitcoin_data['current_indicators']['moving_averages']['ma25']}, 
-                          MA99={bitcoin_data['current_indicators']['moving_averages']['ma99']},
-        - Stochastic: %K={bitcoin_data['current_indicators']['stochastic']['k']},
-                      %D={bitcoin_data['current_indicators']['stochastic']['d']},
-        
-        Price data for the last 30 minutes: {bitcoin_data['1m']}
+        TECHNICAL INDICATORS:
+        - RSI: {current_rsi}
+        - MACD: {current_macd} (Signal: {current_signal})
+        - Stochastic K/D: {stoch_k}/{stoch_d}
+        - Bollinger Bands: Upper {bb_upper}, Lower {bb_lower}
 
-        Provide a detailed trading analysis and recommendation in this exact format:
+        MARKET CONDITIONS:
+        - Fear & Greed Index: {fear_greed_index}
+        - 24h Price Change: {price_change_24h}%
+        - Volatility: {volatility}%
+        - Volume Ratio: {volume_ratio}x
 
-        [DECISION]
-        Action: MUST be exactly BUY, SELL, or HOLD
+        Provide your analysis in exactly one of these formats:
 
-        [ANALYSIS]
-        Trade Reason: Provide a clear, concise explanation of why this trade should be executed, 
-        focusing on technical indicators and market conditions. Consider the MACD crossover signal.
+        For BUY signals:
+        "There's a potential upward trend for BTCUSDT. RSI ({current_rsi:.0f}) indicates approach to oversold territory, 
+        while MACD ({macd_state}) {macd_state}. The Fear & Greed Index ({fear_greed_index:.0f}) {market_sentiment}. 
+        The price has changed by {price_change_24h:.2f}%. Based on this, a 50% buy position has been initiated."
 
-        [RISK MANAGEMENT]
-        Stop-Loss: Specify the price level at which the trade should be closed to limit potential losses.
-        Take-Profit: Define the target price for closing the trade and securing profits.
+        For SELL signals:
+        "Market indicators for BTCUSDT are showing a downward trend. RSI ({current_rsi:.0f}) suggests approach to overbought levels, 
+        while MACD ({macd_state}) {macd_state}. The Fear & Greed Index ({fear_greed_index:.0f}) {market_sentiment}. 
+        The price has changed by {price_change_24h:.2f}%. Consequently, a 50% sell position has been executed."
 
-        [MARKET INSIGHT]
-        Market Context: Analyze current market sentiment, trending news, and external factors that may impact the trade's success.
-        Key Indicators to Monitor: Identify the most critical technical indicators to watch closely during the trade's lifecycle.
+        Choose the appropriate format based on technical indicators and market conditions.
         """,
-        expected_output="A precise scalping trade recommendation aimed at maximizing profitability, including entry/exit points, risk management, and market insights.",
+        expected_output="A detailed trading analysis using all available technical indicators",
         agent=quick_analyst
     )
+
     crew = Crew(
         agents=[quick_analyst],
         tasks=[analysis_task],
@@ -168,14 +191,10 @@ def perform_analysis():
         reflection = ""
 
         # 결과 파싱
-        for line in result_str.split('\n'):
-            line = line.strip()
-            if line.startswith('Action:'):
-                action = line.split('Action:')[1].strip().upper()
-                if action not in ['BUY', 'SELL', 'HOLD']:
-                    action = 'HOLD'  # 기본값으로 설정
-            elif 'Trade Reflection:' in line:
-                reflection = line.split('Trade Reflection:')[1].strip()
+        if "buy position has been initiated" in result_str:
+            action = "BUY"
+        elif "sell position has been executed" in result_str:
+            action = "SELL"
 
         # Create trading record using objects.create()
         record = TradingRecord.objects.create(

@@ -1037,6 +1037,73 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
 class BinanceScalpingDataView(APIView):
 
+    def calculate_fear_greed_index(self, df: pd.DataFrame) -> float:
+        """
+        Calculate a custom fear and greed index based on technical indicators
+        Range: 0 (Extreme Fear) to 100 (Extreme Greed)
+        """
+        try:
+            # 1. Volatility (20%)
+            bb_upper, bb_lower = self.calculate_bollinger_bands(df)
+            bb_width = ((bb_upper - bb_lower) / df['Close'].rolling(20).mean()) * 100
+            volatility_score = min(100, max(0, (bb_width.iloc[-1] / bb_width.mean()) * 50))
+
+            # 2. Market Momentum/Volume (20%)
+            volume_ma = df['Volume'].rolling(window=30).mean()
+            volume_score = min(100, max(0, (df['Volume'].iloc[-1] / volume_ma.iloc[-1]) * 50))
+
+            # 3. RSI (30%)
+            rsi = self.calculate_rsi(df)
+            rsi_score = float(rsi.iloc[-1])
+
+            # 4. MACD Trend (30%)
+            macd, signal, _ = self.calculate_macd(df)
+            macd_diff = macd - signal
+            macd_score = 50  # neutral
+            if macd_diff.iloc[-1] > 0:
+                macd_score = min(100, 50 + abs(macd_diff.iloc[-1] / macd.std() * 25))
+            else:
+                macd_score = max(0, 50 - abs(macd_diff.iloc[-1] / macd.std() * 25))
+
+            # Weighted average
+            fear_greed_index = (
+                    (volatility_score * 0.2) +
+                    (volume_score * 0.2) +
+                    (rsi_score * 0.3) +
+                    (macd_score * 0.3)
+            )
+
+            return min(100, max(0, fear_greed_index))
+
+        except Exception:
+            return 50  # Default neutral value
+
+    def get_market_conditions(self, df: pd.DataFrame) -> dict:
+        """Calculate additional market condition indicators"""
+        try:
+            # Price change calculation
+            price_change_24h = ((df['Close'].iloc[-1] - df['Close'].iloc[-1440]) / df['Close'].iloc[-1440]) * 100
+
+            # Volatility calculation
+            bb_upper, bb_lower = self.calculate_bollinger_bands(df)
+            current_volatility = ((bb_upper.iloc[-1] - bb_lower.iloc[-1]) / df['Close'].iloc[-1]) * 100
+
+            # Volume analysis
+            avg_volume = df['Volume'].rolling(window=30).mean().iloc[-1]
+            volume_ratio = (df['Volume'].iloc[-1] / avg_volume)
+
+            return {
+                'price_change_24h': float(price_change_24h),
+                'volatility': float(current_volatility),
+                'volume_ratio': float(volume_ratio)
+            }
+        except Exception:
+            return {
+                'price_change_24h': 0.0,
+                'volatility': 0.0,
+                'volume_ratio': 1.0
+            }
+
     def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
         pd.Series, pd.Series]:
         """Calculate Bollinger Bands"""
@@ -1045,13 +1112,16 @@ class BinanceScalpingDataView(APIView):
         upper_band = ma + (std * num_std)
         lower_band = ma - (std * num_std)
         return upper_band, lower_band
-    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[pd.Series, pd.Series]:
+
+    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
+        pd.Series, pd.Series]:
         """Calculate Stochastic Oscillator"""
         high = df['High'].rolling(k_period).max()
         low = df['Low'].rolling(k_period).min()
         k = 100 * (df['Close'] - low) / (high - low)
         d = k.rolling(d_period).mean()
         return k, d
+
     def calculate_rsi(self, df: pd.DataFrame, period: int = 14, ema_period: int = 14) -> pd.Series:
         """Calculate RSI indicator using EMA"""
         delta = df["Close"].diff()
@@ -1113,7 +1183,8 @@ class BinanceScalpingDataView(APIView):
             ma7, ma25, ma99 = self.calculate_moving_averages(df)
             upper_bb, lower_bb = self.calculate_bollinger_bands(df)  # 볼린저 밴드 계산 추가
             stoch_k, stoch_d = self.calculate_stochastic(df)  # 스토캐스틱 계산 추가
-
+            fear_greed_index = self.calculate_fear_greed_index(df)
+            market_conditions = self.get_market_conditions(df)
             # 최근 30개 캔들만 사용
             recent_data = []
             for i in range(-30, 0):
@@ -1139,6 +1210,16 @@ class BinanceScalpingDataView(APIView):
                         'stochastic': {  # 스토캐스틱 추가
                             'k': float(stoch_k.iloc[i]) if not pd.isna(stoch_k.iloc[i]) else None,
                             'd': float(stoch_d.iloc[i]) if not pd.isna(stoch_d.iloc[i]) else None
+                        },
+                        'bollinger_bands': {  # 볼린저 밴드 추가
+                            'upper': float(upper_bb.iloc[i]) if not pd.isna(upper_bb.iloc[i]) else None,
+                            'lower': float(lower_bb.iloc[i]) if not pd.isna(lower_bb.iloc[i]) else None
+                        },
+                        'market_conditions': {  # 시장 상황 지표 추가
+                            'fear_greed_index': float(fear_greed_index),
+                            'price_change_24h': market_conditions['price_change_24h'],
+                            'volatility': market_conditions['volatility'],
+                            'volume_ratio': market_conditions['volume_ratio']
                         }
                     }
                 }
