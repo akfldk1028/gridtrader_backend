@@ -158,7 +158,7 @@ def perform_analysis():
             elif 'Trade Reflection:' in line:
                 reflection = line.split('Trade Reflection:')[1].strip()
 
-        # Create trading record object
+        # Create and save trading record
         record = TradingRecord(
             timestamp=datetime.now(),
             coin_symbol='BTCUSDT',
@@ -166,16 +166,15 @@ def perform_analysis():
             trade_ratio=ratio,
             trade_amount_krw=amount,
             trade_reason=reason,
-            coin_balance=Decimal('0.5000'),  # 예시값, 실제로는 현재 잔고를 가져와야 함
-            balance=Decimal('10000000.00'),  # 예시값, 실제로는 현재 잔고를 가져와야 함
+            coin_balance=Decimal('0.5000'),  # 예시값
+            balance=Decimal('10000000.00'),  # 예시값
             current_price=Decimal(str(current_price)),
             trade_reflection=reflection
         )
 
         # Save the record
         record.save()
-
-
+        print(f"Successfully saved trading record - Type: {action}, Ratio: {ratio}%, Price: {current_price}")
 
     except Exception as e:
         print(f"Error processing analysis result: {e}")
