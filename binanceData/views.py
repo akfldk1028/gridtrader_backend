@@ -1081,8 +1081,15 @@ class BinanceScalpingDataView(APIView):
     def get_market_conditions(self, df: pd.DataFrame) -> dict:
         """Calculate additional market condition indicators"""
         try:
-            # Price change calculation
-            price_change_24h = ((df['Close'].iloc[-1] - df['Close'].iloc[-1440]) / df['Close'].iloc[-1440]) * 100
+            # Price change calculation - 가능한 최근 데이터로 계산
+            available_periods = len(df)
+            if available_periods < 2:
+                price_change = 0.0
+            else:
+                # 최근 가격 변화율 계산
+                latest_close = df['Close'].iloc[-1]
+                prev_close = df['Close'].iloc[0]  # 사용 가능한 첫 데이터
+                price_change = ((latest_close - prev_close) / prev_close) * 100
 
             # Volatility calculation
             bb_upper, bb_lower = self.calculate_bollinger_bands(df)
@@ -1093,11 +1100,12 @@ class BinanceScalpingDataView(APIView):
             volume_ratio = (df['Volume'].iloc[-1] / avg_volume)
 
             return {
-                'price_change_24h': float(price_change_24h),
+                'price_change_24h': float(price_change),
                 'volatility': float(current_volatility),
                 'volume_ratio': float(volume_ratio)
             }
-        except Exception:
+        except Exception as e:
+            print(f"Error calculating market conditions: {e}")
             return {
                 'price_change_24h': 0.0,
                 'volatility': 0.0,
