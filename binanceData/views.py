@@ -1044,7 +1044,7 @@ class BinanceScalpingDataView(APIView):
         rs = gain / loss
         return 100 - (100 / (1 + rs))
 
-    def calculate_macd(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
+    def calculate_macd(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate MACD indicators"""
         exp1 = df['Close'].ewm(span=12, adjust=False).mean()
         exp2 = df['Close'].ewm(span=26, adjust=False).mean()
@@ -1053,7 +1053,7 @@ class BinanceScalpingDataView(APIView):
         histogram = macd - signal
         return macd, signal, histogram
 
-    def calculate_moving_averages(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
+    def calculate_moving_averages(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate moving averages"""
         ma5 = df['Close'].rolling(window=5).mean()
         ma10 = df['Close'].rolling(window=10).mean()
@@ -1062,48 +1062,22 @@ class BinanceScalpingDataView(APIView):
 
     @method_decorator(cache_page(60))  # Cache for 1 minute for scalping
     def get(self, request, symbol: str, interval: str = '1m') -> Response:
-        """
-        Get candlestick data with technical indicators for scalping
-
-        Parameters:
-        - symbol: Trading pair symbol (e.g., 'BTCUSDT')
-        - interval: Candlestick interval (default: '1m' for scalping)
-        """
+        """Get candlestick data with technical indicators for scalping"""
         binance_api_url = "https://api.binance.com/api/v3/klines"
-
-        # 충분한 데이터를 가져와서 지표 계산의 정확도를 높임
-        limit = 500
-        total_candles = 1000  # MACD 계산을 위해 충분한 데이터
+        limit = 500  # 충분한 데이터 포인트
 
         try:
-            # 전체 데이터 수집
-            all_candles = []
-            end_time = None
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'limit': limit
+            }
+            response = requests.get(binance_api_url, params=params)
+            response.raise_for_status()
+            candles = response.json()
 
-            while len(all_candles) < total_candles:
-                params = {
-                    'symbol': symbol,
-                    'interval': interval,
-                    'limit': limit
-                }
-                if end_time:
-                    params['endTime'] = end_time
-
-                response = requests.get(binance_api_url, params=params)
-                response.raise_for_status()
-                candles = response.json()
-
-                if not candles:
-                    break
-
-                all_candles.extend(candles)
-                end_time = candles[0][0] - 1
-
-            # 필요한 만큼만 데이터 사용
-            all_candles = all_candles[:total_candles]
-
-            # DataFrame 변환
-            df = pd.DataFrame(all_candles, columns=[
+            # DataFrame 생성
+            df = pd.DataFrame(candles, columns=[
                 "Open Time", "Open", "High", "Low", "Close", "Volume",
                 "Close Time", "Quote Asset Volume", "Number of Trades",
                 "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
@@ -1116,62 +1090,41 @@ class BinanceScalpingDataView(APIView):
                 df[col] = pd.to_numeric(df[col])
 
             # 기술적 지표 계산
-            df['RSI'] = self.calculate_rsi(df)
+            rsi = self.calculate_rsi(df)
             macd, signal, histogram = self.calculate_macd(df)
-            df['MACD'] = macd
-            df['MACD_Signal'] = signal
-            df['MACD_Histogram'] = histogram
-
             ma5, ma10, ma20 = self.calculate_moving_averages(df)
-            df['MA5'] = ma5
-            df['MA10'] = ma10
-            df['MA20'] = ma20
 
-            # 가격 및 거래량 변화율 계산
-            df['Price_Change'] = df['Close'].pct_change() * 100
-            df['Volume_Change'] = df['Volume'].pct_change() * 100
-
-            # 최근 30개 캔들만 응답으로 전송
-            recent_df = df.iloc[-30:]
-
-            # 응답 데이터 준비
-            response_data = []
-            for _, row in recent_df.iterrows():
+            # 최근 30개 캔들만 사용
+            recent_data = []
+            for i in range(-30, 0):
                 candle_data = {
-                    'timestamp': row['Open Time'].isoformat(),
-                    'open': float(row['Open']),
-                    'high': float(row['High']),
-                    'low': float(row['Low']),
-                    'close': float(row['Close']),
-                    'volume': float(row['Volume']),
+                    'timestamp': df["Open Time"].iloc[i].isoformat(),
+                    'open': float(df["Open"].iloc[i]),
+                    'high': float(df["High"].iloc[i]),
+                    'low': float(df["Low"].iloc[i]),
+                    'close': float(df["Close"].iloc[i]),
+                    'volume': float(df["Volume"].iloc[i]),
                     'indicators': {
-                        'rsi': round(float(row['RSI']), 2) if not pd.isna(row['RSI']) else None,
+                        'rsi': float(rsi.iloc[i]) if not pd.isna(rsi.iloc[i]) else None,
                         'macd': {
-                            'macd': round(float(row['MACD']), 8) if not pd.isna(row['MACD']) else None,
-                            'signal': round(float(row['MACD_Signal']), 8) if not pd.isna(row['MACD_Signal']) else None,
-                            'histogram': round(float(row['MACD_Histogram']), 8) if not pd.isna(
-                                row['MACD_Histogram']) else None
+                            'macd': float(macd.iloc[i]) if not pd.isna(macd.iloc[i]) else None,
+                            'signal': float(signal.iloc[i]) if not pd.isna(signal.iloc[i]) else None,
+                            'histogram': float(histogram.iloc[i]) if not pd.isna(histogram.iloc[i]) else None
                         },
                         'moving_averages': {
-                            'ma5': round(float(row['MA5']), 2) if not pd.isna(row['MA5']) else None,
-                            'ma10': round(float(row['MA10']), 2) if not pd.isna(row['MA10']) else None,
-                            'ma20': round(float(row['MA20']), 2) if not pd.isna(row['MA20']) else None
+                            'ma5': float(ma5.iloc[i]) if not pd.isna(ma5.iloc[i]) else None,
+                            'ma10': float(ma10.iloc[i]) if not pd.isna(ma10.iloc[i]) else None,
+                            'ma20': float(ma20.iloc[i]) if not pd.isna(ma20.iloc[i]) else None
                         }
-                    },
-                    'changes': {
-                        'price_change': round(float(row['Price_Change']), 2) if not pd.isna(
-                            row['Price_Change']) else None,
-                        'volume_change': round(float(row['Volume_Change']), 2) if not pd.isna(
-                            row['Volume_Change']) else None
                     }
                 }
-                response_data.append(candle_data)
+                recent_data.append(candle_data)
 
             return Response({
                 'symbol': symbol,
                 'interval': interval,
                 'last_update': pd.Timestamp.now().isoformat(),
-                'data': response_data
+                'data': recent_data
             })
 
         except requests.RequestException as e:
