@@ -159,12 +159,12 @@ def perform_analysis():
 
         For BUY Signal (RSI ≤ 50 and Bullish MACD):
         "There's a potential upward trend for BTCUSDT. RSI (50) indicates approach to oversold territory, 
-        while MACD (neutral) shows upward momentum. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
+        while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
         The price has changed by {price_change:.2f}%. Based on this, a 50% buy position has been initiated."
 
         For SELL Signal (RSI > 50 and Bearish MACD):
         "Market indicators for BTCUSDT are showing a downward trend. RSI (50) suggests approach to overbought levels, 
-        while MACD (neutral) indicates a bearish crossover. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
+        while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
         The price has changed by {price_change:.2f}%. Consequently, a 50% sell position has been executed."
 
         Current analysis indicates a {"BUY" if is_buy_signal else "SELL" if is_sell_signal else "HOLD"} signal.
