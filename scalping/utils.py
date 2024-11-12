@@ -189,9 +189,11 @@ def perform_analysis():
 
         # RSI와 MACD 조합으로 매매 결정
         # AI의 분석 결과에 따라 매매 결정
-        if "buy position has been initiated" in result_str:
+        # 단순화된 결과 파싱
+        result_lower = result_str.lower()
+        if "buy position" in result_lower:
             action = "BUY"
-        elif "sell position has been executed" in result_str:
+        elif "sell position" in result_lower:
             action = "SELL"
 
         # if is_buy_signal:
