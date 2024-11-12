@@ -164,16 +164,8 @@ def perform_analysis():
             line = line.strip()
             if line.startswith('Action:'):
                 action = line.split('Action:')[1].strip().upper()
-            elif line.startswith('Trading Ratio:'):
-                # 거래 비율 - max_digits=5, decimal_places=4
-                ratio_str = line.split('Trading Ratio:')[1].strip().rstrip('%').replace(',', '')
-                ratio = Decimal(ratio_str).quantize(Decimal('0.0001'))
-            elif line.startswith('Amount KRW:'):
-                # 거래 금액 - max_digits=20, decimal_places=2
-                amount_str = line.split('Amount KRW:')[1].strip().replace(',', '').replace('KRW', '').strip()
-                amount = Decimal(amount_str).quantize(Decimal('0.01'))
-            elif 'Trade Reason:' in line:
-                reason = line.split('Trade Reason:')[1].strip()
+                if action not in ['BUY', 'SELL', 'HOLD']:
+                    action = 'HOLD'  # 기본값으로 설정
             elif 'Trade Reflection:' in line:
                 reflection = line.split('Trade Reflection:')[1].strip()
 
@@ -184,7 +176,7 @@ def perform_analysis():
             trade_type=action,
             trade_ratio=ratio,  # max_digits=5, decimal_places=4
             trade_amount_krw=amount,  # max_digits=20, decimal_places=2
-            trade_reason=reason,
+            trade_reason=result_str,
             coin_balance=Decimal('0.50000000'),  # max_digits=20, decimal_places=8
             balance=Decimal('10000000.00'),  # max_digits=20, decimal_places=2
             current_price=Decimal(str(current_price)).quantize(Decimal('0.01')),  # max_digits=20, decimal_places=2
