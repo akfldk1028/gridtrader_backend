@@ -19,10 +19,17 @@ def get_current_bitcoin_price(vt_symbol):
 
 def get_bitcoin_data_from_api(symbol, max_retries=3):
     base_url = "https://gridtrade.one/api/v1/binanceData/scalping"
+    session = requests.Session()
 
     for attempt in range(max_retries):
         try:
-            response = requests.get(f"{base_url}/{symbol}/1m/", timeout=30)
+            # SSL 검증을 비활성화하고 타임아웃 설정
+            response = session.get(
+                f"{base_url}/{symbol}/1m/",
+                timeout=30,
+                verify=False,  # SSL 검증 비활성화
+                headers={'User-Agent': 'Mozilla/5.0'}  # 기본 User-Agent 추가
+            )
             response.raise_for_status()
             data = response.json()
 
@@ -52,12 +59,18 @@ def get_bitcoin_data_from_api(symbol, max_retries=3):
                     'MA10': candle['indicators']['moving_averages']['ma10'],
                     'MA20': candle['indicators']['moving_averages']['ma20']
                 }
-                transformed_data['1m'].append(entry)  # 1m으로 수정
+                transformed_data['1m'].append(entry)
 
             # 최신 지표값들도 포함
             transformed_data['current_indicators'] = latest_indicators
 
             return transformed_data
+
+        except requests.exceptions.SSLError as e:
+            print(f"SSL 오류 발생 (시도 {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(1)
+            continue
         except requests.exceptions.RequestException as e:
             print(f"API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
             if attempt < max_retries - 1:
@@ -68,6 +81,8 @@ def get_bitcoin_data_from_api(symbol, max_retries=3):
             if attempt < max_retries - 1:
                 time.sleep(1)
             continue
+        finally:
+            session.close()
 
     return None
 
