@@ -150,32 +150,34 @@ def perform_analysis():
             if line.startswith('Action:'):
                 action = line.split('Action:')[1].strip().upper()
             elif line.startswith('Trading Ratio:'):
-                ratio = Decimal(line.split('Trading Ratio:')[1].strip().rstrip('%'))
+                # 거래 비율 - max_digits=5, decimal_places=4
+                ratio_str = line.split('Trading Ratio:')[1].strip().rstrip('%').replace(',', '')
+                ratio = Decimal(ratio_str).quantize(Decimal('0.0001'))
             elif line.startswith('Amount KRW:'):
-                amount = Decimal(line.split('Amount KRW:')[1].strip().replace(',', ''))
+                # 거래 금액 - max_digits=20, decimal_places=2
+                amount_str = line.split('Amount KRW:')[1].strip().replace(',', '').replace('KRW', '').strip()
+                amount = Decimal(amount_str).quantize(Decimal('0.01'))
             elif 'Trade Reason:' in line:
                 reason = line.split('Trade Reason:')[1].strip()
             elif 'Trade Reflection:' in line:
                 reflection = line.split('Trade Reflection:')[1].strip()
 
-        # Create and save trading record
+        # Create trading record using objects.create()
         record = TradingRecord.objects.create(
             timestamp=datetime.now(),
             coin_symbol='BTCUSDT',
             trade_type=action,
-            trade_ratio=ratio,
-            trade_amount_krw=amount,
+            trade_ratio=ratio,  # max_digits=5, decimal_places=4
+            trade_amount_krw=amount,  # max_digits=20, decimal_places=2
             trade_reason=reason,
-            coin_balance=Decimal('0.5000'),  # 예시값
-            balance=Decimal('10000000.00'),  # 예시값
-            current_price=Decimal(str(current_price)),
+            coin_balance=Decimal('0.50000000'),  # max_digits=20, decimal_places=8
+            balance=Decimal('10000000.00'),  # max_digits=20, decimal_places=2
+            current_price=Decimal(str(current_price)).quantize(Decimal('0.01')),  # max_digits=20, decimal_places=2
             trade_reflection=reflection
         )
-
-        # Save the record
-        # record.save()
         print(f"Successfully saved trading record - Type: {action}, Ratio: {ratio}%, Price: {current_price}")
 
     except Exception as e:
         print(f"Error processing analysis result: {e}")
+        print(f"Result string: {result_str}")  # 전체 결과 문자열 출력
         return None
