@@ -31,23 +31,23 @@ def setup_bitcoin_analysis_task():
     if now > next_eth_hour:
         next_eth_hour += timedelta(days=1)
 
-    schedule(
-        'llm.tasks.run_bitcoin_analysis',
-        schedule_type=Schedule.CRON,
-        cron="35 0,4,8,12,16,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
-        next_run=next_hour,
-        repeats=-1  # 무한 반복
-    )
-    schedule(
-        'llm.tasks.run_eth_analysis',
-        schedule_type=Schedule.CRON,
-        cron="45 0,4,8,12,16,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
-        next_run=next_eth_hour,
-        repeats=-1  # 무한 반복
-    )
-    # async_task('llm.tasks.run_bitcoin_analysis')
-    print(f"분석 작업이 {next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
-
+    # schedule(
+    #     'llm.tasks.run_bitcoin_analysis',
+    #     schedule_type=Schedule.CRON,
+    #     cron="35 0,4,8,12,16,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+    #     next_run=next_hour,
+    #     repeats=-1  # 무한 반복
+    # )
+    # schedule(
+    #     'llm.tasks.run_eth_analysis',
+    #     schedule_type=Schedule.CRON,
+    #     cron="45 0,4,8,12,16,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+    #     next_run=next_eth_hour,
+    #     repeats=-1  # 무한 반복
+    # )
+    # # async_task('llm.tasks.run_bitcoin_analysis')
+    # print(f"분석 작업이 {next_hour.strftime('%Y-%m-%d %H:%M')}부터 3시간마다 실행되도록 예약되었습니다.")
+    #
 
 def update_strategy_config():
     try:

@@ -1034,74 +1034,153 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             print(f"An error occurred: {e}")
             return None
 
-# class BinanceLLMChartDataAPIView(BinanceAPIView):
-#     def get(self, request):
-#         try:
-#             print("Processing request...")
-#             symbol = request.GET.get('symbol', '')
-#             print(symbol)
-#             data = self.get_bitcoin_data(symbol)
-#             if data is None:
-#                 return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#             return Response(data)
-#         except Exception as e:
-#             print(f"Error processing request for symbol {symbol}: {str(e)}")
-#             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#     def get_bitcoin_data(self, symbol):
-#         try:
-#             end_date = datetime.now()
-#             start_date_hourly = end_date - timedelta(days=21)  # 약 500시간
-#             start_date_daily = end_date - timedelta(days=500)  # 500일
-#             print("Fetching data...")
-#
-#             hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
-#                                                                start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
-#                                                                end_date.strftime("%d %b %Y %H:%M:%S"))
-#             daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
-#                                                               start_date_daily.strftime("%d %b %Y %H:%M:%S"),
-#                                                               end_date.strftime("%d %b %Y %H:%M:%S"))
-#
-#             def process_candles(candles):
-#                 df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-#                                                     'quote_asset_volume', 'number_of_trades',
-#                                                     'taker_buy_base_asset_volume',
-#                                                     'taker_buy_quote_asset_volume', 'ignore'])
-#                 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-#                 df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-#                 df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
-#                     float)
-#
-#                 for ma in [5, 10, 20, 24, 50, 100, 200]:
-#                     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
-#                 period = 20
-#                 multiplier = 2.0
-#                 df["MA"] = df["close"].rolling(window=period).mean()
-#                 df["STD"] = df["close"].rolling(window=period).std()
-#                 df["Upper"] = df["MA"] + (df["STD"] * multiplier)
-#                 df["Lower"] = df["MA"] - (df["STD"] * multiplier)
-#                 StochasticRSI(df)
-#                 RSIAnalyzer(df)
-#                 import numpy as np
-#                 # NaN 값을 None으로 변환
-#                 df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
-#
-#                 # timestamp를 ISO 형식 문자열로 변환
-#                 df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
-#
-#                 # DataFrame을 딕셔너리 리스트로 변환하고 NaN 값 추가 처리
-#                 records = df.to_dict(orient='records')
-#                 for record in records:
-#                     for key, value in record.items():
-#                         if pd.isna(value) or value in [np.inf, -np.inf]:
-#                             record[key] = None
-#
-#                 return records
-#
-#             return {
-#                 'hourly': process_candles(hourly_candles),
-#                 'daily': process_candles(daily_candles)
-#             }
-#         except Exception as e:
-#             print(f"An error occurred: {e}")
-#             return None
+
+class BinanceScalpingDataView(APIView):
+    def calculate_rsi(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
+        """Calculate RSI indicator"""
+        delta = df['Close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        return 100 - (100 / (1 + rs))
+
+    def calculate_macd(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
+        """Calculate MACD indicators"""
+        exp1 = df['Close'].ewm(span=12, adjust=False).mean()
+        exp2 = df['Close'].ewm(span=26, adjust=False).mean()
+        macd = exp1 - exp2
+        signal = macd.ewm(span=9, adjust=False).mean()
+        histogram = macd - signal
+        return macd, signal, histogram
+
+    def calculate_moving_averages(self, df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
+        """Calculate moving averages"""
+        ma5 = df['Close'].rolling(window=5).mean()
+        ma10 = df['Close'].rolling(window=10).mean()
+        ma20 = df['Close'].rolling(window=20).mean()
+        return ma5, ma10, ma20
+
+    @method_decorator(cache_page(60))  # Cache for 1 minute for scalping
+    def get(self, request, symbol: str, interval: str = '1m') -> Response:
+        """
+        Get candlestick data with technical indicators for scalping
+
+        Parameters:
+        - symbol: Trading pair symbol (e.g., 'BTCUSDT')
+        - interval: Candlestick interval (default: '1m' for scalping)
+        """
+        binance_api_url = "https://api.binance.com/api/v3/klines"
+
+        # 충분한 데이터를 가져와서 지표 계산의 정확도를 높임
+        limit = 500
+        total_candles = 1000  # MACD 계산을 위해 충분한 데이터
+
+        try:
+            # 전체 데이터 수집
+            all_candles = []
+            end_time = None
+
+            while len(all_candles) < total_candles:
+                params = {
+                    'symbol': symbol,
+                    'interval': interval,
+                    'limit': limit
+                }
+                if end_time:
+                    params['endTime'] = end_time
+
+                response = requests.get(binance_api_url, params=params)
+                response.raise_for_status()
+                candles = response.json()
+
+                if not candles:
+                    break
+
+                all_candles.extend(candles)
+                end_time = candles[0][0] - 1
+
+            # 필요한 만큼만 데이터 사용
+            all_candles = all_candles[:total_candles]
+
+            # DataFrame 변환
+            df = pd.DataFrame(all_candles, columns=[
+                "Open Time", "Open", "High", "Low", "Close", "Volume",
+                "Close Time", "Quote Asset Volume", "Number of Trades",
+                "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
+            ])
+
+            # 데이터 타입 변환
+            df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms")
+            df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms")
+            for col in ["Open", "High", "Low", "Close", "Volume"]:
+                df[col] = pd.to_numeric(df[col])
+
+            # 기술적 지표 계산
+            df['RSI'] = self.calculate_rsi(df)
+            macd, signal, histogram = self.calculate_macd(df)
+            df['MACD'] = macd
+            df['MACD_Signal'] = signal
+            df['MACD_Histogram'] = histogram
+
+            ma5, ma10, ma20 = self.calculate_moving_averages(df)
+            df['MA5'] = ma5
+            df['MA10'] = ma10
+            df['MA20'] = ma20
+
+            # 가격 및 거래량 변화율 계산
+            df['Price_Change'] = df['Close'].pct_change() * 100
+            df['Volume_Change'] = df['Volume'].pct_change() * 100
+
+            # 최근 30개 캔들만 응답으로 전송
+            recent_df = df.iloc[-30:]
+
+            # 응답 데이터 준비
+            response_data = []
+            for _, row in recent_df.iterrows():
+                candle_data = {
+                    'timestamp': row['Open Time'].isoformat(),
+                    'open': float(row['Open']),
+                    'high': float(row['High']),
+                    'low': float(row['Low']),
+                    'close': float(row['Close']),
+                    'volume': float(row['Volume']),
+                    'indicators': {
+                        'rsi': round(float(row['RSI']), 2) if not pd.isna(row['RSI']) else None,
+                        'macd': {
+                            'macd': round(float(row['MACD']), 8) if not pd.isna(row['MACD']) else None,
+                            'signal': round(float(row['MACD_Signal']), 8) if not pd.isna(row['MACD_Signal']) else None,
+                            'histogram': round(float(row['MACD_Histogram']), 8) if not pd.isna(
+                                row['MACD_Histogram']) else None
+                        },
+                        'moving_averages': {
+                            'ma5': round(float(row['MA5']), 2) if not pd.isna(row['MA5']) else None,
+                            'ma10': round(float(row['MA10']), 2) if not pd.isna(row['MA10']) else None,
+                            'ma20': round(float(row['MA20']), 2) if not pd.isna(row['MA20']) else None
+                        }
+                    },
+                    'changes': {
+                        'price_change': round(float(row['Price_Change']), 2) if not pd.isna(
+                            row['Price_Change']) else None,
+                        'volume_change': round(float(row['Volume_Change']), 2) if not pd.isna(
+                            row['Volume_Change']) else None
+                    }
+                }
+                response_data.append(candle_data)
+
+            return Response({
+                'symbol': symbol,
+                'interval': interval,
+                'last_update': pd.Timestamp.now().isoformat(),
+                'data': response_data
+            })
+
+        except requests.RequestException as e:
+            return Response(
+                {'error': f'Failed to fetch data from Binance: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
