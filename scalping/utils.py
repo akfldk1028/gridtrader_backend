@@ -177,8 +177,6 @@ def perform_analysis():
             trade_ratio=ratio,  # max_digits=5, decimal_places=4
             trade_amount_krw=amount,  # max_digits=20, decimal_places=2
             trade_reason=result_str,
-            coin_balance=Decimal('0.50000000'),  # max_digits=20, decimal_places=8
-            balance=Decimal('10000000.00'),  # max_digits=20, decimal_places=2
             current_price=Decimal(str(current_price)).quantize(Decimal('0.01')),  # max_digits=20, decimal_places=2
             trade_reflection=reflection
         )
