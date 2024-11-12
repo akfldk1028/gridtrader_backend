@@ -1120,7 +1120,6 @@ class BinanceScalpingDataView(APIView):
                         'macd': {
                             'macd': float(macd.iloc[i]) if not pd.isna(macd.iloc[i]) else None,
                             'signal': float(signal.iloc[i]) if not pd.isna(signal.iloc[i]) else None,
-                            'histogram': float(histogram.iloc[i]) if not pd.isna(histogram.iloc[i]) else None
                         },
                         'moving_averages': {
                             'ma5': float(ma5.iloc[i]) if not pd.isna(ma5.iloc[i]) else None,

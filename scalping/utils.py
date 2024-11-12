@@ -104,6 +104,11 @@ def perform_analysis():
         return None
 
     current_price = get_current_bitcoin_price("BTCUSDT")
+    # MACD 교차 여부 확인
+    macd_crossover = False
+    if bitcoin_data['current_indicators']['macd']['macd'] < bitcoin_data['current_indicators']['macd']['signal']:
+        macd_crossover = True
+
 
     analysis_task = Task(
         description=f"""Analyze the recent Bitcoin market data for high-probability scalping opportunities with a focus on maximizing profitability.
@@ -111,7 +116,8 @@ def perform_analysis():
         - RSI: {bitcoin_data['current_indicators']['rsi']} (Oversold < 30, Overbought > 70)
         - MACD: {bitcoin_data['current_indicators']['macd']['macd']}
         - MACD Signal: {bitcoin_data['current_indicators']['macd']['signal']}
-        - MACD Histogram: {bitcoin_data['current_indicators']['macd']['histogram']}
+        - MACD Crossover: {"Bearish" if macd_crossover else "No"}
+
         - Moving Averages: MA5={bitcoin_data['current_indicators']['moving_averages']['ma5']}, 
                           MA10={bitcoin_data['current_indicators']['moving_averages']['ma10']}, 
                           MA20={bitcoin_data['current_indicators']['moving_averages']['ma20']}
@@ -127,7 +133,7 @@ def perform_analysis():
 
         [ANALYSIS]
         Trade Reason: Provide a clear, concise explanation of why this trade should be executed, 
-        focusing on technical indicators and market conditions.
+        focusing on technical indicators and market conditions. Consider the MACD crossover signal.
 
         [RISK MANAGEMENT]
         Stop-Loss: Specify the price level at which the trade should be closed to limit potential losses.
