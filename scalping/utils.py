@@ -154,6 +154,8 @@ def perform_analysis():
         TECHNICAL CONDITIONS:
         - RSI: {current_rsi} (50 is the key level)
         - MACD: Current {current_macd}, Signal {current_signal}
+        - MACD Crossover: {"Bullish" if macd_bullish_cross else "Bearish" if macd_bearish_cross else "None"}
+
         - Stochastic K/D: {stoch_k}/{stoch_d}
         - Fear & Greed Index: {fear_greed_index}
         - Volatility: {volatility}%
@@ -161,12 +163,12 @@ def perform_analysis():
 
         Based on these indicators, provide analysis in one of these exact formats:
 
-        For BUY Signal (RSI ≤ 50 and Bullish MACD):
+        For BUY Signal (RSI ≤ 50  AND MACD Golden Cross AND Fear Index < 50)):
         "There's a potential upward trend for BTCUSDT. RSI {current_rsi} indicates approach to oversold territory, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
         The price has changed by {price_change:.2f}%. Based on this, a 50% buy position has been initiated."
 
-        For SELL Signal (RSI > 50 and Bearish MACD):
+        For SELL Signal (RSI > 50  AND MACD Death Cross AND Fear Index >= 50):
         "Market indicators for BTCUSDT are showing a downward trend. RSI {current_rsi} suggests approach to overbought levels, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
         The price has changed by {price_change:.2f}%. Consequently, a 50% sell position has been executed."
