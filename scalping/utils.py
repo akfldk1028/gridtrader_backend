@@ -121,13 +121,10 @@ def perform_analysis():
         3. Risk Management: Suggested stop-loss and take-profit levels
         4. Market Context: Current market sentiment and external factors to watch
         5. Key Indicators to Monitor: Which technical indicators should be closely watched after entering this position
-
-        Note: All numerical values must be precise and formatted exactly as specified.
-        Current price: {current_price} KRW
         """,
+        expected_output="A detailed crypto trading decision with precise action (BUY/SELL/HOLD), trading ratio, amount, reasoning, and risk analysis based on technical indicators.",
         agent=quick_analyst
     )
-
     crew = Crew(
         agents=[quick_analyst],
         tasks=[analysis_task],
