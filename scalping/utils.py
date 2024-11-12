@@ -186,7 +186,6 @@ def perform_analysis():
     try:
         # 기본값 설정
         action = 'HOLD'
-        ratio = Decimal('0.5000')  # 50%를 0.5로 표현
 
         # RSI와 MACD 조합으로 매매 결정
         if is_buy_signal:
@@ -198,13 +197,12 @@ def perform_analysis():
             timestamp=datetime.now(),
             coin_symbol='BTCUSDT',
             trade_type=action,
-            trade_ratio=ratio,
             trade_amount_krw=Decimal('0.00'),
             trade_reason=result_str,
             current_price=Decimal(str(current_price)).quantize(Decimal('0.01')),
             trade_reflection=""
         )
-        print(f"Successfully saved trading record - Type: {action}, Ratio: {ratio}%, Price: {current_price}")
+        print(f"Successfully saved trading record - Type: {action},  Price: {current_price}")
 
     except Exception as e:
         print(f"Error processing analysis result: {e}")
