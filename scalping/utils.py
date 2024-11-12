@@ -158,12 +158,12 @@ def perform_analysis():
         Based on these indicators, provide analysis in one of these exact formats:
 
         For BUY Signal (RSI ≤ 50 and Bullish MACD):
-        "There's a potential upward trend for BTCUSDT. RSI (50) indicates approach to oversold territory, 
+        "There's a potential upward trend for BTCUSDT. RSI {current_rsi} indicates approach to oversold territory, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
         The price has changed by {price_change:.2f}%. Based on this, a 50% buy position has been initiated."
 
         For SELL Signal (RSI > 50 and Bearish MACD):
-        "Market indicators for BTCUSDT are showing a downward trend. RSI (50) suggests approach to overbought levels, 
+        "Market indicators for BTCUSDT are showing a downward trend. RSI {current_rsi} suggests approach to overbought levels, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
         The price has changed by {price_change:.2f}%. Consequently, a 50% sell position has been executed."
 
@@ -186,7 +186,7 @@ def perform_analysis():
     try:
         # 기본값 설정
         action = 'HOLD'
-        ratio = Decimal('50.0000')
+        ratio = Decimal('0.5000')  # 50%를 0.5로 표현
 
         # RSI와 MACD 조합으로 매매 결정
         if is_buy_signal:
