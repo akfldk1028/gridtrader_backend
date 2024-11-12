@@ -1,6 +1,6 @@
 # scalping/admin.py
 from django.contrib import admin
-from .models import TradingRecord
+from .models import TradingRecord,CoinScalpingAnalysis
 
 @admin.register(TradingRecord)
 class TradingRecordAdmin(admin.ModelAdmin):
@@ -27,3 +27,18 @@ class TradingRecordAdmin(admin.ModelAdmin):
 
     # 시간 순 정렬
     ordering = ['-timestamp']
+
+
+@admin.register(CoinScalpingAnalysis)
+class CoinScalpingAnalysisAdmin(admin.ModelAdmin):
+    list_display = [
+        'timestamp',
+        'coin_symbol',
+        'current_price',
+        'price_change_24h',
+        'scalping_score',
+        'priority'
+    ]
+    list_filter = ['priority', 'coin_symbol']
+    search_fields = ['coin_symbol', 'analysis']
+    readonly_fields = ['timestamp']

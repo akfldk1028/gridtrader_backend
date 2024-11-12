@@ -5,6 +5,7 @@ from django_q.models import Schedule
 from datetime import time, datetime, timedelta
 import asyncio
 from .utils import perform_analysis  # 여기에 기존 분석 로직을 넣습니다.
+from .coin_selector import analyze_scalping_opportunities
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,8 @@ def setup_scalping():
     # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
 
     Schedule.objects.filter(func='scalping.tasks.scalping').delete()
+    Schedule.objects.filter(func='scalping.tasks.analyze_coins').delete()
+
     now = datetime.now()
     next_run = now + timedelta(minutes=1)
 
@@ -25,7 +28,13 @@ def setup_scalping():
         next_run=next_run,
         repeats=-1  # 무한 반복
     )
-
+    schedule(
+        'scalping.tasks.analyze_coins',  # 실행할 함수
+        schedule_type=Schedule.MINUTES,   # 분 단위 실행
+        minutes=10,                       # 10분마다 실행
+        next_run=next_run,               # 다음 실행 시간
+        repeats=-1                       # 무한 반복
+    )
 def scalping():
     try:
         print("Calling perform_analysis function")
@@ -35,4 +44,24 @@ def scalping():
         return f"Analysis completed successfully in seconds. AnalysisResult id: {result }"
     except Exception as e:
         print(f"Error in run_bitcoin_analysis task: {str(e)}")
+        raise
+
+
+def analyze_coins():
+    """10분마다 실행되는 코인 분석 작업"""
+    try:
+        logger.info("Starting coin analysis task")
+        results = analyze_scalping_opportunities()
+
+        if results:
+            coins = [result.coin_symbol for result in results]
+            scores = [float(result.scalping_score) for result in results]
+            logger.info(f"Analysis completed. Top coins: {', '.join(coins)}")
+            return f"Successfully analyzed coins. Top recommendations: {', '.join(coins)}"
+        else:
+            logger.warning("No suitable coins found for scalping")
+            return "Analysis completed but no suitable coins found"
+
+    except Exception as e:
+        logger.error(f"Error in coin analysis task: {str(e)}")
         raise

@@ -88,11 +88,11 @@ def get_bitcoin_data_from_api(symbol, max_retries=3):
 
 
 quick_analyst = Agent(
-    role='Scalping Analyst',
-    goal='Provide quick trading signals for short-term cryptocurrency trading',
-    backstory="""You are an experienced scalping trader who specializes in quick market analysis 
-    and providing actionable trading signals. You focus on immediate market conditions and technical indicators 
-    to make rapid trading decisions.""",
+    role='Professional Scalping Trader',
+    goal='Maximize profitability through precise scalping trades',
+    backstory="""You are a highly skilled and experienced scalping trader known for your ability to consistently generate profits in volatile markets.
+    Your deep understanding of market dynamics and technical analysis allows you to identify high-probability trading opportunities with precision.
+    You excel at managing risk, setting optimal stop-loss and take-profit levels, and adapting to changing market conditions.""",
     verbose=True,
     allow_delegation=False
 )
@@ -106,7 +106,7 @@ def perform_analysis():
     current_price = get_current_bitcoin_price("BTCUSDT")
 
     analysis_task = Task(
-        description=f"""Analyze the recent Bitcoin market data for scalping opportunities.
+        description=f"""Analyze the recent Bitcoin market data for high-probability scalping opportunities with a focus on maximizing profitability.
         Latest technical indicators:
         - RSI: {bitcoin_data['current_indicators']['rsi']} (Oversold < 30, Overbought > 70)
         - MACD: {bitcoin_data['current_indicators']['macd']['macd']}
@@ -122,22 +122,20 @@ def perform_analysis():
 
         [DECISION]
         Action: MUST be exactly BUY, SELL, or HOLD
-        Trading Ratio: Specify a precise percentage between 0-100% with exactly 4 decimal places
-        Amount KRW: Suggested amount in KRW (Korean Won)
 
         [ANALYSIS]
         Trade Reason: Provide a clear, concise explanation of why this trade should be executed, 
         focusing on technical indicators and market conditions.
 
-        [RISK ANALYSIS]
-        Trade Reflection: Analyze the following points:
-        1. Key Risk Factors: What could make this trade unsuccessful?
-        2. Counter Signals: Are there any indicators suggesting the opposite direction?
-        3. Risk Management: Suggested stop-loss and take-profit levels
-        4. Market Context: Current market sentiment and external factors to watch
-        5. Key Indicators to Monitor: Which technical indicators should be closely watched after entering this position
+        [RISK MANAGEMENT]
+        Stop-Loss: Specify the price level at which the trade should be closed to limit potential losses.
+        Take-Profit: Define the target price for closing the trade and securing profits.
+
+        [MARKET INSIGHT]
+        Market Context: Analyze current market sentiment, trending news, and external factors that may impact the trade's success.
+        Key Indicators to Monitor: Identify the most critical technical indicators to watch closely during the trade's lifecycle.
         """,
-        expected_output="A detailed crypto trading decision with precise action (BUY/SELL/HOLD), trading ratio, amount, reasoning, and risk analysis based on technical indicators.",
+        expected_output="A precise scalping trade recommendation aimed at maximizing profitability, including entry/exit points, risk management, and market insights.",
         agent=quick_analyst
     )
     crew = Crew(

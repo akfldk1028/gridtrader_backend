@@ -28,3 +28,27 @@ class TradingRecord(CommonModel):
             models.Index(fields=['-timestamp']),
             models.Index(fields=['coin_symbol']),
         ]
+
+
+class CoinScalpingAnalysis(CommonModel):
+    RECOMMENDATION_LEVELS = [
+        ('HIGH', 'High Priority'),
+        ('MEDIUM', 'Medium Priority'),
+        ('LOW', 'Low Priority')
+    ]
+
+    timestamp = models.DateTimeField('분석 시간', auto_now_add=True)
+    coin_symbol = models.CharField('코인 심볼', max_length=20)
+    current_price = models.DecimalField('현재 가격', max_digits=20, decimal_places=2, default=Decimal('0.00'))
+    volume_24h = models.DecimalField('24시간 거래량', max_digits=20, decimal_places=2, default=Decimal('0.00'))
+    price_change_24h = models.DecimalField('24시간 변동률(%)', max_digits=5, decimal_places=2, default=Decimal('0.00'))
+    scalping_score = models.DecimalField('스캘핑 점수', max_digits=5, decimal_places=2, default=Decimal('0.00'))
+    priority = models.CharField('우선순위', max_length=10, choices=RECOMMENDATION_LEVELS)
+    analysis = models.TextField('분석 결과')
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['coin_symbol']),
+            models.Index(fields=['priority']),
+        ]
