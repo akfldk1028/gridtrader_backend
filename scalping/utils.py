@@ -168,7 +168,7 @@ def perform_analysis():
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) suggests the market might be overly pessimistic. 
         The price has changed by {price_change:.2f}%. Based on this, a 50% buy position has been initiated."
 
-        For SELL Signal (RSI > 50  AND MACD Death Cross = Bearish AND Fear Index >= 50):
+        For SELL Signal (RSI > 50  AND MACD Crossover = Bearish AND Fear Index >= 50):
         "Market indicators for BTCUSDT are showing a downward trend. RSI {current_rsi} suggests approach to overbought levels, 
         while MACD ({macd_state}) {macd_description}. The Fear & Greed Index ({fear_greed_index:.0f}) implies the market might be overly optimistic. 
         The price has changed by {price_change:.2f}%. Consequently, a 50% sell position has been executed."
