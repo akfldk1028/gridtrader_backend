@@ -4,29 +4,87 @@ from .models import TradingRecord,CoinScalpingAnalysis
 
 @admin.register(TradingRecord)
 class TradingRecordAdmin(admin.ModelAdmin):
-    # 목록에 표시할 필드
     list_display = [
-        'timestamp',
+        'created_at',
+        'exchange',
         'coin_symbol',
         'trade_type',
         'trade_ratio',
-        'trade_amount_krw',
-        'current_price',
+        'trade_amount_display',
+        'current_price_display',
         'coin_balance',
-        'balance'
+        'balance_display'
     ]
 
-    # 필터 옵션
-    list_filter = ['trade_type', 'coin_symbol']
+    list_filter = [
+        'exchange',
+        'trade_type',
+        'coin_symbol',
+        ('created_at', admin.DateFieldListFilter)
+    ]
 
-    # 검색 필드
-    search_fields = ['coin_symbol', 'trade_reason']
+    search_fields = [
+        'coin_symbol',
+        'trade_reason',
+        'trade_reflection'
+    ]
 
-    # 읽기 전용 필드
-    readonly_fields = ['timestamp']
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+        'technical_indicators'
+    ]
 
-    # 시간 순 정렬
-    ordering = ['-timestamp']
+    ordering = ['-created_at']
+
+    fieldsets = (
+        ('기본 정보', {
+            'fields': (
+                'exchange',
+                'coin_symbol',
+                'trade_type',
+                'created_at',
+                'updated_at'
+            )
+        }),
+        ('거래 정보', {
+            'fields': (
+                'trade_ratio',
+                'trade_amount_krw',
+                'current_price',
+                'avg_buy_price'
+            )
+        }),
+        ('잔고 정보', {
+            'fields': (
+                'coin_balance',
+                'balance'
+            )
+        }),
+        ('분석 정보', {
+            'fields': (
+                'trade_reason',
+                'trade_reflection',
+                'technical_indicators'
+            ),
+            'classes': ('collapse',)
+        })
+    )
+
+    def trade_amount_display(self, obj):
+        """거래 금액 표시 (천 단위 구분)"""
+        return f"{obj.trade_amount_krw:,.2f}"
+    trade_amount_display.short_description = '거래 금액'
+
+    def current_price_display(self, obj):
+        """현재 가격 표시 (천 단위 구분)"""
+        return f"{obj.current_price:,.2f}"
+    current_price_display.short_description = '현재 가격'
+
+    def balance_display(self, obj):
+        """보유 자산 표시 (천 단위 구분)"""
+        return f"{obj.balance:,.2f}"
+    balance_display.short_description = '보유 자산'
 
 
 @admin.register(CoinScalpingAnalysis)

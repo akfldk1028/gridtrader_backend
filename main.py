@@ -340,17 +340,17 @@ def analyze_data_with_gpt4(news_data, data_json, last_decisions, fear_and_greed,
 #         print(f"Failed to execute buy order: {e}")
 #
 #
-# def execute_sell(percentage):
-#     print("Attempting to sell a percentage of BTC...")
-#     try:
-#         btc_balance = upbit.get_balance("BTC")
-#         amount_to_sell = btc_balance * (percentage / 100)
-#         current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
-#         if current_price * amount_to_sell > 5000:  # Ensure the order is above the minimum threshold
-#             result = upbit.sell_market_order("KRW-BTC", amount_to_sell)
-#             print("Sell order successful:", result)
-#     except Exception as e:
-#         print(f"Failed to execute sell order: {e}")
+def execute_sell(percentage):
+    print("Attempting to sell a percentage of BTC...")
+    try:
+        btc_balance = upbit.get_balance("BTC")
+        amount_to_sell = btc_balance * (percentage / 100)
+        current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
+        if current_price * amount_to_sell > 5000:  # Ensure the order is above the minimum threshold
+            result = upbit.sell_market_order("KRW-BTC", amount_to_sell)
+            print("Sell order successful:", result)
+    except Exception as e:
+        print(f"Failed to execute sell order: {e}")
 
 
 def make_decision_and_execute():
