@@ -1292,10 +1292,10 @@ class UpbitDataView(APIView):
         df['MACD'], df['Signal_Line'], df['MACD_Histogram'] = self.calculate_macd(df)
 
         # Moving Averages
-        df['MA7'] = df['Close'].rolling(window=7).mean()
-        df['MA10'] = df['Close'].rolling(window=10).mean()
-        df['MA25'] = df['Close'].rolling(window=25).mean()
-        df['MA99'] = df['Close'].rolling(window=99).mean()
+        df['MA7'] = df['close'].rolling(window=7).mean()
+        df['MA10'] = df['close'].rolling(window=10).mean()
+        df['MA25'] = df['close'].rolling(window=25).mean()
+        df['MA99'] = df['close'].rolling(window=99).mean()
 
         # Bollinger Bands
         middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
@@ -1316,16 +1316,14 @@ class UpbitDataView(APIView):
         histogram = macd - signal
         return macd, signal, histogram
 
-    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
-        pd.Series, pd.Series, pd.Series]:
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[pd.Series, pd.Series, pd.Series]:
         middle_band = df['close'].rolling(window=period).mean()
         std_dev = df['close'].rolling(window=period).std()
         upper_band = middle_band + (std_dev * num_std)
         lower_band = middle_band - (std_dev * num_std)
         return middle_band, upper_band, lower_band
 
-    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
-        pd.Series, pd.Series]:
+    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[pd.Series, pd.Series]:
         high = df['high'].rolling(k_period).max()
         low = df['low'].rolling(k_period).min()
         k = 100 * (df['close'] - low) / (high - low)
