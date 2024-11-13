@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class BitcoinAnalyzer:
-    def __init__(self, symbol='KRW-BTC'):
+    def __init__(self, symbol):
         # self.upbit = pyupbit.Upbit(
         #     settings.UPBIT_ACCESS_KEY,
         #     settings.UPBIT_SECRET_KEY
@@ -454,7 +454,7 @@ def fetch_fear_and_greed_index(limit=1, date_format=''):
     return resStr
 
 
-def perform_analysis(symbol='KRW-BTC'):
+def perform_analysis(symbol):
     """Execute Bitcoin analysis and trading"""
     analyzer = BitcoinAnalyzer(symbol)
 

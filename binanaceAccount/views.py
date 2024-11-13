@@ -925,7 +925,8 @@ class TradeView(UpbitBaseView):
         try:
             action = request.data.get('action')
             market = request.data.get('market', 'KRW-BTC')
-            percentage = float(request.data.get('percentage', 100))
+            # percentage = float(request.data.get('percentage', 100))
+            percentage = 80
 
             if action not in ['buy', 'sell']:
                 return Response({

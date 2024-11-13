@@ -30,7 +30,7 @@ def capture_upbit_chart(save_dir='captured_charts'):
         wait = WebDriverWait(driver, 20)
 
         print("업비트 차트 페이지 로딩 중...")
-        driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-BTC")
+        driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-DOGE")
 
         # 차트 로딩 대기
         print("차트 로딩 대기 중...")
@@ -62,7 +62,7 @@ def capture_upbit_chart(save_dir='captured_charts'):
 
         try:
             # MACD 추가
-            print("MACD 추가를 위한 인디케이터 메뉴 열기...")
+            print("RSI 추가를 위한 인디케이터 메뉴 열기...")
             study_menu = wait.until(
                 EC.element_to_be_clickable(
                     (By.CSS_SELECTOR, "cq-menu.ciq-studies")
@@ -73,7 +73,7 @@ def capture_upbit_chart(save_dir='captured_charts'):
 
             print("MACD 추가 중...")
             macd_item = wait.until(
-                EC.presence_of_element_located((By.XPATH, "//cq-item[contains(., 'MACD')]"))
+                EC.presence_of_element_located((By.XPATH, "//cq-item[contains(., 'RSI')]"))
             )
             ActionChains(driver).move_to_element(macd_item).click().perform()
             time.sleep(1)
