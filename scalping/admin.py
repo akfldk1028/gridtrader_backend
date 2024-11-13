@@ -75,11 +75,11 @@ class TradingRecordAdmin(admin.ModelAdmin):
     )
     def truncated_trade_reason(self, obj):
         """거래 이유를 일정 길이로 자르고 툴팁으로 전체 내용 표시"""
-        if len(obj.trade_reason) > 30:
+        if len(obj.trade_reason) > 500:
             return format_html(
                 '<span title="{}">{}</span>',
                 obj.trade_reason,
-                f"{obj.trade_reason[:30]}..."
+                f"{obj.trade_reason[:500]}..."
             )
         return obj.trade_reason
     truncated_trade_reason.short_description = '거래 이유'
