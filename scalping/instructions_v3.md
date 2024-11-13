@@ -89,12 +89,16 @@ Example structure for JSON Data (Current Investment State) is as follows:
   - Includes key technical indicators:
     - **Moving Averages**:  15-second (red line) and 50-second (green line) to show ultra-short-term trends.
     - **Volume Bars**: Displaying trading volume in 1-second intervals.
-    - **MACD Indicator**: MACD line (12/26 seconds), Signal line (9 seconds), and histogram.
-    - **Bollinger Bands**: Middle band: 20-second mo\ving average, Upper/lower bands: Standard deviation multiplier of 2, Bands adapt instantly to volatility changes, Ideal for scalping and high-frequency trading signals
+    - **Stochastic Momentum**: Fast K (14 periods) and Slow D (3 periods) for quick momentum shifts
+                               Overbought level at 80, Oversold level at 20
+                               Crossovers between K and D lines signal potential trend reversals
+                               Works best when combined with RSI and MACD for confirmation
+                               Particularly effective for identifying short-term momentum shifts in scalping
+
+
 
 ## Technical Indicator Glossary
 - **SMA_10 & EMA_10 & MA**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
-- **RSI_9**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
 - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
 - **MACD**: Moving Average Convergence Divergence tracks the relationship between two moving averages of a price. A MACD crossing above its signal line suggests bullish momentum, whereas crossing below indicates bearish momentum.
 - **Stochastic Oscillator**: A momentum indicator comparing a particular closing price of a security to its price range over a specific period. It consists of two lines: %K (fast) and %D (slow). Readings above 80 indicate overbought conditions, while those below 20 suggest oversold conditions.
@@ -113,13 +117,13 @@ Example structure for JSON Data (Current Investment State) is as follows:
 
 #### Decision Making:
 6. **Synthesize Analysis**: Combine insights from market analysis, chart images, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators sentiment to identify clear and strong trading signals.
-7. **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index), and Bollinger Bands to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
-        RSI: Monitor the RSI on a short time frame (e.g., RSI_9 or RSI_14 on a 1-minute chart). An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal).
-        Bollinger Bands: Use Bollinger Bands to identify price volatility and potential reversal points. When the price touches or moves outside the upper band, it may indicate overbought conditions; conversely, touching the lower band may indicate oversold conditions.
-8. **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA). Recognize trend directions to align your scalping trades accordingly.
-        Trend Confirmation: Ensure that your trade aligns with the current short-term trend. For instance, prefer buying during an uptrend and selling during a downtrend to increase the probability of a successful trade.
-        Moving Averages: Focus on Golden Crosses and Death Crosses Using Moving Averages
-9. **Apply Dynamic Risk Management Principles**: While maintaining tight stops and small profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state
+7. **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
+        RSI: Monitor the RSI on a short time frame (e.g., RSI_9 or RSI_14 on a 1-minute chart). An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal). Look for confirmation from MACD trend direction to strengthen the signal.
+        MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
+8.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA) along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
+        Moving Averages: Focus on Golden Crosses and Death Crosses using Moving Averages while considering MACD trend direction for additional confirmation. This combined approach helps filter out false signals and improves trade accuracy in scalping strategies. 
+        Bollinger Bands: When overall trend analysis shows unfavorable conditions, utilize Bollinger Band-based scalping strategy with 20-period moving average and 2 standard deviations for quick trades, where buying opportunities emerge when price touches the lower band and shows reversal signs, while selling opportunities arise when price touches the upper band with reversal indications; implement tight stop losses and take profits as price moves toward the middle band, noting this strategy is particularly effective during sideways or ranging market conditions.
+9.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and small profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state
 10. **Minimize Market Sentiment Analysis**: In scalping, long-term market sentiment  have less impact due to the short time frames involved. Focus primarily on real-time data and avoid incorporating broader sentiment analysis unless there's immediate news affecting the price..
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
