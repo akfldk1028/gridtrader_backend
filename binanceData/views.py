@@ -1287,8 +1287,6 @@ class UpbitDataView(APIView):
 
         df['SMA_10'] = ta.sma(df['close'], length=10)
         df['EMA_10'] = ta.ema(df['close'], length=10)
-        # RSI
-        df['RSI_9'] = ta.rsi(df['close'], length=9)
         df['RSI_14'] = ta.rsi(df['close'], length=14)
 
         # MACD
