@@ -51,6 +51,39 @@ class BitcoinAnalyzer:
 
         return None
 
+    def generate_trade_reflection(self, previous_decisions: str, current_price: Decimal) -> str:
+        """Generate reflection on previous trading decisions"""
+        try:
+            reflection_prompt = f"""
+            As a trading advisor, analyze the previous trading decisions and current market price to provide a reflection.
+
+            Previous Decisions:
+            {previous_decisions}
+
+            Current BTC Price: {current_price}
+
+            Please provide a brief reflection on:
+            1. Whether the previous trading decisions were effective
+            2. What could have been done differently
+            3. What lessons can be learned for future trades
+
+            Format your response as a concise paragraph focusing on the most recent trades.
+            """
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system",
+                     "content": "You are a cryptocurrency trading advisor providing reflections on past trades."},
+                    {"role": "user", "content": reflection_prompt}
+                ],
+                max_tokens=200  # 짧게 유지
+            )
+
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error generating reflection: {e}")
+            return "반성 생성 중 오류 발생"
     def get_current_status(self) -> Dict:
         """Get current trading account status"""
         try:
@@ -219,6 +252,8 @@ class BitcoinAnalyzer:
             return False
 
 
+
+
 def perform_analysis():
     """Execute Bitcoin analysis and trading"""
     analyzer = BitcoinAnalyzer()
@@ -240,10 +275,11 @@ def perform_analysis():
         decision = analyzer.analyze_with_gpt4(market_data, last_decisions, current_status)
 
         if decision:
-            # Save decision to database
+            # Save decision to database 결제를 해야함
             current_status_dict = json.loads(current_status)
             current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
-
+            # Generate reflection on previous trades
+            reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
             trading_record = TradingRecord.objects.create(
                 exchange='UPBIT',
                 coin_symbol='BTC',
@@ -252,7 +288,8 @@ def perform_analysis():
                 trade_reason=decision['reason'],
                 coin_balance=Decimal(current_status_dict['btc_balance']),
                 balance=Decimal(current_status_dict['krw_balance']),
-                current_price=Decimal(str(current_price))
+                current_price=Decimal(str(current_price)),
+                trade_reflection=reflection
             )
 
             # Execute trade if not hold
