@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 class BitcoinAnalyzer:
     def __init__(self):
-        self.upbit = pyupbit.Upbit(
-            settings.UPBIT_ACCESS_KEY,
-            settings.UPBIT_SECRET_KEY
-        )
+        # self.upbit = pyupbit.Upbit(
+        #     settings.UPBIT_ACCESS_KEY,
+        #     settings.UPBIT_SECRET_KEY
+        # )
+        self.upbit = None
         self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     def get_bitcoin_data(self, symbol='BTCUSDT', max_retries=3) -> Optional[Dict]:
@@ -55,8 +56,19 @@ class BitcoinAnalyzer:
         try:
             orderbook = pyupbit.get_orderbook(ticker="KRW-BTC")
             current_time = orderbook['timestamp']
-            balances = self.upbit.get_balances()
 
+            # 실제 Upbit 연동이 없을 경우의 기본값
+            if self.upbit is None:
+                return json.dumps({
+                    'current_time': current_time,
+                    'orderbook': orderbook,
+                    'btc_balance': "0.0",
+                    'krw_balance': "1000000.0",  # 100만원 기본값
+                    'btc_avg_buy_price': "0.0"
+                })
+
+            # Upbit 연동이 있는 경우 실제 데이터 조회
+            balances = self.upbit.get_balances()
             btc_balance = Decimal('0')
             krw_balance = Decimal('0')
             btc_avg_buy_price = Decimal('0')
@@ -78,6 +90,36 @@ class BitcoinAnalyzer:
         except Exception as e:
             logger.error(f"Error getting current status: {e}")
             return None
+
+
+    # def get_current_status(self) -> Dict:
+    #     """Get current trading account status"""
+    #     try:
+    #         orderbook = pyupbit.get_orderbook(ticker="KRW-BTC")
+    #         current_time = orderbook['timestamp']
+    #         balances = self.upbit.get_balances()
+    #
+    #         btc_balance = Decimal('0')
+    #         krw_balance = Decimal('0')
+    #         btc_avg_buy_price = Decimal('0')
+    #
+    #         for b in balances:
+    #             if b['currency'] == "BTC":
+    #                 btc_balance = Decimal(b['balance'])
+    #                 btc_avg_buy_price = Decimal(b['avg_buy_price'])
+    #             if b['currency'] == "KRW":
+    #                 krw_balance = Decimal(b['balance'])
+    #
+    #         return json.dumps({
+    #             'current_time': current_time,
+    #             'orderbook': orderbook,
+    #             'btc_balance': str(btc_balance),
+    #             'krw_balance': str(krw_balance),
+    #             'btc_avg_buy_price': str(btc_avg_buy_price)
+    #         })
+    #     except Exception as e:
+    #         logger.error(f"Error getting current status: {e}")
+    #         return None
 
     def get_last_decisions(self, num_decisions: int = 10) -> str:
         """Fetch recent trading decisions from database"""
@@ -186,11 +228,11 @@ def perform_analysis():
             )
 
             # Execute trade if not hold
-            if decision['decision'] != 'hold':
-                if analyzer.execute_trade(decision):
-                    logger.info(f"Successfully executed {decision['decision']} trade")
-                else:
-                    logger.warning(f"Failed to execute {decision['decision']} trade")
+            # if decision['decision'] != 'hold':
+            #     if analyzer.execute_trade(decision):
+            #         logger.info(f"Successfully executed {decision['decision']} trade")
+            #     else:
+            #         logger.warning(f"Failed to execute {decision['decision']} trade")
 
             return trading_record.id
 
