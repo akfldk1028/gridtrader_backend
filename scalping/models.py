@@ -41,8 +41,10 @@ class TradingRecord(CommonModel):
         ]
 
 
+
     def __str__(self):
-        return f"{self.timestamp}: {self.exchange} {self.coin_symbol} {self.trade_type}"
+        """timestamp를 created_at으로 수정"""
+        return f"{self.created_at}: {self.exchange} {self.coin_symbol} {self.trade_type}"
 # class TradingRecord(CommonModel):
 #     TRADE_TYPES = [
 #         ('BUY', 'Buy'),

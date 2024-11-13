@@ -2,10 +2,11 @@
 from django.contrib import admin
 from .models import TradingRecord,CoinScalpingAnalysis
 
+
 @admin.register(TradingRecord)
 class TradingRecordAdmin(admin.ModelAdmin):
     list_display = [
-        'created_at',
+        'formatted_created_at',  # created_at을 포맷팅해서 보여줌
         'exchange',
         'coin_symbol',
         'trade_type',
@@ -85,7 +86,6 @@ class TradingRecordAdmin(admin.ModelAdmin):
         """보유 자산 표시 (천 단위 구분)"""
         return f"{obj.balance:,.2f}"
     balance_display.short_description = '보유 자산'
-
 
 @admin.register(CoinScalpingAnalysis)
 class CoinScalpingAnalysisAdmin(admin.ModelAdmin):
