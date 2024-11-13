@@ -1114,17 +1114,16 @@ class BinanceScalpingDataView(APIView):
         - Tuple of (Middle Band, Upper Band, Lower Band)
         """
         # Calculate middle band (20-day SMA)
-        middle_band = df['close'].rolling(window=period).mean()
+        middle_band = df['Close'].rolling(window=period).mean()  # 'close' -> 'Close'
 
         # Calculate standard deviation
-        std_dev = df['close'].rolling(window=period).std()
+        std_dev = df['Close'].rolling(window=period).std()  # 'close' -> 'Close'
 
         # Calculate upper and lower bands
         upper_band = middle_band + (std_dev * num_std)
         lower_band = middle_band - (std_dev * num_std)
 
         return middle_band, upper_band, lower_band
-
     def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
         pd.Series, pd.Series]:
         """Calculate Stochastic Oscillator"""
