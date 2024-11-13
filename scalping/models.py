@@ -2,6 +2,8 @@
 from django.db import models
 from decimal import Decimal
 from common.models import CommonModel
+from django.utils import timezone
+
 class TradingRecord(CommonModel):
     TRADE_TYPES = [
         ('BUY', 'Buy'),
@@ -45,9 +47,12 @@ class TradingRecord(CommonModel):
     def __str__(self):
         """timestamp를 created_at으로 수정"""
         return f"{self.created_at}: {self.exchange} {self.coin_symbol} {self.trade_type}"
-    def formatted_created_at(self):
-        """생성 시간을 보기 좋게 포맷팅"""
-        return self.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    def formatted_created_at(self, obj):
+        """created_at을 한국 시간으로 포맷팅하여 표시"""
+        korea_timezone = timezone.localtime(obj.created_at, timezone=timezone.get_default_timezone())
+        return korea_timezone.strftime('%Y-%m-%d %H:%M:%S')
+
+
 # class TradingRecord(CommonModel):
 #     TRADE_TYPES = [
 #         ('BUY', 'Buy'),
