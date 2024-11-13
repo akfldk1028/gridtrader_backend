@@ -27,6 +27,7 @@ import json
 from pandas import Timestamp
 from datetime import datetime, timezone
 import pandas_ta as ta
+import pyupbit
 
 
 class KRXStockDataAPIView(APIView):
@@ -1277,179 +1278,81 @@ class BinanceScalpingDataView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+
 class UpbitDataView(APIView):
+    def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate various indicators and add them as columns to the DataFrame."""
+        df['SMA_10'] = ta.sma(df['close'], length=10)
+        df['EMA_10'] = ta.ema(df['close'], length=10)
+        # RSI
+        df['RSI_14'] = ta.rsi(df['close'], length=14)
 
+        # MACD
+        df['MACD'], df['Signal_Line'], df['MACD_Histogram'] = self.calculate_macd(df)
 
-    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
-        pd.Series, pd.Series, pd.Series]:
-        """
-        Calculate Bollinger Bands
+        # Moving Averages
+        df['MA7'] = df['Close'].rolling(window=7).mean()
+        df['MA10'] = df['Close'].rolling(window=10).mean()
+        df['MA25'] = df['Close'].rolling(window=25).mean()
+        df['MA99'] = df['Close'].rolling(window=99).mean()
 
-        Parameters:
-        - df: DataFrame with price data
-        - period: Moving average period (default: 20)
-        - num_std: Number of standard deviations (default: 2)
+        # Bollinger Bands
+        middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
+        df['Middle_Band'], df['Upper_Band'], df['Lower_Band'] = middle_band, upper_band, lower_band
 
-        Returns:
-        - Tuple of (Middle Band, Upper Band, Lower Band)
-        """
-        # Calculate middle band (20-day SMA)
-        middle_band = df['Close'].rolling(window=period).mean()  # 'close' -> 'Close'
+        # Stochastic Oscillator
+        stoch_k, stoch_d = self.calculate_stochastic(df)
+        df['Stoch_K'], df['Stoch_D'] = stoch_k, stoch_d
 
-        # Calculate standard deviation
-        std_dev = df['Close'].rolling(window=period).std()  # 'close' -> 'Close'
-
-        # Calculate upper and lower bands
-        upper_band = middle_band + (std_dev * num_std)
-        lower_band = middle_band - (std_dev * num_std)
-
-        return middle_band, upper_band, lower_band
-    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
-        pd.Series, pd.Series]:
-        """Calculate Stochastic Oscillator"""
-        high = df['High'].rolling(k_period).max()
-        low = df['Low'].rolling(k_period).min()
-        k = 100 * (df['Close'] - low) / (high - low)
-        d = k.rolling(d_period).mean()
-        return k, d
-
-    def calculate_rsi(self, df: pd.DataFrame, length: int = 14) -> pd.Series:
-        """
-        Calculate RSI using pandas_ta
-
-        Parameters:
-        - df: DataFrame with price data
-        - length: RSI period (default: 14)
-
-        Returns:
-        - Series: RSI values
-        """
-        try:
-            rsi = ta.rsi(df['Close'], length=length)
-            return rsi
-        except Exception as e:
-            print(f"Error calculating RSI: {e}")
-            return pd.Series([np.nan] * len(df))  # 에러 시 NaN 값 반환
+        return df
 
     def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
     Tuple[pd.Series, pd.Series, pd.Series]:
-        """
-        Calculate MACD (Moving Average Convergence Divergence)
-
-        Parameters:
-        - df: DataFrame with 'Close' prices
-        - fast_period: Short-term EMA period (default: 12)
-        - slow_period: Long-term EMA period (default: 26)
-        - signal_period: Signal line EMA period (default: 9)
-
-        Returns:
-        - Tuple of (MACD line, Signal line, Histogram)
-        """
-        # Calculate the EMAs
-        fast_ema = df['Close'].ewm(span=fast_period, adjust=False).mean()
-        slow_ema = df['Close'].ewm(span=slow_period, adjust=False).mean()
-
-        # Calculate MACD line
+        fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
+        slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
         macd = fast_ema - slow_ema
-
-        # Calculate Signal line
-        signal = macd.ewm(span=signal_period, adjust=True).mean()
-
-        # Calculate Histogram
+        signal = macd.ewm(span=signal_period, adjust=False).mean()
         histogram = macd - signal
-
         return macd, signal, histogram
-    def calculate_moving_averages(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
-        """Calculate moving averages"""
-        ma7 = df['Close'].rolling(window=7).mean()
-        ma25 = df['Close'].rolling(window=25).mean()
-        ma99 = df['Close'].rolling(window=99).mean()
-        ma200 = df['Close'].rolling(window=200).mean()
 
-        return ma7, ma25, ma99, ma200
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
+        pd.Series, pd.Series, pd.Series]:
+        middle_band = df['close'].rolling(window=period).mean()
+        std_dev = df['close'].rolling(window=period).std()
+        upper_band = middle_band + (std_dev * num_std)
+        lower_band = middle_band - (std_dev * num_std)
+        return middle_band, upper_band, lower_band
 
-    @method_decorator(cache_page(150))  # Cache for 1 minute for scalping
-    def get(self, request, symbol: str, interval: str = '1m') -> Response:
-        """Get candlestick data with technical indicators for scalping"""
-        binance_api_url = "https://api.binance.com/api/v3/klines"
-        limit = 1000  # 충분한 데이터 포인트
+    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
+        pd.Series, pd.Series]:
+        high = df['high'].rolling(k_period).max()
+        low = df['low'].rolling(k_period).min()
+        k = 100 * (df['close'] - low) / (high - low)
+        d = k.rolling(d_period).mean()
+        return k, d
+
+    @method_decorator(cache_page(60))
+    def get(self, request, symbol: str = 'KRW-BTC', interval: str = 'minute1') -> Response:
+        """Get candlestick data with technical indicators for scalping from Upbit."""
+        limit = 1000
 
         try:
-            params = {
-                'symbol': symbol,
-                'interval': interval,
-                'limit': limit
-            }
-            response = requests.get(binance_api_url, params=params)
-            response.raise_for_status()
-            candles = response.json()
+            # Upbit에서 1분 데이터 가져오기
+            df = pyupbit.get_ohlcv(symbol, interval=interval, count=limit)
 
-            # DataFrame 생성
-            df = pd.DataFrame(candles, columns=[
-                "Open Time", "Open", "High", "Low", "Close", "Volume",
-                "Close Time", "Quote Asset Volume", "Number of Trades",
-                "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
-            ])
+            # 기술적 지표를 DataFrame에 추가
+            df = self.calculate_indicators(df)
 
-            # 데이터 타입 변환
-            df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms")
-            df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms")
-            for col in ["Open", "High", "Low", "Close", "Volume"]:
-                df[col] = pd.to_numeric(df[col])
+            # 마지막 30개의 데이터만 선택
+            recent_data = df.iloc[-30:]
 
-            # 기술적 지표 계산
-            rsi = self.calculate_rsi(df)
-            macd, signal, histogram = self.calculate_macd(df)
-            ma7, ma25, ma99, ma200 = self.calculate_moving_averages(df)
-            middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
-            stoch_k, stoch_d = self.calculate_stochastic(df)  # 스토캐스틱 계산 추가
-            # 최근 30개 캔들만 사용
-            recent_data = []
-            for i in range(-30, 0):
-                candle_data = {
-                    'timestamp': df["Open Time"].iloc[i].isoformat(),
-                    'open': float(df["Open"].iloc[i]),
-                    'high': float(df["High"].iloc[i]),
-                    'low': float(df["Low"].iloc[i]),
-                    'close': float(df["Close"].iloc[i]),
-                    'volume': float(df["Volume"].iloc[i]),
-                    'indicators': {
-                        'rsi': float(rsi.iloc[i]) if not pd.isna(rsi.iloc[i]) else None,
-                        'macd': {
-                            'macd': float(macd.iloc[i]) if not pd.isna(macd.iloc[i]) else None,
-                            'signal': float(signal.iloc[i]) if not pd.isna(signal.iloc[i]) else None,
-                            'histogram': float(histogram.iloc[i]) if not pd.isna(histogram.iloc[i]) else None
-                        },
-                        'moving_averages': {
-                            'ma7': float(ma7.iloc[i]) if not pd.isna(ma7.iloc[i]) else None,
-                            'ma25': float(ma25.iloc[i]) if not pd.isna(ma25.iloc[i]) else None,
-                            'ma99': float(ma99.iloc[i]) if not pd.isna(ma99.iloc[i]) else None
-                        },
-                        'stochastic': {  # 스토캐스틱 추가
-                            'k': float(stoch_k.iloc[i]) if not pd.isna(stoch_k.iloc[i]) else None,
-                            'd': float(stoch_d.iloc[i]) if not pd.isna(stoch_d.iloc[i]) else None
-                        },
-                        'bollinger_bands': {  # 볼린저 밴드 추가
-                            'middle': float(middle_band.iloc[i]) if not pd.isna(middle_band.iloc[i]) else None,
-                            'upper': float(upper_band.iloc[i]) if not pd.isna(upper_band.iloc[i]) else None,
-                            'lower': float(lower_band.iloc[i]) if not pd.isna(lower_band.iloc[i]) else None
-                        }
-                    }
-                }
-                recent_data.append(candle_data)
+            # JSON 형식으로 변환하여 반환
+            data_json = recent_data.to_json(orient='split')
+            print(data_json)
+            print("---------------------------------------------")
+            return Response(json.loads(data_json))
 
-            return Response({
-                'symbol': symbol,
-                'interval': interval,
-                'last_update': pd.Timestamp.now().isoformat(),
-                'data': recent_data
-            })
-
-        except requests.RequestException as e:
-            return Response(
-                {'error': f'Failed to fetch data from Binance: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
         except Exception as e:
             return Response(
                 {'error': f'An unexpected error occurred: {str(e)}'},

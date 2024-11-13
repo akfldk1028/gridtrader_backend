@@ -104,15 +104,14 @@ class BitcoinAnalyzer:
             if driver:
                 driver.quit()
 
-    def get_bitcoin_data(self, symbol='BTCUSDT', max_retries=3) -> Optional[Dict]:
+    def get_bitcoin_data(self, symbol='KRW-BTC', max_retries=3) -> Optional[Dict]:
         """Fetch Bitcoin data with technical indicators from API"""
-        base_url = "https://gridtrade.one/api/v1/binanceData/scalping"
+        base_url = "https://gridtrade.one/api/v1/binanceData/upbit"
         session = requests.Session()
-
         for attempt in range(max_retries):
             try:
                 response = session.get(
-                    f"{base_url}/{symbol}/1m/",
+                    f"{base_url}/{symbol}/minute1/",
                     timeout=30,
                     verify=False,
                     headers={'User-Agent': 'Mozilla/5.0'}
@@ -384,7 +383,7 @@ def perform_analysis():
 
     try:
         # Gather all required data
-        market_data = analyzer.get_bitcoin_data()
+        market_data = analyzer.get_bitcoin_data(symbol='KRW-BTC',  max_retries=3)
         if not market_data:
             print("Failed to fetch market data")
             return None
