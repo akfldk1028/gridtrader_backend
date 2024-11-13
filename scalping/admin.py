@@ -1,6 +1,7 @@
 # scalping/admin.py
 from django.contrib import admin
 from .models import TradingRecord,CoinScalpingAnalysis
+from django.utils.html import format_html
 
 
 @admin.register(TradingRecord)
@@ -11,6 +12,7 @@ class TradingRecordAdmin(admin.ModelAdmin):
         'coin_symbol',
         'trade_type',
         'trade_ratio',
+        'truncated_trade_reason',  # trade_reason 추가
         'trade_amount_display',
         'current_price_display',
         'coin_balance',
@@ -71,6 +73,16 @@ class TradingRecordAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
+    def truncated_trade_reason(self, obj):
+        """거래 이유를 일정 길이로 자르고 툴팁으로 전체 내용 표시"""
+        if len(obj.trade_reason) > 30:
+            return format_html(
+                '<span title="{}">{}</span>',
+                obj.trade_reason,
+                f"{obj.trade_reason[:30]}..."
+            )
+        return obj.trade_reason
+    truncated_trade_reason.short_description = '거래 이유'
 
     def trade_amount_display(self, obj):
         """거래 금액 표시 (천 단위 구분)"""

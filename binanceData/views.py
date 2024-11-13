@@ -1294,7 +1294,6 @@ class UpbitDataView(APIView):
 
         # Moving Averages with min_periods=1
         df['MA7'] = df['close'].rolling(window=7, min_periods=1).mean()
-        df['MA10'] = df['close'].rolling(window=10, min_periods=1).mean()
         df['MA25'] = df['close'].rolling(window=25, min_periods=1).mean()
         df['MA99'] = df['close'].rolling(window=99, min_periods=1).mean()
 

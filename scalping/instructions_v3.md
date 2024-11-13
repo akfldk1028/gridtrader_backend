@@ -98,7 +98,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 
 
 ## Technical Indicator Glossary
-- **SMA_10 & EMA_10 & MA**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
+- **SMA_10 & EMA_10 & MA25**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
 - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
 - **MACD**: Moving Average Convergence Divergence tracks the relationship between two moving averages of a price. A MACD crossing above its signal line suggests bullish momentum, whereas crossing below indicates bearish momentum.
 - **Stochastic Oscillator**: A momentum indicator comparing a particular closing price of a security to its price range over a specific period. It consists of two lines: %K (fast) and %D (slow). Readings above 80 indicate overbought conditions, while those below 20 suggest oversold conditions.
