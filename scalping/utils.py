@@ -1,8 +1,4 @@
-# tasks.py
 import logging
-from django_q.tasks import async_task, schedule
-from django_q.models import Schedule
-from datetime import datetime, timedelta
 import json
 from decimal import Decimal
 import requests
@@ -11,6 +7,15 @@ from django.conf import settings
 from openai import OpenAI
 from typing import Dict, Optional
 import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import base64
+from datetime import datetime
+import os
 from .models import TradingRecord
 
 logger = logging.getLogger(__name__)
@@ -24,6 +29,80 @@ class BitcoinAnalyzer:
         # )
         self.upbit = None
         self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+    def capture_chart(self) -> Optional[str]:
+        """캡처 차트 이미지를 base64로 인코딩하여 반환"""
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--window-size=1920x1080')
+
+        driver = None
+        try:
+            driver = webdriver.Chrome(options=chrome_options)
+            wait = WebDriverWait(driver, 20)
+
+            # 업비트 차트 페이지 로드
+            driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-BTC")
+
+            # 차트 로딩 대기
+            chart_element = wait.until(
+                EC.presence_of_element_located((By.ID, "fullChartiq"))
+            )
+            time.sleep(3)
+
+            # 1초 단위 차트로 변경
+            time_menu = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "cq-menu.ciq-period"))
+            )
+            time_menu.click()
+            time.sleep(1)
+
+            one_second_option = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "cq-item[stxtap*='second']"))
+            )
+            one_second_option.click()
+            time.sleep(2)
+
+            # MACD 추가
+            study_menu = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "cq-menu.ciq-studies"))
+            )
+            study_menu.click()
+            time.sleep(1)
+
+            macd_item = wait.until(
+                EC.presence_of_element_located((By.XPATH, "//cq-item[contains(., 'MACD')]"))
+            )
+            ActionChains(driver).move_to_element(macd_item).click().perform()
+            time.sleep(1)
+
+            # 볼린저 밴드 추가
+            study_menu.click()
+            time.sleep(1)
+
+            bb_item = wait.until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "//cq-item[.//translate[@original='Bollinger Bands']]")
+                )
+            )
+            ActionChains(driver).move_to_element(bb_item).click().perform()
+            time.sleep(2)
+
+            # 스크린샷 캡처 및 base64 인코딩
+            screenshot = driver.get_screenshot_as_png()
+            base64_image = base64.b64encode(screenshot).decode('utf-8')
+
+            return base64_image
+
+        except Exception as e:
+            logger.error(f"Chart capture error: {e}")
+            return None
+        finally:
+            if driver:
+                driver.quit()
 
     def get_bitcoin_data(self, symbol='BTCUSDT', max_retries=3) -> Optional[Dict]:
         """Fetch Bitcoin data with technical indicators from API"""
@@ -177,7 +256,7 @@ class BitcoinAnalyzer:
             logger.error(f"Error getting last decisions: {e}")
             return ""
 
-    def analyze_with_gpt4(self, market_data: Dict, last_decisions: str, current_status: str) -> Optional[Dict]:
+    def analyze_with_gpt4(self, market_data: Dict, last_decisions: str, fear_and_greed, current_status: str) -> Optional[Dict]:
         """Analyze market data using GPT-4"""
         try:
             # 현재 파일의 디렉토리 경로를 가져옴
@@ -189,16 +268,41 @@ class BitcoinAnalyzer:
             with open(instructions_path, 'r', encoding='utf-8') as file:
                 instructions = file.read()
 
+            # 차트 이미지 캡처
+            chart_image = self.capture_chart()
+
+            if not chart_image:
+                logger.warning("Failed to capture chart image")
+
+            messages = [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": json.dumps(market_data)},
+                {"role": "user", "content": last_decisions},
+                {"role": "user", "content": fear_and_greed},
+                {"role": "user", "content": current_status}
+            ]
+
+            # 이미지가 성공적으로 캡처된 경우에만 추가
+            if chart_image:
+                messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{chart_image}"
+                            }
+                        }
+                    ]
+                })
+
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": instructions},
-                    {"role": "user", "content": json.dumps(market_data)},
-                    {"role": "user", "content": last_decisions},
-                    {"role": "user", "content": current_status}
-                ],
-                response_format={"type": "json_object"}
+                model="gpt-4o-mini",  # 이미지를 처리할 수 있는 모델로 변경
+                messages=messages,
+                response_format={"type": "json_object"},
+                max_tokens=1000
             )
+
 
             result = json.loads(response.choices[0].message.content)
             print(str(result))
@@ -252,7 +356,27 @@ class BitcoinAnalyzer:
             return False
 
 
-
+def fetch_fear_and_greed_index(limit=1, date_format=''):
+    """
+    Fetches the latest Fear and Greed Index data.
+    Parameters:
+    - limit (int): Number of results to return. Default is 1.
+    - date_format (str): Date format ('us', 'cn', 'kr', 'world'). Default is '' (unixtime).
+    Returns:
+    - dict or str: The Fear and Greed Index data in the specified format.
+    """
+    base_url = "https://api.alternative.me/fng/"
+    params = {
+        'limit': limit,
+        'format': 'json',
+        'date_format': date_format
+    }
+    response = requests.get(base_url, params=params)
+    myData = response.json()['data']
+    resStr = ""
+    for data in myData:
+        resStr += str(data)
+    return resStr
 
 def perform_analysis():
     """Execute Bitcoin analysis and trading"""
@@ -266,20 +390,22 @@ def perform_analysis():
             return None
 
         last_decisions = analyzer.get_last_decisions()
+        fear_and_greed = fetch_fear_and_greed_index(limit=30)
         current_status = analyzer.get_current_status()
+        current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
+        # Generate reflection on previous trades
+        reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
         if not current_status:
             logger.error("Failed to get current status")
             return None
 
         # Analyze with GPT-4
-        decision = analyzer.analyze_with_gpt4(market_data, last_decisions, current_status)
+        decision = analyzer.analyze_with_gpt4(market_data, last_decisions, fear_and_greed, current_status)
 
         if decision:
             # Save decision to database 결제를 해야함
             current_status_dict = json.loads(current_status)
-            current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
-            # Generate reflection on previous trades
-            reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+
             trading_record = TradingRecord.objects.create(
                 exchange='UPBIT',
                 coin_symbol='BTC',
@@ -291,13 +417,6 @@ def perform_analysis():
                 current_price=Decimal(str(current_price)),
                 trade_reflection=reflection
             )
-
-            # Execute trade if not hold
-            # if decision['decision'] != 'hold':
-            #     if analyzer.execute_trade(decision):
-            #         logger.info(f"Successfully executed {decision['decision']} trade")
-            #     else:
-            #         logger.warning(f"Failed to execute {decision['decision']} trade")
 
             return trading_record.id
 
