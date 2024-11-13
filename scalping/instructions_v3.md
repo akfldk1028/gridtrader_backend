@@ -137,8 +137,8 @@ Example structure for JSON Data (Current Investment State) is as follows:
 - Your response must be JSON format.
 
 ## Examples
-### Example Instruction for Making a Decision (JSON format)
-#### Example: Recommendation to Buy
+- **IMPORTANT**: Please provide a diverse and comprehensive market analysis using multiple technical indicators (RSI, MACD, Bollinger Bands, Moving Averages, Stochastic RSI, OBV, Ichimoku Cloud, etc.) and generate varied responses that consider different timeframes, market conditions, and indicator combinations. Each analysis should emphasize different aspects and avoid repetitive patterns in reasoning and decision-making process.
+### Example: Recommendation to Buy
 ```json
 {
     "decision": "buy",
@@ -161,7 +161,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
     "reason": "The current chart image shows a clear upward trend with the price consistently making higher highs and higher lows. The 15-hour moving average has recently crossed above the 50-hour moving average at 96,800,000 KRW, signaling strong bullish momentum. The MACD indicator shows a positive crossover, and the RSI_14 is at 65, indicating strong buying interest without being overbought. Additionally, recent crypto news highlights significant institutional buying, further supporting a bullish outlook. Therefore, a buy decision is recommended, allocating 45% of the portfolio to capitalize on the expected continued upward movement."
 }
 ```
-#### Example: Recommendation to Sell
+### Example: Recommendation to Sell
 ```json
 {
     "decision": "sell",
@@ -183,7 +183,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
     "reason": "The current chart image shows a bearish reversal pattern with the price forming lower highs and lower lows. The 15-hour moving average has crossed below the 50-hour moving average at 96,700,000 KRW, indicating a bearish trend. The MACD histogram is declining, showing increasing negative momentum. The RSI_14 is at 75, indicating overbought conditions. The Fear and Greed Index is at 90, suggesting 'Extreme Greed,' which typically leads to market corrections. Additionally, recent news about potential taxation on crypto transactions has created negative sentiment. Based on these factors, a sell decision is recommended, allocating 60% of the portfolio to minimize potential losses."
 }
 ```
-#### Example: Recommendation to Hold
+### Example: Recommendation to Hold
 ```json
 {
     "decision": "hold",

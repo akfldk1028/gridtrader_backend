@@ -230,35 +230,7 @@ class BitcoinAnalyzer:
         except Exception as e:
             logger.error(f"Error generating reflection: {e}")
             return "반성 생성 중 오류 발생"
-    # def get_current_status(self) -> Dict:
-    #     """Get current trading account status"""
-    #     try:
-    #         orderbook = pyupbit.get_orderbook(ticker=self.symbol)
-    #         current_time = orderbook['timestamp']
-    #
-    #         # Upbit 연동이 있는 경우 실제 데이터 조회
-    #         balances = self.upbit.get_balances()
-    #         btc_balance = Decimal('0')
-    #         krw_balance = Decimal('0')
-    #         btc_avg_buy_price = Decimal('0')
-    #
-    #         for b in balances:
-    #             if b['currency'] == "BTC":
-    #                 btc_balance = Decimal(b['balance'])
-    #                 btc_avg_buy_price = Decimal(b['avg_buy_price'])
-    #             if b['currency'] == "KRW":
-    #                 krw_balance = Decimal(b['balance'])
-    #
-    #         return json.dumps({
-    #             'current_time': current_time,
-    #             'orderbook': orderbook,
-    #             'btc_balance': str(btc_balance),
-    #             'krw_balance': str(krw_balance),
-    #             'btc_avg_buy_price': str(btc_avg_buy_price)
-    #         })
-    #     except Exception as e:
-    #         logger.error(f"Error getting current status: {e}")
-    #         return None
+
 
     def execute_trade(self, decision: Dict) -> bool:
         """Execute trade based on analysis using API"""
@@ -306,7 +278,7 @@ class BitcoinAnalyzer:
     #         logger.error(f"Error getting current status: {e}")
     #         return None
 
-    def get_last_decisions(self, num_decisions: int = 10, current_price = 100000000) -> str:
+    def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
         try:
             decisions = TradingRecord.objects.order_by('-created_at')[:num_decisions]
