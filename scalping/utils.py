@@ -109,7 +109,6 @@ def perform_analysis():
     current_indicators = bitcoin_data['current_indicators']
     current_price = get_current_bitcoin_price("BTCUSDT")
 
-
     # 기술적 지표 추출
     current_rsi = current_indicators['rsi']
     current_macd = current_indicators['macd']['macd']
@@ -137,7 +136,6 @@ def perform_analysis():
     elif current_rsi < 40:
         rsi_state = "approaching_oversold"
 
-
     analysis_task = Task(
         description=f"""Analyze current market conditions with these technical indicators:
 
@@ -147,7 +145,6 @@ def perform_analysis():
         - MACD Cross: {"Bullish" if macd_bullish_cross else "Bearish" if macd_bearish_cross else "None"}
         - Fear & Greed Index: {fear_greed_index:.1f}
         - Price Change 24h: {price_change:.2f}%
-
 
         TRADING RULES:
         SELL Signal (50% Position) when:
@@ -162,7 +159,6 @@ def perform_analysis():
 
         Provide analysis in following format:
 
-
         For SELL:
         "The market is showing signs of potential overbought conditions with RSI at {current_rsi}. 
         MACD indicates [bearish momentum/divergence]. The Fear & Greed Index at {fear_greed_index:.0f} 
@@ -173,6 +169,27 @@ def perform_analysis():
         MACD indicates [bullish momentum/convergence]. The Fear & Greed Index at {fear_greed_index:.0f} 
         suggests extreme fear. Initiating a 50% buy position."
         """,
+        expected_output={
+            "analysis": {
+                "type": "string",
+                "description": "Detailed market analysis"
+            },
+            "recommendation": {
+                "type": "string",
+                "enum": ["BUY", "SELL", "HOLD"],
+                "description": "Trading recommendation"
+            },
+            "indicators": {
+                "type": "object",
+                "properties": {
+                    "rsi": {"type": "number"},
+                    "rsi_state": {"type": "string"},
+                    "macd": {"type": "number"},
+                    "macd_signal": {"type": "number"},
+                    "fear_greed": {"type": "number"}
+                }
+            }
+        },
         agent=market_analyst
     )
 
@@ -183,7 +200,6 @@ def perform_analysis():
         process=Process.sequential
     )
 
-
     result = crew.kickoff()
     result_str = str(result)
 
@@ -192,8 +208,6 @@ def perform_analysis():
         action = 'HOLD'
 
         # RSI와 MACD 조합으로 매매 결정
-        # AI의 분석 결과에 따라 매매 결정
-        # 단순화된 결과 파싱
         result_lower = result_str.lower()
         if ("buy position" in result_lower and
             (current_rsi <= 30 or rsi_state == "approaching_oversold") and
@@ -203,12 +217,6 @@ def perform_analysis():
               (current_rsi >= 70 or rsi_state == "approaching_overbought") and
               macd_bearish_cross):
             action = "SELL"
-
-
-        # if is_buy_signal:
-        #     action = "BUY"
-        # elif is_sell_signal:
-        #     action = "SELL"
 
         record = TradingRecord.objects.create(
             timestamp=datetime.now(),
