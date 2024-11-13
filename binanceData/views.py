@@ -1035,7 +1035,6 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
             print(f"An error occurred: {e}")
             return None
 
-
 class BinanceScalpingDataView(APIView):
 
     def fetch_fear_and_greed_index(self, limit=30, date_format='') -> float:
@@ -1255,12 +1254,185 @@ class BinanceScalpingDataView(APIView):
                             'middle': float(middle_band.iloc[i]) if not pd.isna(middle_band.iloc[i]) else None,
                             'upper': float(upper_band.iloc[i]) if not pd.isna(upper_band.iloc[i]) else None,
                             'lower': float(lower_band.iloc[i]) if not pd.isna(lower_band.iloc[i]) else None
+                        }
+                    }
+                }
+                recent_data.append(candle_data)
+
+            return Response({
+                'symbol': symbol,
+                'interval': interval,
+                'last_update': pd.Timestamp.now().isoformat(),
+                'data': recent_data
+            })
+
+        except requests.RequestException as e:
+            return Response(
+                {'error': f'Failed to fetch data from Binance: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class UpbitDataView(APIView):
+
+
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
+        pd.Series, pd.Series, pd.Series]:
+        """
+        Calculate Bollinger Bands
+
+        Parameters:
+        - df: DataFrame with price data
+        - period: Moving average period (default: 20)
+        - num_std: Number of standard deviations (default: 2)
+
+        Returns:
+        - Tuple of (Middle Band, Upper Band, Lower Band)
+        """
+        # Calculate middle band (20-day SMA)
+        middle_band = df['Close'].rolling(window=period).mean()  # 'close' -> 'Close'
+
+        # Calculate standard deviation
+        std_dev = df['Close'].rolling(window=period).std()  # 'close' -> 'Close'
+
+        # Calculate upper and lower bands
+        upper_band = middle_band + (std_dev * num_std)
+        lower_band = middle_band - (std_dev * num_std)
+
+        return middle_band, upper_band, lower_band
+    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
+        pd.Series, pd.Series]:
+        """Calculate Stochastic Oscillator"""
+        high = df['High'].rolling(k_period).max()
+        low = df['Low'].rolling(k_period).min()
+        k = 100 * (df['Close'] - low) / (high - low)
+        d = k.rolling(d_period).mean()
+        return k, d
+
+    def calculate_rsi(self, df: pd.DataFrame, length: int = 14) -> pd.Series:
+        """
+        Calculate RSI using pandas_ta
+
+        Parameters:
+        - df: DataFrame with price data
+        - length: RSI period (default: 14)
+
+        Returns:
+        - Series: RSI values
+        """
+        try:
+            rsi = ta.rsi(df['Close'], length=length)
+            return rsi
+        except Exception as e:
+            print(f"Error calculating RSI: {e}")
+            return pd.Series([np.nan] * len(df))  # 에러 시 NaN 값 반환
+
+    def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
+    Tuple[pd.Series, pd.Series, pd.Series]:
+        """
+        Calculate MACD (Moving Average Convergence Divergence)
+
+        Parameters:
+        - df: DataFrame with 'Close' prices
+        - fast_period: Short-term EMA period (default: 12)
+        - slow_period: Long-term EMA period (default: 26)
+        - signal_period: Signal line EMA period (default: 9)
+
+        Returns:
+        - Tuple of (MACD line, Signal line, Histogram)
+        """
+        # Calculate the EMAs
+        fast_ema = df['Close'].ewm(span=fast_period, adjust=False).mean()
+        slow_ema = df['Close'].ewm(span=slow_period, adjust=False).mean()
+
+        # Calculate MACD line
+        macd = fast_ema - slow_ema
+
+        # Calculate Signal line
+        signal = macd.ewm(span=signal_period, adjust=True).mean()
+
+        # Calculate Histogram
+        histogram = macd - signal
+
+        return macd, signal, histogram
+    def calculate_moving_averages(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.Series, pd.Series]:
+        """Calculate moving averages"""
+        ma7 = df['Close'].rolling(window=7).mean()
+        ma25 = df['Close'].rolling(window=25).mean()
+        ma99 = df['Close'].rolling(window=99).mean()
+        ma200 = df['Close'].rolling(window=200).mean()
+
+        return ma7, ma25, ma99, ma200
+
+    @method_decorator(cache_page(150))  # Cache for 1 minute for scalping
+    def get(self, request, symbol: str, interval: str = '1m') -> Response:
+        """Get candlestick data with technical indicators for scalping"""
+        binance_api_url = "https://api.binance.com/api/v3/klines"
+        limit = 1000  # 충분한 데이터 포인트
+
+        try:
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'limit': limit
+            }
+            response = requests.get(binance_api_url, params=params)
+            response.raise_for_status()
+            candles = response.json()
+
+            # DataFrame 생성
+            df = pd.DataFrame(candles, columns=[
+                "Open Time", "Open", "High", "Low", "Close", "Volume",
+                "Close Time", "Quote Asset Volume", "Number of Trades",
+                "Taker Buy Base Asset Volume", "Taker Buy Quote Asset Volume", "Ignore"
+            ])
+
+            # 데이터 타입 변환
+            df["Open Time"] = pd.to_datetime(df["Open Time"], unit="ms")
+            df["Close Time"] = pd.to_datetime(df["Close Time"], unit="ms")
+            for col in ["Open", "High", "Low", "Close", "Volume"]:
+                df[col] = pd.to_numeric(df[col])
+
+            # 기술적 지표 계산
+            rsi = self.calculate_rsi(df)
+            macd, signal, histogram = self.calculate_macd(df)
+            ma7, ma25, ma99, ma200 = self.calculate_moving_averages(df)
+            middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
+            stoch_k, stoch_d = self.calculate_stochastic(df)  # 스토캐스틱 계산 추가
+            # 최근 30개 캔들만 사용
+            recent_data = []
+            for i in range(-30, 0):
+                candle_data = {
+                    'timestamp': df["Open Time"].iloc[i].isoformat(),
+                    'open': float(df["Open"].iloc[i]),
+                    'high': float(df["High"].iloc[i]),
+                    'low': float(df["Low"].iloc[i]),
+                    'close': float(df["Close"].iloc[i]),
+                    'volume': float(df["Volume"].iloc[i]),
+                    'indicators': {
+                        'rsi': float(rsi.iloc[i]) if not pd.isna(rsi.iloc[i]) else None,
+                        'macd': {
+                            'macd': float(macd.iloc[i]) if not pd.isna(macd.iloc[i]) else None,
+                            'signal': float(signal.iloc[i]) if not pd.isna(signal.iloc[i]) else None,
+                            'histogram': float(histogram.iloc[i]) if not pd.isna(histogram.iloc[i]) else None
                         },
-                        'market_conditions': {  # 시장 상황 지표 추가
-                            'fear_greed_index': float(fear_greed_index),
-                            'price_change_24h': market_conditions['price_change_24h'],
-                            'volatility': market_conditions['volatility'],
-                            'volume_ratio': market_conditions['volume_ratio']
+                        'moving_averages': {
+                            'ma7': float(ma7.iloc[i]) if not pd.isna(ma7.iloc[i]) else None,
+                            'ma25': float(ma25.iloc[i]) if not pd.isna(ma25.iloc[i]) else None,
+                            'ma99': float(ma99.iloc[i]) if not pd.isna(ma99.iloc[i]) else None
+                        },
+                        'stochastic': {  # 스토캐스틱 추가
+                            'k': float(stoch_k.iloc[i]) if not pd.isna(stoch_k.iloc[i]) else None,
+                            'd': float(stoch_d.iloc[i]) if not pd.isna(stoch_d.iloc[i]) else None
+                        },
+                        'bollinger_bands': {  # 볼린저 밴드 추가
+                            'middle': float(middle_band.iloc[i]) if not pd.isna(middle_band.iloc[i]) else None,
+                            'upper': float(upper_band.iloc[i]) if not pd.isna(upper_band.iloc[i]) else None,
+                            'lower': float(lower_band.iloc[i]) if not pd.isna(lower_band.iloc[i]) else None
                         }
                     }
                 }

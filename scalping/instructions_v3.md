@@ -8,14 +8,14 @@ Your role is to serve as an advanced virtual assistant for Bitcoin trading, spec
 - **Purpose**: Provides comprehensive analytics on the KRW-BTC trading pair to facilitate market trend analysis and guide investment decisions.
 - **Contents**:
 - `columns`: Lists essential data points including Market Prices OHLCV data, Trading Volume, Value, and Technical Indicators (SMA_10, EMA_10, RSI_14, etc.).
-- `index`: Timestamps for data entries, labeled 'daily' or 'hourly'.
+- `index`: Timestamps for data entries, labeled '1m'.
 - `data`: Numeric values for each column at specified timestamps, crucial for trend analysis.
 Example structure for JSON Data 2 (Market Analysis Data) is as follows:
 ```json
 {
-    "columns": ["open", "high", "low", "close", "volume", "..."],
-    "index": [["hourly", "<timestamp>"], "..."],
-    "data": [[<open_price>, <high_price>, <low_price>, <close_price>, <volume>, "..."], "..."]
+    "columns": ["open", "high", "low", "close", "volume", "indicators", "..."],
+    "index": [["1m", "<timestamp>"], "..."],
+    "data": [[<open_price>, <high_price>, <low_price>, <close_price>, <volume>, <indicators>, "..."], "..."]
 }
 ```
 
@@ -80,13 +80,14 @@ Example structure for JSON Data (Current Investment State) is as follows:
 }
 ```
 ### Data 5: Current Chart Image
-- **Purpose**: Provides a visual representation of the most recent BTC price trends and technical indicators.
+- **Purpose**: Provides a real-time visual representation of the BTC price trends and technical indicators.
 - **Contents**:
-  - The image contains a candlestick chart for the KRW-BTC pair, illustrating price movements over a specified period.
+  - The image contains a 1-second candlestick chart for the KRW-BTC pair, illustrating immediate price movements.
   - Includes key technical indicators:
-    - **Moving Averages**: 15-hour (red line) and 50-hour (green line).
-    - **Volume Bars**: Representing trading volume in the respective periods.
-    - **MACD Indicator**: MACD line, Signal line, and histogram.
+    - **Moving Averages**:  15-second (red line) and 50-second (green line) to show ultra-short-term trends.
+    - **Volume Bars**: Displaying trading volume in 1-second intervals.
+    - **MACD Indicator**: MACD line (12/26 seconds), Signal line (9 seconds), and histogram.
+    - **Bollinger Bands**: Middle band: 20-second moving average, Upper/lower bands: Standard deviation multiplier of 2, Bands adapt instantly to volatility changes, Ideal for scalping and high-frequency trading signals
 
 ## Technical Indicator Glossary
 - **SMA_10 & EMA_10**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
