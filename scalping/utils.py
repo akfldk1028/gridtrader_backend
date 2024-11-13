@@ -22,13 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 class BitcoinAnalyzer:
-    def __init__(self):
+    def __init__(self, symbol='KRW-BTC'):
         # self.upbit = pyupbit.Upbit(
         #     settings.UPBIT_ACCESS_KEY,
         #     settings.UPBIT_SECRET_KEY
         # )
         self.upbit = None
         self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.symbol = symbol
 
     def capture_chart(self) -> Optional[str]:
         """캡처 차트 이미지를 base64로 인코딩하여 반환"""
@@ -45,7 +46,7 @@ class BitcoinAnalyzer:
             wait = WebDriverWait(driver, 20)
 
             # 업비트 차트 페이지 로드
-            driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-BTC")
+            driver.get(f"https://upbit.com/full_chart?code=CRIX.UPBIT.{self.symbol}")
 
             # 차트 로딩 대기
             chart_element = wait.until(
@@ -104,14 +105,14 @@ class BitcoinAnalyzer:
             if driver:
                 driver.quit()
 
-    def get_bitcoin_data(self, symbol='KRW-BTC', max_retries=3) -> Optional[Dict]:
+    def get_bitcoin_data(self, max_retries=3) -> Optional[Dict]:
         """Fetch Bitcoin data with technical indicators from API"""
         base_url = "https://gridtrade.one/api/v1/binanceData/upbit"
         session = requests.Session()
         for attempt in range(max_retries):
             try:
                 response = session.get(
-                    f"{base_url}/{symbol}/minute1/",
+                    f"{base_url}/{self.symbol}/minute1/",
                     timeout=30,
                     verify=False,
                     headers={'User-Agent': 'Mozilla/5.0'}
@@ -167,7 +168,7 @@ class BitcoinAnalyzer:
     def get_current_status(self) -> Dict:
         """Get current trading account status"""
         try:
-            orderbook = pyupbit.get_orderbook(ticker="KRW-BTC")
+            orderbook = pyupbit.get_orderbook(ticker=self.symbol)
             current_time = orderbook['timestamp']
 
             # 실제 Upbit 연동이 없을 경우의 기본값
@@ -381,17 +382,17 @@ def fetch_fear_and_greed_index(limit=1, date_format=''):
         resStr += str(data)
     return resStr
 
-def perform_analysis():
+def perform_analysis(symbol='KRW-BTC'):
     """Execute Bitcoin analysis and trading"""
-    analyzer = BitcoinAnalyzer()
+    analyzer = BitcoinAnalyzer(symbol)
 
     try:
         # Gather all required data
-        market_data = analyzer.get_bitcoin_data(symbol='KRW-BTC',  max_retries=3)
+        market_data = analyzer.get_bitcoin_data(max_retries=3)
         if not market_data:
             print("Failed to fetch market data")
             return None
-        current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
+        current_price = pyupbit.get_orderbook(ticker=symbol)['orderbook_units'][0]["ask_price"]
 
         last_decisions = analyzer.get_last_decisions(current_price)
         fear_and_greed = fetch_fear_and_greed_index(limit=30)
@@ -411,7 +412,7 @@ def perform_analysis():
 
             trading_record = TradingRecord.objects.create(
                 exchange='UPBIT',
-                coin_symbol='BTC',
+                coin_symbol=symbol.split('-')[1],  # 심볼에서 'BTC' 부분만 추출
                 trade_type=decision['decision'].upper(),
                 trade_ratio=Decimal(str(decision['percentage'])),
                 trade_reason=decision['reason'],

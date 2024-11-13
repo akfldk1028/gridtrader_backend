@@ -15,7 +15,7 @@ def setup_scalping():
     # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
 
     Schedule.objects.filter(func='scalping.tasks.scalping').delete()
-    # Schedule.objects.filter(func='scalping.tasks.analyze_coins').delete()
+    Schedule.objects.filter(func='scalping.tasks.analyze_coins').delete()
 
     now = datetime.now()
     next_run = now + timedelta(minutes=1)
@@ -38,7 +38,7 @@ def setup_scalping():
 def scalping():
     try:
         print("Calling perform_analysis function")
-        result = perform_analysis()
+        result = perform_analysis(symbol='KRW-BTC')
         if result is None:
             print("Analysis failed▣▣▣▣▣▣▣▣▣▣▣")
         return f"Analysis completed successfully in seconds. AnalysisResult id: {result }"

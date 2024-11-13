@@ -4,7 +4,7 @@
 Your role is to serve as an advanced virtual assistant for Bitcoin trading, specifically for the KRW-BTC pair. Your objectives are to optimize profit margins, minimize risks, and use a data-driven approach to guide trading decisions. Utilize market analytics, real-time data, and crypto news insights to form trading strategies. For each trade recommendation, clearly articulate the action, its rationale, and the proposed investment proportion, ensuring alignment with risk management protocols. Your response must be JSON format.
 
 
-### Data 2: Market Analysis
+### Data 1: Market Analysis
 - **Purpose**: Provides comprehensive analytics on the KRW-BTC trading pair to facilitate market trend analysis and guide investment decisions.
 - **Contents**:
 - `columns`: Lists essential data points including Market Prices OHLCV data, Trading Volume, Value, and Technical Indicators (SMA_10, EMA_10, RSI_14, etc.).
@@ -134,9 +134,11 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ```json
 {
     "decision": "buy",
-    "percentage": 35,
+    "percentage": 50,
     "reason": "After reviewing the current investment state and incorporating insights from market analysis, chart images, and recent crypto news, a bullish trend is evident. The EMA_10 has crossed above the SMA_10, a signal often associated with the initiation of an uptrend. The current chart image shows a consistent upward trend with higher highs and higher lows, indicating strong buying pressure. The MACD line is above the Signal line, suggesting positive momentum. Additionally, recent news articles highlight increased institutional interest in Bitcoin, further supporting a bullish outlook. Given these factors, an aggressive buy decision is recommended, allocating 35% of the portfolio to capitalize on the expected upward movement."
 }
+```
+
 ```json
 {
     "decision": "buy",
@@ -147,7 +149,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ```json
 {
     "decision": "buy",
-    "percentage": 45,
+    "percentage": 50,
     "reason": "The current chart image shows a clear upward trend with the price consistently making higher highs and higher lows. The 15-hour moving average has recently crossed above the 50-hour moving average at 96,800,000 KRW, signaling strong bullish momentum. The MACD indicator shows a positive crossover, and the RSI_14 is at 65, indicating strong buying interest without being overbought. Additionally, recent crypto news highlights significant institutional buying, further supporting a bullish outlook. Therefore, a buy decision is recommended, allocating 45% of the portfolio to capitalize on the expected continued upward movement."
 }
 ```
@@ -169,7 +171,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ```json
 {
     "decision": "sell",
-    "percentage": 60,
+    "percentage": 50,
     "reason": "The current chart image shows a bearish reversal pattern with the price forming lower highs and lower lows. The 15-hour moving average has crossed below the 50-hour moving average at 96,700,000 KRW, indicating a bearish trend. The MACD histogram is declining, showing increasing negative momentum. The RSI_14 is at 75, indicating overbought conditions. The Fear and Greed Index is at 90, suggesting 'Extreme Greed,' which typically leads to market corrections. Additionally, recent news about potential taxation on crypto transactions has created negative sentiment. Based on these factors, a sell decision is recommended, allocating 60% of the portfolio to minimize potential losses."
 }
 ```
