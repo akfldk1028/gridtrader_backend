@@ -479,6 +479,7 @@ def perform_analysis(symbol):
         last_decisions = analyzer.get_last_decisions(current_price)
         fear_and_greed = fetch_fear_and_greed_index(limit=30)
         current_status = analyzer.get_current_status()
+        reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
 
         if not current_status:
             logger.error("Failed to get current status")
@@ -492,37 +493,10 @@ def perform_analysis(symbol):
             current_status
         )
 
-        if not decision:
-            logger.error("Failed to get GPT-4 analysis")
-            return None
-
-        # 거래 시그널 검증
-        should_execute = True
-        should_record = True
-
-        if decision['decision'] == 'HOLD':
-            should_execute = False
-            should_record = True  # HOLD도 기록은 남김
-
-        elif decision['decision'] == last_trade_type:
-            # 직전 거래와 동일한 타입인 경우 거래와 기록 모두 스킵
-            logger.info(f"Skipping {decision['decision']} - Same as last trade type")
-            return None
-
-        if should_execute or should_record:
+        if decision:
+            # Save decision to database 결제를 해야함
             current_status_dict = json.loads(current_status)
 
-            # 실제 거래 실행
-            if should_execute:
-                trade_success = analyzer.execute_trade(decision)
-                if not trade_success:
-                    logger.error("Trade execution failed")
-                    # 거래는 실패해도 기록은 남김
-
-            # Generate reflection
-            reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
-
-            # Save decision to database
             trading_record = TradingRecord.objects.create(
                 exchange='UPBIT',
                 coin_symbol=symbol.split('-')[1],  # 심볼에서 'BTC' 부분만 추출
@@ -536,6 +510,50 @@ def perform_analysis(symbol):
             )
 
             return trading_record.id
+        # if not decision:
+        #     logger.error("Failed to get GPT-4 analysis")
+        #     return None
+        #
+        # # 거래 시그널 검증
+        # should_execute = True
+        # should_record = True
+        #
+        # if decision['decision'] == 'HOLD':
+        #     should_execute = False
+        #     should_record = True  # HOLD도 기록은 남김
+        #
+        # elif decision['decision'] == last_trade_type:
+        #     # 직전 거래와 동일한 타입인 경우 거래와 기록 모두 스킵
+        #     logger.info(f"Skipping {decision['decision']} - Same as last trade type")
+        #     return None
+        #
+        # if should_execute or should_record:
+        #     current_status_dict = json.loads(current_status)
+        #
+        #     # 실제 거래 실행
+        #     if should_execute:
+        #         trade_success = analyzer.execute_trade(decision)
+        #         if not trade_success:
+        #             logger.error("Trade execution failed")
+        #             # 거래는 실패해도 기록은 남김
+        #
+        #     # Generate reflection
+        #     reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+        #
+        #     # Save decision to database
+        #     trading_record = TradingRecord.objects.create(
+        #         exchange='UPBIT',
+        #         coin_symbol=symbol.split('-')[1],  # 심볼에서 'BTC' 부분만 추출
+        #         trade_type=decision['decision'].upper(),
+        #         trade_ratio=Decimal(str(decision['percentage'])),
+        #         trade_reason=decision['reason'],
+        #         coin_balance=Decimal(current_status_dict['btc_balance']),
+        #         balance=Decimal(current_status_dict['krw_balance']),
+        #         current_price=Decimal(str(current_price)),
+        #         trade_reflection=reflection
+        #     )
+        #
+        #     return trading_record.id
 
         return None
 
