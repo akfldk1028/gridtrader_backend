@@ -169,27 +169,10 @@ def perform_analysis():
         MACD indicates [bullish momentum/convergence]. The Fear & Greed Index at {fear_greed_index:.0f} 
         suggests extreme fear. Initiating a 50% buy position."
         """,
-        expected_output={
-            "analysis": {
-                "type": "string",
-                "description": "Detailed market analysis"
-            },
-            "recommendation": {
-                "type": "string",
-                "enum": ["BUY", "SELL", "HOLD"],
-                "description": "Trading recommendation"
-            },
-            "indicators": {
-                "type": "object",
-                "properties": {
-                    "rsi": {"type": "number"},
-                    "rsi_state": {"type": "string"},
-                    "macd": {"type": "number"},
-                    "macd_signal": {"type": "number"},
-                    "fear_greed": {"type": "number"}
-                }
-            }
-        },
+        expected_output="""Please provide:
+        1. A detailed market analysis
+        2. A trading recommendation (BUY/SELL/HOLD)
+        3. Current indicator values including RSI, MACD, and Fear & Greed Index""",
         agent=market_analyst
     )
 
