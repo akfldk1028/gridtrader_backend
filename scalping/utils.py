@@ -167,10 +167,32 @@ class BitcoinAnalyzer:
                 response_format={"type": "json_object"}
             )
 
-            return json.loads(response.choices[0].message.content)
+            result = json.loads(response.choices[0].message.content)
+            print(str(result))
+            print("----------------------------")
+            # 응답 검증 및 기본값 설정
+            if not isinstance(result, dict):
+                raise ValueError("GPT response is not a dictionary")
+
+            # 필수 필드 검증 및 기본값 설정
+            validated_result = {
+                "decision": result.get("decision", "HOLD").upper(),
+                "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
+                "reason": str(result.get("reason", "No reason provided"))
+            }
+
+            # decision 값 검증
+            if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
+                validated_result["decision"] = "HOLD"
+
+            return validated_result
+
         except Exception as e:
-            logger.error(f"GPT-4 analysis error: {e}")
-            return None
+            return {
+                "decision": "HOLD",
+                "percentage": 0,
+                "reason": f"Analysis failed: {str(e)}"
+            }
 
     def execute_trade(self, decision: Dict) -> bool:
         """Execute trade based on analysis"""

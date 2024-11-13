@@ -19,7 +19,7 @@ class TradingRecord(CommonModel):
     coin_symbol = models.CharField('코인 심볼', max_length=20)
     trade_type = models.CharField('거래 유형', max_length=4, choices=TRADE_TYPES, default='HOLD')
     trade_amount_krw = models.DecimalField('거래 금액', max_digits=20, decimal_places=2, default=Decimal('0.00'))
-    trade_ratio = models.DecimalField('거래 비율(%)', max_digits=5, decimal_places=4, default=Decimal('0.0000'))
+    trade_ratio = models.DecimalField('거래 비율(%)', max_digits=8, decimal_places=4, default=Decimal('0.0000'))
 
     # 잔고 관련 필드
     coin_balance = models.DecimalField('코인 보유량', max_digits=20, decimal_places=8, default=Decimal('0.00000000'))
