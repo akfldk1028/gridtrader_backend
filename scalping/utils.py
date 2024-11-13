@@ -257,7 +257,7 @@ class BitcoinAnalyzer:
             logger.error(f"Error getting last decisions: {e}")
             return ""
 
-    def analyze_with_gpt4(self, market_data: Dict, reflection: str, fear_and_greed, current_status: str) -> Optional[Dict]:
+    def analyze_with_gpt4(self, market_data: Dict, last_decisions: str, fear_and_greed, current_status: str) -> Optional[Dict]:
         """Analyze market data using GPT-4"""
         try:
             # 현재 파일의 디렉토리 경로를 가져옴
@@ -278,7 +278,7 @@ class BitcoinAnalyzer:
             messages = [
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": json.dumps(market_data)},
-                {"role": "user", "content": reflection},
+                {"role": "user", "content": last_decisions},
                 {"role": "user", "content": fear_and_greed},
                 {"role": "user", "content": current_status}
             ]
@@ -401,7 +401,7 @@ def perform_analysis():
             return None
 
         # Analyze with GPT-4
-        decision = analyzer.analyze_with_gpt4(market_data, reflection, fear_and_greed, current_status)
+        decision = analyzer.analyze_with_gpt4(market_data, last_decisions, fear_and_greed, current_status)
 
         if decision:
             # Save decision to database 결제를 해야함

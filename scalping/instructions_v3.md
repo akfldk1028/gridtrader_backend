@@ -21,6 +21,9 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
 
 ### Data 2: Previous Decisions
 - **Purpose**: This section details the insights gleaned from the most recent trading decisions undertaken by the system. It serves to provide a historical backdrop that is instrumental in refining and honing future trading strategies. Incorporate a structured evaluation of past decisions against OHLCV data to systematically assess their effectiveness.
+        - **Effectiveness**: Were recent trades profitable and aligned with market trends? 
+        - **Missed Opportunities**: Identify any missed signals or overtrading instances.
+        - **Improvements**: Suggest one quick adjustment for immediate strategy enhancement.
 - **Contents**: 
     - Each record within `last_decisions` chronicles a distinct trading decision, encapsulating the decision's timing (`timestamp`), the action executed (`decision`), the proportion of the portfolio it impacted (`percentage`), the reasoning underpinning the decision (`reason`), and the portfolio's condition at the decision's moment (`btc_balance`, `krw_balance`, `btc_avg_buy_price`).
         - `timestamp`: Marks the exact moment the decision was recorded, expressed in milliseconds since the Unix epoch, to furnish a chronological context.
