@@ -135,15 +135,17 @@ class BitcoinAnalyzer:
             reflection_prompt = f"""
             As a trading advisor, analyze the previous trading decisions and current market price to provide a reflection.
 
+
+            Evaluate recent scalping trades based on the following:
+            
+            1. **Effectiveness**: Were recent trades profitable and aligned with market trends?
+            2. **Missed Opportunities**: Identify any missed signals or overtrading instances.
+            3. **Improvements**: Suggest one quick adjustment for immediate strategy enhancement.
+            
             Previous Decisions:
             {previous_decisions}
 
             Current BTC Price: {current_price}
-
-            Please provide a brief reflection on:
-            1. Whether the previous trading decisions were effective
-            2. What could have been done differently
-            3. What lessons can be learned for future trades
 
             Format your response as a concise paragraph focusing on the most recent trades.
             """
@@ -155,7 +157,7 @@ class BitcoinAnalyzer:
                      "content": "You are a cryptocurrency trading advisor providing reflections on past trades."},
                     {"role": "user", "content": reflection_prompt}
                 ],
-                max_tokens=200  # 짧게 유지
+                max_tokens=500  # 짧게 유지
             )
 
             return response.choices[0].message.content
@@ -235,7 +237,7 @@ class BitcoinAnalyzer:
     def get_last_decisions(self, num_decisions: int = 10) -> str:
         """Fetch recent trading decisions from database"""
         try:
-            decisions = TradingRecord.objects.all()[:num_decisions]
+            decisions = TradingRecord.objects.order_by('-created_at')[:num_decisions]
 
             formatted_decisions = []
             for decision in decisions:
