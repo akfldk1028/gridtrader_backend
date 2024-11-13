@@ -33,7 +33,8 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
         - `btc_balance`: Reveals the quantity of Bitcoin within the portfolio at the decision's time, demonstrating the portfolio's market exposure.
         - `krw_balance`: Indicates the amount of Korean Won available for trading at the time of the decision, signaling liquidity.
         - `btc_avg_buy_price`: Provides the average acquisition cost of the Bitcoin holdings, serving as a metric for evaluating the past decisions' performance and the prospective future profitability.
-
+        - `current_price`: current crypto price
+        - 
 ### Data 3: Fear and Greed Index
 - **Purpose**: The Fear and Greed Index serves as a quantified measure of the crypto market's sentiment, ranging from "Extreme Fear" to "Extreme Greed." This index is pivotal for understanding the general mood among investors and can be instrumental in decision-making processes for Bitcoin trading. Specifically, it helps in gauging whether market participants are too bearish or bullish, which in turn can indicate potential market movements or reversals. Incorporating this data aids in balancing trading strategies with the prevailing market sentiment, optimizing for profit margins while minimizing risks.
 - **Contents**:

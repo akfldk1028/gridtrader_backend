@@ -234,7 +234,7 @@ class BitcoinAnalyzer:
     #         logger.error(f"Error getting current status: {e}")
     #         return None
 
-    def get_last_decisions(self, num_decisions: int = 10) -> str:
+    def get_last_decisions(self, num_decisions: int = 10, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
         try:
             decisions = TradingRecord.objects.order_by('-created_at')[:num_decisions]
@@ -248,7 +248,9 @@ class BitcoinAnalyzer:
                     "reason": decision.trade_reason,
                     "btc_balance": float(decision.coin_balance),
                     "krw_balance": float(decision.balance),
-                    "btc_avg_buy_price": float(decision.current_price)
+                    "btc_avg_buy_price": float(decision.current_price),
+                    "current_price": {current_price}
+
                 }
                 formatted_decisions.append(str(formatted_decision))
 
@@ -389,11 +391,11 @@ def perform_analysis():
         if not market_data:
             print("Failed to fetch market data")
             return None
+        current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
 
-        last_decisions = analyzer.get_last_decisions()
+        last_decisions = analyzer.get_last_decisions(current_price)
         fear_and_greed = fetch_fear_and_greed_index(limit=30)
         current_status = analyzer.get_current_status()
-        current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
         # Generate reflection on previous trades
         reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
         if not current_status:
