@@ -62,7 +62,7 @@ def capture_upbit_chart(save_dir='captured_charts'):
 
         try:
             # MACD 추가
-            print("RSI 추가를 위한 인디케이터 메뉴 열기...")
+            print("STO 추가를 위한 인디케이터 메뉴 열기...")
             study_menu = wait.until(
                 EC.element_to_be_clickable(
                     (By.CSS_SELECTOR, "cq-menu.ciq-studies")
@@ -71,9 +71,9 @@ def capture_upbit_chart(save_dir='captured_charts'):
             study_menu.click()
             time.sleep(1)
 
-            print("MACD 추가 중...")
+            print("STO 추가 중...")
             macd_item = wait.until(
-                EC.presence_of_element_located((By.XPATH, "//cq-item[contains(., 'RSI')]"))
+                EC.presence_of_element_located((By.XPATH, "//cq-item[.//translate[@original='Stochastic Momentum Index']]"))
             )
             ActionChains(driver).move_to_element(macd_item).click().perform()
             time.sleep(1)

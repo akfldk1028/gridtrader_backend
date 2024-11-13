@@ -140,7 +140,7 @@ class BitcoinAnalyzer:
             time.sleep(1)
 
             macd_item = wait.until(
-                EC.presence_of_element_located((By.XPATH, "//cq-item[contains(., 'MACD')]"))
+                EC.presence_of_element_located((By.XPATH, "//cq-item[.//translate[@original='Stochastic Momentum Index']]"))
             )
             ActionChains(driver).move_to_element(macd_item).click().perform()
             time.sleep(1)
