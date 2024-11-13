@@ -90,10 +90,10 @@ Example structure for JSON Data (Current Investment State) is as follows:
     - **Moving Averages**:  15-second (red line) and 50-second (green line) to show ultra-short-term trends.
     - **Volume Bars**: Displaying trading volume in 1-second intervals.
     - **MACD Indicator**: MACD line (12/26 seconds), Signal line (9 seconds), and histogram.
-    - **Bollinger Bands**: Middle band: 20-second moving average, Upper/lower bands: Standard deviation multiplier of 2, Bands adapt instantly to volatility changes, Ideal for scalping and high-frequency trading signals
+    - **Bollinger Bands**: Middle band: 20-second mo\ving average, Upper/lower bands: Standard deviation multiplier of 2, Bands adapt instantly to volatility changes, Ideal for scalping and high-frequency trading signals
 
 ## Technical Indicator Glossary
-- **SMA_10 & EMA_10**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
+- **SMA_10 & EMA_10 & MA**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
 - **RSI_9**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
 - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
 - **MACD**: Moving Average Convergence Divergence tracks the relationship between two moving averages of a price. A MACD crossing above its signal line suggests bullish momentum, whereas crossing below indicates bearish momentum.
@@ -107,15 +107,14 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ### Instruction Workflow
 #### Pre-Decision Analysis:
 1. **Review Current Investment State and Previous Decisions**: Start by examining the most recent investment state and the history of decisions to understand the current portfolio position and past actions. Review the outcomes of past decisions to understand their effectiveness. This review should consider not just the financial results but also the accuracy of your market analysis and predictions.
-2. **Analyze Market Data**: Utilize Data 2 (Market Analysis) and Data 6 (Current Chart Image) to examine current market trends, including price movements and technical indicators. Pay special attention to the SMA_10, EMA_10, RSI_14, MACD, Bollinger Bands, and other key indicators for signals on potential market directions.
+2. **Analyze Market Data**: Utilize Data 2 (Market Analysis) and Data 6 (Current Chart Image) to examine current market trends, including price movements and technical indicators. Pay special attention to the SMA_10, EMA_10, RSI_9, RSI_14, MACD, Bollinger Bands, and other key indicators for signals on potential market directions.
 3. **Analyze Fear and Greed Index**:  Consider the index only as background market context, without directly influencing 1-minute scalping decisions while focusing on RSI and volume signals for immediate trade actions.
 4. **Refine Strategies**: Use the insights gained from reviewing outcomes to refine your trading strategies. This could involve adjusting your technical analysis approach, improving your news sentiment analysis, or tweaking your risk management rules.
 
 #### Decision Making:
 6. **Synthesize Analysis**: Combine insights from market analysis, chart images, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators sentiment to identify clear and strong trading signals.
-7. **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index), MACD (Moving Average Convergence Divergence), and Bollinger Bands to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
+7. **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index), and Bollinger Bands to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
         RSI: Monitor the RSI on a short time frame (e.g., RSI_9 or RSI_14 on a 1-minute chart). An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal).
-        MACD: Observe the MACD line and Signal line crossovers on short intervals. A bullish crossover (MACD line crosses above the Signal line) may signal a buying opportunity, while a bearish crossover suggests a selling opportunity.
         Bollinger Bands: Use Bollinger Bands to identify price volatility and potential reversal points. When the price touches or moves outside the upper band, it may indicate overbought conditions; conversely, touching the lower band may indicate oversold conditions.
 8. **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA). Recognize trend directions to align your scalping trades accordingly.
         Trend Confirmation: Ensure that your trade aligns with the current short-term trend. For instance, prefer buying during an uptrend and selling during a downtrend to increase the probability of a successful trade.

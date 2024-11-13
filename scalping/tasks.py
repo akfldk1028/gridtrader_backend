@@ -38,7 +38,9 @@ def setup_scalping():
 def scalping():
     try:
         print("Calling perform_analysis function")
-        result = perform_analysis(symbol='KRW-BTC')
+        result = perform_analysis(symbol='KRW-DOGE')
+        # result = perform_analysis(symbol='KRW-BTC')
+
         if result is None:
             print("Analysis failed▣▣▣▣▣▣▣▣▣▣▣")
         return f"Analysis completed successfully in seconds. AnalysisResult id: {result }"

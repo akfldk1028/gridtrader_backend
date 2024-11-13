@@ -5,7 +5,7 @@ import requests
 import pyupbit
 from django.conf import settings
 from openai import OpenAI
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Optional
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -30,7 +30,72 @@ class BitcoinAnalyzer:
         self.upbit = None
         self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.symbol = symbol
+        self.base_url = f"https://gridtrade.one/api/v1/binanaceAccount"  # settings.py에 BASE_URL 추가 필요
 
+
+    def _make_api_request(self, endpoint: str, method: str = 'GET', data: Dict = None) -> Dict:
+        """API 요청 헬퍼 함수"""
+        url = f"{self.base_url}{endpoint}"
+        try:
+            if method == 'GET':
+                response = requests.get(url)
+            else:  # POST
+                response = requests.post(url, json=data)
+
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"API request failed: {e}")
+            raise
+
+    def get_balance_from_api(self) -> Dict:
+        """잔고 조회 API 호출"""
+        return self._make_api_request('/upbit/balance/')
+
+    def get_current_price_from_api(self) -> Dict:
+        """현재가 조회 API 호출"""
+        return self._make_api_request(f'/upbit/price/?market={self.symbol}')
+
+    def execute_trade_via_api(self, action: str, percentage: float) -> Dict:
+        """거래 실행 API 호출"""
+        data = {
+            "action": action,
+            "market": self.symbol,
+            "percentage": percentage
+        }
+        return self._make_api_request('/upbit/trade/', method='POST', data=data)
+
+    def get_current_status(self) -> Dict:
+        """Get current trading account status using API"""
+        try:
+            # 현재가 조회
+            price_info = self.get_current_price_from_api()
+            if price_info['status'] != 'success':
+                raise Exception("Failed to get current price")
+
+            orderbook = price_info['data']
+            current_time = orderbook['timestamp']
+
+            # 잔고 조회
+            balance_info = self.get_balance_from_api()
+            if balance_info['status'] != 'success':
+                raise Exception("Failed to get balance")
+
+            symbol_currency = self.symbol.split('-')[1]  # KRW-BTC -> BTC
+
+            return json.dumps({
+                'current_time': current_time,
+                'orderbook': orderbook,
+                f'{symbol_currency.lower()}_balance': str(
+                    balance_info['data'].get(symbol_currency, {}).get('balance', '0.0')),
+                'krw_balance': str(balance_info['data'].get('KRW', {}).get('balance', '0.0')),
+                f'{symbol_currency.lower()}_avg_buy_price': str(
+                    balance_info['data'].get(symbol_currency, {}).get('avg_buy_price', '0.0'))
+            })
+
+        except Exception as e:
+            logger.error(f"Error getting current status: {e}")
+            return None
     def capture_chart(self) -> Optional[str]:
         """캡처 차트 이미지를 base64로 인코딩하여 반환"""
         chrome_options = Options()
@@ -165,46 +230,52 @@ class BitcoinAnalyzer:
         except Exception as e:
             logger.error(f"Error generating reflection: {e}")
             return "반성 생성 중 오류 발생"
-    def get_current_status(self) -> Dict:
-        """Get current trading account status"""
+    # def get_current_status(self) -> Dict:
+    #     """Get current trading account status"""
+    #     try:
+    #         orderbook = pyupbit.get_orderbook(ticker=self.symbol)
+    #         current_time = orderbook['timestamp']
+    #
+    #         # Upbit 연동이 있는 경우 실제 데이터 조회
+    #         balances = self.upbit.get_balances()
+    #         btc_balance = Decimal('0')
+    #         krw_balance = Decimal('0')
+    #         btc_avg_buy_price = Decimal('0')
+    #
+    #         for b in balances:
+    #             if b['currency'] == "BTC":
+    #                 btc_balance = Decimal(b['balance'])
+    #                 btc_avg_buy_price = Decimal(b['avg_buy_price'])
+    #             if b['currency'] == "KRW":
+    #                 krw_balance = Decimal(b['balance'])
+    #
+    #         return json.dumps({
+    #             'current_time': current_time,
+    #             'orderbook': orderbook,
+    #             'btc_balance': str(btc_balance),
+    #             'krw_balance': str(krw_balance),
+    #             'btc_avg_buy_price': str(btc_avg_buy_price)
+    #         })
+    #     except Exception as e:
+    #         logger.error(f"Error getting current status: {e}")
+    #         return None
+
+    def execute_trade(self, decision: Dict) -> bool:
+        """Execute trade based on analysis using API"""
         try:
-            orderbook = pyupbit.get_orderbook(ticker=self.symbol)
-            current_time = orderbook['timestamp']
+            if decision['decision'] not in ['BUY', 'SELL']:
+                return False
 
-            # 실제 Upbit 연동이 없을 경우의 기본값
-            if self.upbit is None:
-                return json.dumps({
-                    'current_time': current_time,
-                    'orderbook': orderbook,
-                    'btc_balance': "0.0",
-                    'krw_balance': "1000000.0",  # 100만원 기본값
-                    'btc_avg_buy_price': "0.0"
-                })
+            trade_result = self.execute_trade_via_api(
+                action=decision['decision'].lower(),
+                percentage=float(decision['percentage'])
+            )
 
-            # Upbit 연동이 있는 경우 실제 데이터 조회
-            balances = self.upbit.get_balances()
-            btc_balance = Decimal('0')
-            krw_balance = Decimal('0')
-            btc_avg_buy_price = Decimal('0')
+            return trade_result['status'] == 'success'
 
-            for b in balances:
-                if b['currency'] == "BTC":
-                    btc_balance = Decimal(b['balance'])
-                    btc_avg_buy_price = Decimal(b['avg_buy_price'])
-                if b['currency'] == "KRW":
-                    krw_balance = Decimal(b['balance'])
-
-            return json.dumps({
-                'current_time': current_time,
-                'orderbook': orderbook,
-                'btc_balance': str(btc_balance),
-                'krw_balance': str(krw_balance),
-                'btc_avg_buy_price': str(btc_avg_buy_price)
-            })
         except Exception as e:
-            logger.error(f"Error getting current status: {e}")
-            return None
-
+            logger.error(f"Trade execution error: {e}")
+            return False
 
     # def get_current_status(self) -> Dict:
     #     """Get current trading account status"""
@@ -335,29 +406,29 @@ class BitcoinAnalyzer:
                 "reason": f"Analysis failed: {str(e)}"
             }
 
-    def execute_trade(self, decision: Dict) -> bool:
-        """Execute trade based on analysis"""
-        try:
-            if decision['decision'] == 'buy':
-                krw_balance = self.upbit.get_balance("KRW")
-                amount = Decimal(krw_balance) * (Decimal(str(decision['percentage'])) / Decimal('100'))
-                if amount > Decimal('5000'):
-                    self.upbit.buy_market_order("KRW-BTC", amount * Decimal('0.9995'))
-                    return True
-
-            elif decision['decision'] == 'sell':
-                btc_balance = self.upbit.get_balance("BTC")
-                amount = Decimal(btc_balance) * (Decimal(str(decision['percentage'])) / Decimal('100'))
-                current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
-                if Decimal(str(current_price)) * amount > Decimal('5000'):
-                    self.upbit.sell_market_order("KRW-BTC", amount)
-                    return True
-
-            return False
-
-        except Exception as e:
-            logger.error(f"Trade execution error: {e}")
-            return False
+    # def execute_trade(self, decision: Dict) -> bool:
+    #     """Execute trade based on analysis"""
+    #     try:
+    #         if decision['decision'] == 'buy':
+    #             krw_balance = self.upbit.get_balance("KRW")
+    #             amount = Decimal(krw_balance) * (Decimal(str(decision['percentage'])) / Decimal('100'))
+    #             if amount > Decimal('5000'):
+    #                 self.upbit.buy_market_order("KRW-BTC", amount * Decimal('0.9995'))
+    #                 return True
+    #
+    #         elif decision['decision'] == 'sell':
+    #             btc_balance = self.upbit.get_balance("BTC")
+    #             amount = Decimal(btc_balance) * (Decimal(str(decision['percentage'])) / Decimal('100'))
+    #             current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
+    #             if Decimal(str(current_price)) * amount > Decimal('5000'):
+    #                 self.upbit.sell_market_order("KRW-BTC", amount)
+    #                 return True
+    #
+    #         return False
+    #
+    #     except Exception as e:
+    #         logger.error(f"Trade execution error: {e}")
+    #         return False
 
 
 def fetch_fear_and_greed_index(limit=1, date_format=''):
@@ -382,34 +453,76 @@ def fetch_fear_and_greed_index(limit=1, date_format=''):
         resStr += str(data)
     return resStr
 
+
 def perform_analysis(symbol='KRW-BTC'):
     """Execute Bitcoin analysis and trading"""
     analyzer = BitcoinAnalyzer(symbol)
 
     try:
+        # 가장 최근 거래 기록 확인
+        try:
+            latest_record = TradingRecord.objects.filter(
+                exchange='UPBIT',
+                coin_symbol=symbol.split('-')[1]
+            ).latest('created_at')
+            last_trade_type = latest_record.trade_type
+        except TradingRecord.DoesNotExist:
+            last_trade_type = None
+
         # Gather all required data
         market_data = analyzer.get_bitcoin_data(max_retries=3)
         if not market_data:
-            print("Failed to fetch market data")
+            logger.error("Failed to fetch market data")
             return None
-        current_price = pyupbit.get_orderbook(ticker=symbol)['orderbook_units'][0]["ask_price"]
 
+        current_price = pyupbit.get_orderbook(ticker=symbol)['orderbook_units'][0]["ask_price"]
         last_decisions = analyzer.get_last_decisions(current_price)
         fear_and_greed = fetch_fear_and_greed_index(limit=30)
         current_status = analyzer.get_current_status()
-        # Generate reflection on previous trades
-        reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+
         if not current_status:
             logger.error("Failed to get current status")
             return None
 
         # Analyze with GPT-4
-        decision = analyzer.analyze_with_gpt4(market_data, last_decisions, fear_and_greed, current_status)
+        decision = analyzer.analyze_with_gpt4(
+            market_data,
+            last_decisions,
+            fear_and_greed,
+            current_status
+        )
 
-        if decision:
-            # Save decision to database 결제를 해야함
+        if not decision:
+            logger.error("Failed to get GPT-4 analysis")
+            return None
+
+        # 거래 시그널 검증
+        should_execute = True
+        should_record = True
+
+        if decision['decision'] == 'HOLD':
+            should_execute = False
+            should_record = True  # HOLD도 기록은 남김
+
+        elif decision['decision'] == last_trade_type:
+            # 직전 거래와 동일한 타입인 경우 거래와 기록 모두 스킵
+            logger.info(f"Skipping {decision['decision']} - Same as last trade type")
+            return None
+
+        if should_execute or should_record:
             current_status_dict = json.loads(current_status)
 
+            # 실제 거래 실행
+            if should_execute:
+                trade_success = analyzer.execute_trade(decision)
+                if not trade_success:
+                    logger.error("Trade execution failed")
+                    # 거래는 실패해도 기록은 남김
+
+            # Generate reflection
+            reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+
+            # Save decision to database
             trading_record = TradingRecord.objects.create(
                 exchange='UPBIT',
                 coin_symbol=symbol.split('-')[1],  # 심볼에서 'BTC' 부분만 추출
@@ -424,230 +537,182 @@ def perform_analysis(symbol='KRW-BTC'):
 
             return trading_record.id
 
+        return None
+
     except Exception as e:
         logger.error(f"Analysis error: {e}")
         return None
 
-
-
-
-
-
-# import os
-# from crewai import Agent, Task, Crew, Process
-# from datetime import datetime, timedelta
-# import requests
-# import time
-# from .models import TradingRecord
-# from decimal import Decimal
+# def perform_analysis(symbol='KRW-BTC'):
+#     """Execute Bitcoin analysis and trading"""
+#     analyzer = BitcoinAnalyzer(symbol)
 #
-#
-# def get_current_bitcoin_price(vt_symbol):
 #     try:
-#         url = f"https://api.binance.com/api/v3/ticker/price?symbol={vt_symbol}"
-#         response = requests.get(url)
-#         data = response.json()
-#         return float(data['price'])
-#     except Exception as e:
-#         print(f"Error fetching current Bitcoin price: {e}")
-#         return None
+#         # Gather all required data
+#         market_data = analyzer.get_bitcoin_data(max_retries=3)
+#         if not market_data:
+#             print("Failed to fetch market data")
+#             return None
+#         current_price = pyupbit.get_orderbook(ticker=symbol)['orderbook_units'][0]["ask_price"]
 #
+#         last_decisions = analyzer.get_last_decisions(current_price)
+#         fear_and_greed = fetch_fear_and_greed_index(limit=30)
+#         current_status = analyzer.get_current_status()
+#         # Generate reflection on previous trades
+#         reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+#         if not current_status:
+#             logger.error("Failed to get current status")
+#             return None
 #
-# def get_bitcoin_data_from_api(symbol, max_retries=3):
-#     base_url = "https://gridtrade.one/api/v1/binanceData/scalping"
-#     session = requests.Session()
+#         # Analyze with GPT-4
+#         decision = analyzer.analyze_with_gpt4(market_data, last_decisions, fear_and_greed, current_status)
 #
-#     for attempt in range(max_retries):
-#         try:
-#             # SSL 검증을 비활성화하고 타임아웃 설정
-#             response = session.get(
-#                 f"{base_url}/{symbol}/1m/",
-#                 timeout=30,
-#                 verify=False,  # SSL 검증 비활성화
-#                 headers={'User-Agent': 'Mozilla/5.0'}  # 기본 User-Agent 추가
+#         if decision:
+#             # Save decision to database 결제를 해야함
+#             current_status_dict = json.loads(current_status)
+#
+#             trading_record = TradingRecord.objects.create(
+#                 exchange='UPBIT',
+#                 coin_symbol=symbol.split('-')[1],  # 심볼에서 'BTC' 부분만 추출
+#                 trade_type=decision['decision'].upper(),
+#                 trade_ratio=Decimal(str(decision['percentage'])),
+#                 trade_reason=decision['reason'],
+#                 coin_balance=Decimal(current_status_dict['btc_balance']),
+#                 balance=Decimal(current_status_dict['krw_balance']),
+#                 current_price=Decimal(str(current_price)),
+#                 trade_reflection=reflection
 #             )
-#             response.raise_for_status()
-#             data = response.json()
 #
-#             transformed_data = {
-#                 '1m': []  # 키를 1m으로 통일
-#             }
-#
-#             # 최근 30개의 데이터만 사용
-#             recent_data = data['data'][-30:]
-#
-#             # 최신 지표값들 (AI 분석용)
-#             latest_indicators = recent_data[-1]['indicators']
-#
-#             for candle in recent_data:
-#                 entry = {
-#                     'open': candle['open'],
-#                     'high': candle['high'],
-#                     'low': candle['low'],
-#                     'close': candle['close'],
-#                     'volume': candle['volume'],
-#                     'timestamp': candle['timestamp'],
-#                     'RSI': candle['indicators']['rsi'],
-#                     'MACD': candle['indicators']['macd']['macd'],
-#                     'MACD_Signal': candle['indicators']['macd']['signal'],
-#                     'MACD_Histogram': candle['indicators']['macd']['histogram'],
-#                     'MA7': candle['indicators']['moving_averages']['ma7'],
-#                     'MA25': candle['indicators']['moving_averages']['ma25'],
-#                     'MA99': candle['indicators']['moving_averages']['ma99'],
-#                     '%K': candle['indicators']['stochastic']['k'],
-#                     '%D': candle['indicators']['stochastic']['d'],
-#                 }
-#                 transformed_data['1m'].append(entry)
-#
-#             # 최신 지표값들도 포함
-#             transformed_data['current_indicators'] = latest_indicators
-#
-#             return transformed_data
-#
-#         except requests.exceptions.SSLError as e:
-#             print(f"SSL 오류 발생 (시도 {attempt + 1}/{max_retries}): {e}")
-#             if attempt < max_retries - 1:
-#                 time.sleep(1)
-#             continue
-#         except requests.exceptions.RequestException as e:
-#             print(f"API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
-#             if attempt < max_retries - 1:
-#                 time.sleep(1)
-#             continue
-#         except Exception as e:
-#             print(f"데이터 처리 중 오류 발생: {e}")
-#             if attempt < max_retries - 1:
-#                 time.sleep(1)
-#             continue
-#         finally:
-#             session.close()
-#
-#     return None
-#
-#
-# market_analyst = Agent(
-#     role='Technical Market Analyst',
-#     goal='Analyze market conditions and technical indicators for optimal trading decisions',
-#     backstory="""You are an expert technical analyst specialized in cryptocurrency markets.
-#     You excel at interpreting multiple technical indicators including RSI overbought/oversold conditions,
-#     MACD momentum, and market sentiment indicators to identify high-probability trading opportunities.""",
-#     verbose=True,
-#     allow_delegation=False
-# )
-#
-#
-# def perform_analysis():
-#     bitcoin_data = get_bitcoin_data_from_api("BTCUSDT")
-#     if not bitcoin_data:
-#         return None
-#
-#     current_indicators = bitcoin_data['current_indicators']
-#     current_price = get_current_bitcoin_price("BTCUSDT")
-#
-#     # 기술적 지표 추출
-#     current_rsi = current_indicators['rsi']
-#     current_macd = current_indicators['macd']['macd']
-#     current_signal = current_indicators['macd']['signal']
-#     fear_greed_index = float(current_indicators['market_conditions']['fear_greed_index'])
-#     price_change = float(current_indicators['market_conditions']['price_change_24h'])
-#
-#     # MACD 크로스오버 확인
-#     prev_candle = bitcoin_data['1m'][-2]
-#     prev_macd = prev_candle['MACD']
-#     prev_signal = prev_candle['MACD_Signal']
-#
-#     macd_bullish_cross = prev_macd <= prev_signal and current_macd > current_signal
-#     macd_bearish_cross = prev_macd >= prev_signal and current_macd < current_signal
-#     macd_above_signal = current_macd > current_signal
-#
-#     # RSI 상태 판단
-#     rsi_state = "neutral"
-#     if current_rsi >= 70:
-#         rsi_state = "overbought"
-#     elif current_rsi <= 30:
-#         rsi_state = "oversold"
-#     elif current_rsi > 60:
-#         rsi_state = "approaching_overbought"
-#     elif current_rsi < 40:
-#         rsi_state = "approaching_oversold"
-#
-#     analysis_task = Task(
-#         description=f"""Analyze current market conditions with these technical indicators:
-#
-#         MARKET CONDITIONS:
-#         - RSI: {current_rsi:.2f} (State: {rsi_state})
-#         - MACD: {current_macd:.6f} (Signal: {current_signal:.6f})
-#         - MACD Cross: {"Bullish" if macd_bullish_cross else "Bearish" if macd_bearish_cross else "None"}
-#         - Fear & Greed Index: {fear_greed_index:.1f}
-#         - Price Change 24h: {price_change:.2f}%
-#
-#         TRADING RULES:
-#         SELL Signal (50% Position) when:
-#         - RSI approaching or above 70 (overbought)
-#         - MACD shows bearish momentum
-#         - Extreme Greed conditions
-#
-#         BUY Signal (50% Position) when:
-#         - RSI approaching or below 30 (oversold)
-#         - MACD shows bullish momentum
-#         - Extreme Fear conditions
-#
-#         Provide analysis in following format:
-#
-#         For SELL:
-#         "The market is showing signs of potential overbought conditions with RSI at {current_rsi}.
-#         MACD indicates [bearish momentum/divergence]. The Fear & Greed Index at {fear_greed_index:.0f}
-#         suggests extreme greed. Based on these conditions, a 50% sell position is recommended."
-#
-#         For BUY:
-#         "Market conditions show oversold signals with RSI at {current_rsi}.
-#         MACD indicates [bullish momentum/convergence]. The Fear & Greed Index at {fear_greed_index:.0f}
-#         suggests extreme fear. Initiating a 50% buy position."
-#         """,
-#         expected_output="""Please provide:
-#         1. A detailed market analysis
-#         2. A trading recommendation (BUY/SELL/HOLD)
-#         3. Current indicator values including RSI, MACD, and Fear & Greed Index""",
-#         agent=market_analyst
-#     )
-#
-#     crew = Crew(
-#         agents=[market_analyst],
-#         tasks=[analysis_task],
-#         verbose=True,
-#         process=Process.sequential
-#     )
-#
-#     result = crew.kickoff()
-#     result_str = str(result)
-#
-#     try:
-#         # 기본값 설정
-#         action = 'HOLD'
-#
-#         # RSI와 MACD 조합으로 매매 결정
-#         result_lower = result_str.lower()
-#         if ("buy position" in result_lower and
-#             (current_rsi <= 30 or rsi_state == "approaching_oversold") and
-#             macd_bullish_cross):
-#             action = "BUY"
-#         elif ("sell position" in result_lower and
-#               (current_rsi >= 70 or rsi_state == "approaching_overbought") and
-#               macd_bearish_cross):
-#             action = "SELL"
-#
-#         record = TradingRecord.objects.create(
-#             timestamp=datetime.now(),
-#             coin_symbol='BTCUSDT',
-#             trade_type=action,
-#             trade_amount_krw=Decimal('0.00'),
-#             trade_reason=result_str,
-#             current_price=Decimal(str(current_price)).quantize(Decimal('0.01')),
-#             trade_reflection=""
-#         )
-#         print(f"Successfully saved trading record - Type: {action},  Price: {current_price}")
+#             return trading_record.id
 #
 #     except Exception as e:
-#         print(f"Error processing analysis result: {e}")
-#         print(f"Result string: {result_str}")
+#         logger.error(f"Analysis error: {e}")
 #         return None
+
+
+class MultiCoinAnalyzer:
+    def __init__(self, symbols: List[str] = None, total_balance: Decimal = Decimal('3000000')):
+        self.symbols = symbols or ['KRW-BTC', 'KRW-ETH', 'KRW-XRP']
+        self.total_balance = total_balance
+        self.per_symbol_balance = total_balance / len(self.symbols)
+        self.analyzers = {
+            symbol: BitcoinAnalyzer(symbol=symbol)
+            for symbol in self.symbols
+        }
+
+    def perform_multi_analysis(self) -> List[Dict]:
+        """모든 심볼에 대한 분석 수행"""
+        results = []
+
+        for symbol in self.symbols:
+            try:
+                analyzer = self.analyzers[symbol]
+
+                # 기존 BitcoinAnalyzer의 분석 로직 실행
+                market_data = analyzer.get_bitcoin_data(max_retries=3)
+                if not market_data:
+                    logger.error(f"Failed to fetch market data for {symbol}")
+                    continue
+
+                current_price = pyupbit.get_orderbook(ticker=symbol)['orderbook_units'][0]["ask_price"]
+                current_status = analyzer.get_current_status()
+
+                if not current_status:
+                    logger.error(f"Failed to get current status for {symbol}")
+                    continue
+
+                # 해당 심볌의 이전 거래 내역 조회
+                last_decisions = TradingRecord.objects.filter(
+                    exchange='UPBIT',
+                    coin_symbol=symbol.split('-')[1]
+                ).order_by('-created_at')[:10]
+
+                # 거래 내역 포맷팅
+                formatted_decisions = []
+                for decision in last_decisions:
+                    formatted_decision = {
+                        "timestamp": int(decision.created_at.timestamp() * 1000),
+                        "decision": decision.trade_type.lower(),
+                        "percentage": float(decision.trade_ratio),
+                        "reason": decision.trade_reason,
+                        "coin_balance": float(decision.coin_balance),
+                        "krw_balance": float(decision.balance),
+                        "current_price": float(decision.current_price)
+                    }
+                    formatted_decisions.append(str(formatted_decision))
+
+                last_decisions_str = "\n".join(formatted_decisions)
+
+                # 기술적 분석 데이터 수집
+                fear_and_greed = fetch_fear_and_greed_index(limit=30)
+
+                # GPT 분석 실행
+                decision = analyzer.analyze_with_gpt4(
+                    market_data,
+                    last_decisions_str,
+                    fear_and_greed,
+                    current_status
+                )
+
+                if not decision:
+                    logger.error(f"Analysis failed for {symbol}")
+                    continue
+
+                if decision['decision'] != 'HOLD':
+                    # 거래 전 현재 잔고 확인
+                    try:
+                        latest_record = TradingRecord.objects.filter(
+                            exchange='UPBIT',
+                            coin_symbol=symbol.split('-')[1]
+                        ).latest('created_at')
+                        krw_balance = latest_record.balance
+                        coin_balance = latest_record.coin_balance
+                    except TradingRecord.DoesNotExist:
+                        krw_balance = self.per_symbol_balance
+                        coin_balance = Decimal('0')
+
+                    # 거래 금액 계산
+                    trade_ratio = Decimal(str(decision['percentage'])) / Decimal('100')
+
+                    if decision['decision'].upper() == 'BUY':
+                        trade_amount_krw = krw_balance * trade_ratio
+                        trade_coin_amount = trade_amount_krw / Decimal(str(current_price))
+                        new_krw_balance = krw_balance - trade_amount_krw
+                        new_coin_balance = coin_balance + trade_coin_amount
+                    else:  # SELL
+                        trade_coin_amount = coin_balance * trade_ratio
+                        trade_amount_krw = trade_coin_amount * Decimal(str(current_price))
+                        new_krw_balance = krw_balance + trade_amount_krw
+                        new_coin_balance = coin_balance - trade_coin_amount
+
+                    # 거래 기록 저장
+                    trading_record = TradingRecord.objects.create(
+                        exchange='UPBIT',
+                        coin_symbol=symbol.split('-')[1],
+                        trade_type=decision['decision'].upper(),
+                        trade_amount_krw=trade_amount_krw,
+                        trade_ratio=decision['percentage'],
+                        coin_balance=new_coin_balance,
+                        balance=new_krw_balance,
+                        current_price=Decimal(str(current_price)),
+                        trade_reason=decision['reason'],
+                        trade_reflection=analyzer.generate_trade_reflection(
+                            last_decisions_str,
+                            Decimal(str(current_price))
+                        )
+                    )
+
+                    results.append({
+                        'symbol': symbol,
+                        'record_id': trading_record.id,
+                        'decision': decision,
+                        'trade_amount': float(trade_amount_krw)
+                    })
+
+            except Exception as e:
+                logger.error(f"Error in analysis for {symbol}: {e}")
+                continue
+
+        return results
+
+

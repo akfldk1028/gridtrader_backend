@@ -14,5 +14,7 @@ urlpatterns = [
     path('get-future-position', views.FuturesPositionView.as_view(), ),
     path('get-server-time', views.ServerTimeView.as_view(), ),
     path('daily-balance', views.DailyBalanceView.as_view(), ),
-
+    path('upbit/balance/', views.BalanceView.as_view(), name='balance'),
+    path('upbit/trade/', views.TradeView.as_view(), name='trade'),
+    path('upbit/price/', views.CurrentPriceView.as_view(), name='current-price'),
 ]

@@ -21,6 +21,7 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Dict
+import pyupbit
 
 
 class BinanceAPIView(APIView):
@@ -865,3 +866,143 @@ class DailyBalanceView(BinanceAPIView):
         except DailyBalance.DoesNotExist:
             return Response({"error": "No DailyBalance found"}, status=status.HTTP_404_NOT_FOUND)
 
+
+# views.py
+
+
+class UpbitBaseView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.upbit = pyupbit.Upbit(
+            settings.UPBIT_ACCESS_KEY,
+            settings.UPBIT_SECRET_KEY
+        )
+
+
+class BalanceView(UpbitBaseView):
+    def get(self, request):
+        """
+        잔고 조회 API
+        GET /api/v1/balance/
+        """
+        try:
+            balances = self.upbit.get_balances()
+            formatted_balances = {}
+
+            for balance in balances:
+                currency = balance['currency']
+                formatted_balances[currency] = {
+                    'balance': float(balance['balance']),
+                    'avg_buy_price': float(balance['avg_buy_price']) if balance['avg_buy_price'] else 0,
+                    'unit_currency': balance['unit_currency']
+                }
+
+            return Response({
+                'status': 'success',
+                'data': formatted_balances
+            })
+
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TradeView(UpbitBaseView):
+    def post(self, request):
+        """
+        거래 실행 API
+        POST /api/v1/trade/
+
+        Request Body:
+        {
+            "action": "buy" | "sell",
+            "market": "KRW-BTC",
+            "percentage": 100
+        }
+        """
+        try:
+            action = request.data.get('action')
+            market = request.data.get('market', 'KRW-BTC')
+            percentage = float(request.data.get('percentage', 100))
+
+            if action not in ['buy', 'sell']:
+                return Response({
+                    'status': 'error',
+                    'message': 'Invalid action. Must be either "buy" or "sell"'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if percentage <= 0 or percentage > 100:
+                return Response({
+                    'status': 'error',
+                    'message': 'Percentage must be between 0 and 100'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if action == 'buy':
+                # KRW 잔고 확인
+                krw_balance = float(self.upbit.get_balance("KRW"))
+                amount_to_invest = krw_balance * (percentage / 100)
+
+                if amount_to_invest < 5000:
+                    return Response({
+                        'status': 'error',
+                        'message': 'Minimum order amount is 5000 KRW'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # 수수료를 고려한 주문 실행
+                result = self.upbit.buy_market_order(market, amount_to_invest * 0.9995)
+
+            else:  # sell
+                # 코인 잔고 확인
+                coin_currency = market.split('-')[1]
+                coin_balance = float(self.upbit.get_balance(coin_currency))
+                amount_to_sell = coin_balance * (percentage / 100)
+
+                # 최소 주문 금액 확인
+                current_price = pyupbit.get_orderbook(ticker=market)['orderbook_units'][0]["ask_price"]
+                if current_price * amount_to_sell < 5000:
+                    return Response({
+                        'status': 'error',
+                        'message': 'Order amount is less than minimum requirement (5000 KRW)'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                result = self.upbit.sell_market_order(market, amount_to_sell)
+
+            return Response({
+                'status': 'success',
+                'data': result
+            })
+
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CurrentPriceView(UpbitBaseView):
+    def get(self, request):
+        """
+        현재가 조회 API
+        GET /api/v1/price/?market=KRW-BTC
+        """
+        try:
+            market = request.query_params.get('market', 'KRW-BTC')
+            orderbook = pyupbit.get_orderbook(ticker=market)
+
+            return Response({
+                'status': 'success',
+                'data': {
+                    'market': market,
+                    'timestamp': orderbook['timestamp'],
+                    'ask_price': orderbook['orderbook_units'][0]["ask_price"],
+                    'bid_price': orderbook['orderbook_units'][0]["bid_price"]
+                }
+            })
+
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
