@@ -1279,10 +1279,12 @@ class BinanceScalpingDataView(APIView):
             )
 
 
-
 class UpbitDataView(APIView):
     def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate various indicators and add them as columns to the DataFrame."""
+        if df is None or df.empty:
+            return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+
         df['SMA_10'] = ta.sma(df['close'], length=10)
         df['EMA_10'] = ta.ema(df['close'], length=10)
         # RSI
@@ -1292,11 +1294,11 @@ class UpbitDataView(APIView):
         # MACD
         df['MACD'], df['Signal_Line'], df['MACD_Histogram'] = self.calculate_macd(df)
 
-        # Moving Averages
-        df['MA7'] = df['close'].rolling(window=7).mean()
-        df['MA10'] = df['close'].rolling(window=10).mean()
-        df['MA25'] = df['close'].rolling(window=25).mean()
-        df['MA99'] = df['close'].rolling(window=99).mean()
+        # Moving Averages with min_periods=1
+        df['MA7'] = df['close'].rolling(window=7, min_periods=1).mean()
+        df['MA10'] = df['close'].rolling(window=10, min_periods=1).mean()
+        df['MA25'] = df['close'].rolling(window=25, min_periods=1).mean()
+        df['MA99'] = df['close'].rolling(window=99, min_periods=1).mean()
 
         # Bollinger Bands
         middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
@@ -1309,7 +1311,7 @@ class UpbitDataView(APIView):
         return df
 
     def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
-    Tuple[pd.Series, pd.Series, pd.Series]:
+            Tuple[pd.Series, pd.Series, pd.Series]:
         fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
         slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
         macd = fast_ema - slow_ema
@@ -1317,14 +1319,16 @@ class UpbitDataView(APIView):
         histogram = macd - signal
         return macd, signal, histogram
 
-    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
+        pd.Series, pd.Series, pd.Series]:
         middle_band = df['close'].rolling(window=period).mean()
         std_dev = df['close'].rolling(window=period).std()
         upper_band = middle_band + (std_dev * num_std)
         lower_band = middle_band - (std_dev * num_std)
         return middle_band, upper_band, lower_band
 
-    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[pd.Series, pd.Series]:
+    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
+        pd.Series, pd.Series]:
         high = df['high'].rolling(k_period).max()
         low = df['low'].rolling(k_period).min()
         k = 100 * (df['close'] - low) / (high - low)
@@ -1337,19 +1341,27 @@ class UpbitDataView(APIView):
         limit = 1000
 
         try:
-            # Upbit에서 1분 데이터 가져오기
+            # Add KRW- prefix if not present
+            if not symbol.startswith('KRW-'):
+                symbol = f'KRW-{symbol}'
+
+            # Get data from Upbit
             df = pyupbit.get_ohlcv(symbol, interval=interval, count=limit)
 
-            # 기술적 지표를 DataFrame에 추가
+            if df is None or df.empty:
+                return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Add technical indicators
             df = self.calculate_indicators(df)
 
-            # 마지막 30개의 데이터만 선택
+            # Select last 30 data points
             recent_data = df.iloc[-30:]
 
-            # JSON 형식으로 변환하여 반환
+            # Handle NaN values
+            recent_data = recent_data.where(pd.notnull(recent_data), None)
+
+            # Convert to JSON and return
             data_json = recent_data.to_json(orient='split')
-            print(data_json)
-            print("---------------------------------------------")
             return Response(json.loads(data_json))
 
         except Exception as e:
