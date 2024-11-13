@@ -26,6 +26,7 @@ from django.core.cache import caches
 import json
 from pandas import Timestamp
 from datetime import datetime, timezone
+import pandas_ta as ta
 
 
 class KRXStockDataAPIView(APIView):
@@ -1037,89 +1038,29 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
 class BinanceScalpingDataView(APIView):
 
-    def calculate_fear_greed_index(self, df: pd.DataFrame) -> float:
+    def fetch_fear_and_greed_index(self, limit=30, date_format='') -> float:
         """
-        Calculate an enhanced fear and greed index based on multiple technical indicators
-        Range: 0 (Extreme Fear) to 100 (Extreme Greed)
+        Fetches the Fear and Greed Index from alternative.me API.
 
-        Components:
-        1. Price Momentum (20%): RSI + Price change rate
-        2. Market Volatility (20%): Bollinger Bands Width + ATR
-        3. Market Volume (20%): Volume + OBV trend
-        4. Market Trend (40%): MACD + Moving Average trends
+        Parameters:
+        - limit (int): Number of results to return. Default is 1.
+        - date_format (str): Date format ('us', 'cn', 'kr', 'world'). Default is '' (unixtime).
+
+        Returns:
+        - float: The Fear and Greed Index value
         """
         try:
-            # 1. Price Momentum (20%)
-            rsi = self.calculate_rsi(df)
-            price_change = ((df['Close'].iloc[-1] - df['Close'].iloc[-20]) / df['Close'].iloc[-20]) * 100
-            momentum_score = (
-                    min(100, max(0, rsi.iloc[-1])) * 0.5 +  # RSI contribution
-                    min(100, max(0, 50 + price_change)) * 0.5  # Price change contribution
-            )
-
-            # 2. Market Volatility (20%)
-            bb_upper, bb_lower = self.calculate_bollinger_bands(df)
-            bb_width = ((bb_upper - bb_lower) / df['Close'].rolling(20).mean()) * 100
-
-            # Calculate ATR (Average True Range)
-            tr = pd.DataFrame()
-            tr['h-l'] = df['High'] - df['Low']
-            tr['h-pc'] = abs(df['High'] - df['Close'].shift(1))
-            tr['l-pc'] = abs(df['Low'] - df['Close'].shift(1))
-            atr = tr.max(axis=1).rolling(14).mean()
-
-            volatility_score = 100 - min(100, max(0,
-                                                  (bb_width.iloc[-1] / bb_width.mean()) * 30 +  # BB contribution
-                                                  (atr.iloc[-1] / atr.mean()) * 70  # ATR contribution
-                                                  ))
-
-            # 3. Market Volume (20%)
-            volume_ma = df['Volume'].rolling(window=20).mean()
-            volume_ratio = df['Volume'].iloc[-1] / volume_ma.iloc[-1]
-
-            # Calculate OBV (On Balance Volume)
-            obv = (np.sign(df['Close'].diff()) * df['Volume']).cumsum()
-            obv_trend = (obv.iloc[-1] - obv.iloc[-20]) / abs(obv.iloc[-20]) * 100
-
-            volume_score = min(100, max(0,
-                                        50 + (volume_ratio - 1) * 25 +  # Volume ratio contribution
-                                        obv_trend * 0.5  # OBV trend contribution
-                                        ))
-
-            # 4. Market Trend (40%)
-            macd, signal, _ = self.calculate_macd(df)
-            ma7, ma25, ma99, ma200 = self.calculate_moving_averages(df)
-
-            # MACD trend score
-            macd_diff = macd - signal
-            macd_score = 50  # neutral
-            if macd_diff.iloc[-1] > 0:
-                macd_score = min(100, 50 + abs(macd_diff.iloc[-1] / macd.std() * 25))
-            else:
-                macd_score = max(0, 50 - abs(macd_diff.iloc[-1] / macd.std() * 25))
-
-            # Moving average trend score
-            ma_score = 50
-            current_price = df['Close'].iloc[-1]
-            if current_price > ma7.iloc[-1] > ma25.iloc[-1]:
-                ma_score = min(100, 75 + (current_price - ma7.iloc[-1]) / current_price * 100)
-            elif current_price < ma7.iloc[-1] < ma25.iloc[-1]:
-                ma_score = max(0, 25 - (ma7.iloc[-1] - current_price) / current_price * 100)
-
-            trend_score = (macd_score * 0.5 + ma_score * 0.5)
-
-            # Final weighted average
-            fear_greed_index = (
-                    (momentum_score * 0.2) +
-                    (volatility_score * 0.2) +
-                    (volume_score * 0.2) +
-                    (trend_score * 0.4)
-            )
-
-            return min(100, max(0, fear_greed_index))
-
+            base_url = "https://api.alternative.me/fng/"
+            params = {
+                'limit': limit,
+                'format': 'json',
+                'date_format': date_format
+            }
+            response = requests.get(base_url, params=params)
+            data = response.json()['data'][0]  # Get the latest data
+            return float(data['value'])
         except Exception as e:
-            print(f"Error calculating fear/greed index: {e}")
+            print(f"Error fetching fear/greed index: {e}")
             return 50  # Default neutral value
 
 
@@ -1138,8 +1079,9 @@ class BinanceScalpingDataView(APIView):
                 price_change = ((latest_close - prev_close) / prev_close) * 100
 
             # Volatility calculation
-            bb_upper, bb_lower = self.calculate_bollinger_bands(df)
-            current_volatility = ((bb_upper.iloc[-1] - bb_lower.iloc[-1]) / df['Close'].iloc[-1]) * 100
+
+            middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
+            current_volatility = ((upper_band.iloc[-1] - lower_band.iloc[-1]) / df['Close'].iloc[-1]) * 100
 
             # Volume analysis
             avg_volume = df['Volume'].rolling(window=30).mean().iloc[-1]
@@ -1159,13 +1101,29 @@ class BinanceScalpingDataView(APIView):
             }
 
     def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
-        pd.Series, pd.Series]:
-        """Calculate Bollinger Bands"""
-        ma = df['Close'].rolling(window=period).mean()
-        std = df['Close'].rolling(window=period).std()
-        upper_band = ma + (std * num_std)
-        lower_band = ma - (std * num_std)
-        return upper_band, lower_band
+        pd.Series, pd.Series, pd.Series]:
+        """
+        Calculate Bollinger Bands
+
+        Parameters:
+        - df: DataFrame with price data
+        - period: Moving average period (default: 20)
+        - num_std: Number of standard deviations (default: 2)
+
+        Returns:
+        - Tuple of (Middle Band, Upper Band, Lower Band)
+        """
+        # Calculate middle band (20-day SMA)
+        middle_band = df['close'].rolling(window=period).mean()
+
+        # Calculate standard deviation
+        std_dev = df['close'].rolling(window=period).std()
+
+        # Calculate upper and lower bands
+        upper_band = middle_band + (std_dev * num_std)
+        lower_band = middle_band - (std_dev * num_std)
+
+        return middle_band, upper_band, lower_band
 
     def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
         pd.Series, pd.Series]:
@@ -1176,15 +1134,23 @@ class BinanceScalpingDataView(APIView):
         d = k.rolling(d_period).mean()
         return k, d
 
-    def calculate_rsi(self, df: pd.DataFrame, period: int = 12, ema_period: int = 14) -> pd.Series:
-        """Calculate RSI indicator using EMA"""
-        delta = df["Close"].diff()
-        up, down = delta.clip(lower=0), -1 * delta.clip(upper=0)
-        roll_up = up.ewm(span=period).mean()
-        roll_down = down.ewm(span=period).mean()
-        rs = roll_up / roll_down
-        rsi = 100.0 - (100.0 / (1.0 + rs))
-        return rsi
+    def calculate_rsi(self, df: pd.DataFrame, length: int = 14) -> pd.Series:
+        """
+        Calculate RSI using pandas_ta
+
+        Parameters:
+        - df: DataFrame with price data
+        - length: RSI period (default: 14)
+
+        Returns:
+        - Series: RSI values
+        """
+        try:
+            rsi = ta.rsi(df['Close'], length=length)
+            return rsi
+        except Exception as e:
+            print(f"Error calculating RSI: {e}")
+            return pd.Series([np.nan] * len(df))  # 에러 시 NaN 값 반환
 
     def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
     Tuple[pd.Series, pd.Series, pd.Series]:
@@ -1201,8 +1167,8 @@ class BinanceScalpingDataView(APIView):
         - Tuple of (MACD line, Signal line, Histogram)
         """
         # Calculate the EMAs
-        fast_ema = df['Close'].ewm(span=fast_period, adjust=True).mean()
-        slow_ema = df['Close'].ewm(span=slow_period, adjust=True).mean()
+        fast_ema = df['Close'].ewm(span=fast_period, adjust=False).mean()
+        slow_ema = df['Close'].ewm(span=slow_period, adjust=False).mean()
 
         # Calculate MACD line
         macd = fast_ema - slow_ema
@@ -1256,9 +1222,9 @@ class BinanceScalpingDataView(APIView):
             rsi = self.calculate_rsi(df)
             macd, signal, histogram = self.calculate_macd(df)
             ma7, ma25, ma99, ma200 = self.calculate_moving_averages(df)
-            upper_bb, lower_bb = self.calculate_bollinger_bands(df)  # 볼린저 밴드 계산 추가
+            middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
             stoch_k, stoch_d = self.calculate_stochastic(df)  # 스토캐스틱 계산 추가
-            fear_greed_index = self.calculate_fear_greed_index(df)
+            fear_greed_index = self.fetch_fear_and_greed_index()  # 새로운 메서드 사용
             market_conditions = self.get_market_conditions(df)
             # 최근 30개 캔들만 사용
             recent_data = []
@@ -1287,8 +1253,9 @@ class BinanceScalpingDataView(APIView):
                             'd': float(stoch_d.iloc[i]) if not pd.isna(stoch_d.iloc[i]) else None
                         },
                         'bollinger_bands': {  # 볼린저 밴드 추가
-                            'upper': float(upper_bb.iloc[i]) if not pd.isna(upper_bb.iloc[i]) else None,
-                            'lower': float(lower_bb.iloc[i]) if not pd.isna(lower_bb.iloc[i]) else None
+                            'middle': float(middle_band.iloc[i]) if not pd.isna(middle_band.iloc[i]) else None,
+                            'upper': float(upper_band.iloc[i]) if not pd.isna(upper_band.iloc[i]) else None,
+                            'lower': float(lower_band.iloc[i]) if not pd.isna(lower_band.iloc[i]) else None
                         },
                         'market_conditions': {  # 시장 상황 지표 추가
                             'fear_greed_index': float(fear_greed_index),
