@@ -576,11 +576,7 @@ def perform_analysis(symbol):
             if trade_amount < Decimal('5000'):
                 logger.info(f"Skipping BUY - Trade amount ({trade_amount} KRW) is less than minimum (5000 KRW)")
                 should_execute = False
-        elif decision['decision'] == 'SELL':
-            if coin_value_krw < Decimal('5000'):
-                logger.info(
-                            f"Skipping SELL - Coin value ({coin_value_krw} KRW) is less than minimum (5000 KRW)")
-                should_execute = False
+
         # 실제 거래 실행
         if should_execute:
             trade_success = analyzer.execute_trade(decision)
