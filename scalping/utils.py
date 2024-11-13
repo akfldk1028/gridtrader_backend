@@ -147,7 +147,13 @@ class BitcoinAnalyzer:
     def analyze_with_gpt4(self, market_data: Dict, last_decisions: str, current_status: str) -> Optional[Dict]:
         """Analyze market data using GPT-4"""
         try:
-            with open('instructions_v3.md', 'r', encoding='utf-8') as file:
+            # 현재 파일의 디렉토리 경로를 가져옴
+            import os
+
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            instructions_path = os.path.join(current_dir, 'instructions_v3.md')
+
+            with open(instructions_path, 'r', encoding='utf-8') as file:
                 instructions = file.read()
 
             response = self.openai_client.chat.completions.create(
