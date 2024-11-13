@@ -575,7 +575,20 @@ def perform_analysis(symbol):
         if not decision:
             logger.error("Failed to get analysis decision")
             return None
+        reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+        current_status_dict = json.loads(current_status)
 
+        trading_record = TradingRecord.objects.create(
+            exchange='UPBIT',
+            coin_symbol=symbol.split('-')[1],
+            trade_type=decision['decision'].upper(),
+            trade_ratio=Decimal(str(decision['percentage'])),
+            trade_reason=decision['reason'],
+            coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
+            balance=Decimal(current_status_dict['krw_balance']),
+            current_price=Decimal(str(current_price)),
+            trade_reflection=reflection
+        )
         # 거래 실행 여부 결정
         should_execute = True
         should_record = True
@@ -595,7 +608,6 @@ def perform_analysis(symbol):
             should_record = False
 
         if should_execute or should_record:
-            current_status_dict = json.loads(current_status)
 
             # 실제 거래 실행
             if should_execute:
@@ -620,20 +632,20 @@ def perform_analysis(symbol):
                         logger.error("Trade execution failed")
 
             # 거래 기록 저장
-            if should_record:
-                reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
-
-                trading_record = TradingRecord.objects.create(
-                    exchange='UPBIT',
-                    coin_symbol=symbol.split('-')[1],
-                    trade_type=decision['decision'].upper(),
-                    trade_ratio=Decimal(str(decision['percentage'])),
-                    trade_reason=decision['reason'],
-                    coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
-                    balance=Decimal(current_status_dict['krw_balance']),
-                    current_price=Decimal(str(current_price)),
-                    trade_reflection=reflection
-                )
+            # if should_record:
+            #     reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+            #
+            #     trading_record = TradingRecord.objects.create(
+            #         exchange='UPBIT',
+            #         coin_symbol=symbol.split('-')[1],
+            #         trade_type=decision['decision'].upper(),
+            #         trade_ratio=Decimal(str(decision['percentage'])),
+            #         trade_reason=decision['reason'],
+            #         coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
+            #         balance=Decimal(current_status_dict['krw_balance']),
+            #         current_price=Decimal(str(current_price)),
+            #         trade_reflection=reflection
+            #     )
 
                 return trading_record.id
 
