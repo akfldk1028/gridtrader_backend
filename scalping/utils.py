@@ -589,47 +589,35 @@ def perform_analysis(symbol):
             current_price=Decimal(str(current_price)),
             trade_reflection=reflection
         )
-        # 거래 실행 여부 결정
+        # 거래 실행 조건 확인
         should_execute = True
-        should_record = True
 
         if decision['decision'] == 'HOLD':
             should_execute = False
-        elif decision['decision'] != allowed_trade_type:
-            logger.info(
-                f"Skipping {decision['decision']} - Not allowed in current position. "
-                f"Current coin value: {coin_value_krw} KRW, Only {allowed_trade_type} is possible."
-            )
-            should_execute = False
-            should_record = False
         elif decision['decision'] == last_trade_type:
             logger.info(f"Skipping {decision['decision']} - Same as last trade type")
             should_execute = False
-            should_record = False
-
-        if should_execute or should_record:
-
-            # 실제 거래 실행
-            if should_execute:
-                # 매수 시 최소 거래 금액 확인
-                if decision['decision'] == 'BUY':
-                    krw_balance = Decimal(current_status_dict['krw_balance'])
-                    trade_amount = krw_balance * (Decimal(str(decision['percentage'])) / Decimal('100'))
-                    if trade_amount < Decimal('5000'):
-                        logger.info(f"Skipping BUY - Trade amount ({trade_amount} KRW) is less than minimum (5000 KRW)")
-                        should_execute = False
-
-                # 매도 시 최소 거래 금액 확인
-                elif decision['decision'] == 'SELL':
-                    if coin_value_krw < Decimal('5000'):
-                        logger.info(
+        elif decision['decision'] == 'BUY':
+            # 매수 시에는 KRW 잔고만 확인
+            krw_balance = Decimal(current_status_dict['krw_balance'])
+            trade_amount = krw_balance
+            if trade_amount < Decimal('5000'):
+                logger.info(f"Skipping BUY - Trade amount ({trade_amount} KRW) is less than minimum (5000 KRW)")
+                should_execute = False
+        elif decision['decision'] == 'SELL':
+            if coin_value_krw < Decimal('5000'):
+                logger.info(
                             f"Skipping SELL - Coin value ({coin_value_krw} KRW) is less than minimum (5000 KRW)")
-                        should_execute = False
+                should_execute = False
+        # 실제 거래 실행
+        if should_execute:
+            trade_success = analyzer.execute_trade(decision)
+            if not trade_success:
+                logger.error("Trade execution failed")
 
-                if should_execute:
-                    trade_success = analyzer.execute_trade(decision)
-                    if not trade_success:
-                        logger.error("Trade execution failed")
+        return trading_record.id
+
+
 
             # 거래 기록 저장
             # if should_record:
@@ -647,7 +635,6 @@ def perform_analysis(symbol):
             #         trade_reflection=reflection
             #     )
 
-                return trading_record.id
 
         return None
 
