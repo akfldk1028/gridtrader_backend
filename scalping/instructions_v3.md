@@ -117,6 +117,11 @@ Example structure for JSON Data (Current Investment State) is as follows:
 
 #### Decision Making:
 5.  **Synthesize Analysis**: Combine insights from market analysis, chart images, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators sentiment to identify clear and strong trading signals.
+     - Chart Image Analysis: Pay careful attention to real-time chart images for visual confirmation of:
+     - Candlestick patterns and formations
+     - Volume spikes and trends
+     - Price action relative to indicators
+     - Visual confirmation of technical signals
 6.  **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
         RSI: Monitor the RSI on a short time frame (e.g., RSI_14 on a 1-minute chart). An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal). Look for confirmation from MACD trend direction to strengthen the signal.
         MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
