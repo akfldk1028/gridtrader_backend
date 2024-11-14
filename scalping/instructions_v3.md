@@ -76,15 +76,26 @@ Example structure for JSON Data (Current Investment State) is as follows:
 }
 ```
 ### Data 5: Current Chart Image
-- **Purpose**: Provides a real-time visual representation of the crypto price trends and technical indicators.
+- **Purpose**: Real-time visualization of cryptocurrency price trends and technical indicators
+- **Timeframe**: 1-minute chart
 - **Contents**:
-  - The image contains a 1-minutes candlestick chart for the KRW-BTC pair, illustrating immediate price movements.
-  - Includes key technical indicators:
-    - **Main Chart**:  1-minutes mainchart.
-    - **Volume Bars**: Displaying trading volume in 1-minutes intervals.
-    - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
-    - **MACD**: Moving Average Convergence Divergence tracks the relationship between two moving averages of a price. A MACD crossing above its signal line suggests bullish momentum, whereas crossing below indicates bearish momentum.
-
+  1. **Main Chart**
+     - KRW-BTC pair 1-minute candlestick chart
+     - Shows immediate price movements
+  2. **Volume Indicator**
+     - Shows trading volume in 1-minute intervals
+     - Confirms price movement validity
+  3. **Technical Indicators**
+      **RSI_14 (Relative Strength Index)**
+         - Below 30: Oversold zone (buy signal)
+         - Above 70: Overbought zone (sell signal)
+     **MACD (Moving Average Convergence Divergence)**
+         - Crosses above signal line: Bullish momentum
+         - Crosses below signal line: Bearish momentum
+- **Applications**:
+      - Real-time price monitoring
+      - Technical analysis-based trading signal detection
+      - Market trend and momentum analysis
 
 
 ## Technical Indicator Glossary
@@ -112,7 +123,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 7.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA) along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
         Moving Averages: Focus on Golden Crosses and Death Crosses using Moving Averages while considering MACD trend direction for additional confirmation. This combined approach helps filter out false signals and improves trade accuracy in scalping strategies. 
         Bollinger Bands: When overall trend analysis shows unfavorable conditions, utilize Bollinger Band-based scalping strategy with 20-period moving average and 2 standard deviations for quick trades, where buying opportunities emerge when price touches the lower band and shows reversal signs, while selling opportunities arise when price touches the upper band with reversal indications; implement tight stop losses and take profits as price moves toward the middle band, noting this strategy is particularly effective during sideways or ranging market conditions.
-8.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and small profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
+8.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and  profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
 9.  **Confirm Trend Strength and Direction**:
     - Volume Confirmation: Ensure strong volume supports the trend direction
     - Trend Momentum: Look for strong consecutive candles in the trend direction
