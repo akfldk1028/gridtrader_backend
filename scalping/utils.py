@@ -138,16 +138,32 @@ class BitcoinAnalyzer:
 
             # MACD 추가
             study_menu = wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "cq-menu.ciq-studies"))
+                EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, "cq-menu.ciq-studies")
+                )
             )
             study_menu.click()
             time.sleep(1)
-
             macd_item = wait.until(
-                EC.presence_of_element_located((By.XPATH, "//cq-item[.//translate[@original='Stochastic Momentum Index']]"))
+                EC.presence_of_element_located((By.XPATH, "//cq-item[.//translate[@original='MACD']]"))
             )
             ActionChains(driver).move_to_element(macd_item).click().perform()
             time.sleep(1)
+            ######################################
+
+            study_menu = wait.until(
+                EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, "cq-menu.ciq-studies")
+                )
+            )
+            study_menu.click()
+            time.sleep(1)
+            macd_item = wait.until(
+                EC.presence_of_element_located((By.XPATH, "//cq-item[.//translate[@original='RSI']]"))
+            )
+            ActionChains(driver).move_to_element(macd_item).click().perform()
+            time.sleep(1)
+
 
             # 볼린저 밴드 추가
             study_menu.click()
