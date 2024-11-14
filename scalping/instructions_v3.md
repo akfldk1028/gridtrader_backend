@@ -77,13 +77,13 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ```
 ### Data 5: Current Chart Image
 - **Purpose**: Real-time visualization of cryptocurrency price trends and technical indicators
-- **Timeframe**: 1-minute chart
+- **Timeframe**: 10-minute chart
 - **Contents**:
   1. **Main Chart**
-     - KRW-BTC pair 1-minute candlestick chart
+     - KRW-BTC pair 10-minute candlestick chart
      - Shows immediate price movements
   2. **Volume Indicator**
-     - Shows trading volume in 1-minute intervals
+     - Shows trading volume in 10-minute intervals
      - Confirms price movement validity
   3. **Technical Indicators**
       **RSI_14 (Relative Strength Index)**
