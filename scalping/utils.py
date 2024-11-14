@@ -357,10 +357,8 @@ class BitcoinAnalyzer:
             current_indicators = self._format_last_row_indicators(market_data)
             # GPT에 보낼 프롬프트 구성
             analysis_prompt = f"""
-            Please analyze the following market data and provide a trading decision.
             Current Technical Indicators:
             {current_indicators}
-            Please provide a trading decision based on these indicators and context.
             """
 
             # 차트 이미지 캡처
@@ -371,13 +369,13 @@ class BitcoinAnalyzer:
 
             if not chart_image:
                 logger.warning("Failed to capture chart image")
+                # {"role": "user", "content": fear_and_greed},
 
             messages = [
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": json.dumps(market_data)},
                 {"role": "user", "content": analysis_prompt},
                 {"role": "user", "content": reflection},
-                {"role": "user", "content": fear_and_greed},
                 {"role": "user", "content": current_status}
             ]
 

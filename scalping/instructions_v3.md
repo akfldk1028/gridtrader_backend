@@ -18,24 +18,17 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
 }
 ```
 
-### Data 2: Previous Decisions
+### Data 2: Technical Current Market Indicators
+- **Purpose**: :  Formats and displays real-time technical analysis indicators for market monitoring
+- **Contents** :  Current Market Indicators 
+
+### Data 3: Previous Decisions
 - **Purpose**: :  As a trading advisor, analyze the previous trading decisions and current market price to provide a reflection.
                     1. **Effectiveness**: Were recent trades profitable and aligned with market trends?
                     2. **Missed Opportunities**: Identify any missed signals or overtrading instances.
                     3. **Improvements**: Suggest one quick adjustment for immediate strategy enhancement.
 - **Contents** :  Evaluate recent scalping trades based on the following:
                     - **Previous Decisions**: previous_decisions
-
-
-### Data 3: Fear and Greed Index
-- **Purpose**: : While the Fear and Greed Index traditionally measures long-term market sentiment, for 1-minute scalping we adapt its use as follows:
-- **Contents**:
-  - The dataset comprises 30 days' worth of Fear and Greed Index data, each entry containing:
-    - `value`: The index value, ranging from 0 (Extreme Fear) to 100 (Extreme Greed), reflecting the current market sentiment.
-    - `value_classification`: A textual classification of the index value, such as "Fear," "Greed," "Extreme Fear," or "Extreme Greed."
-    - `timestamp`: The Unix timestamp representing the date and time when the index value was recorded.
-    - `time_until_update`: (Optional) The remaining time in seconds until the next index update, available only for the most recent entry.
-  - This data allows for a nuanced understanding of market sentiment trends over the past month, providing insights into investor behavior and potential market directions.
 
 ### Data 4: Current Investment State
 - **Purpose**: Offers a real-time overview of your investment status.
@@ -122,7 +115,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 
 ### Considerations
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
-- **Maximize Returns**: Focus on strategies that maximize returns, even if they involve higher risks. aggressive position sizes where appropriate.
+- **Smart Entry & Protection**: Enter positions only when profit potential is clear and always protect capital with strict stop-losses to minimize risk exposure
 - **Mitigate High Risks**: Implement stop-loss orders and other risk management techniques to protect the portfolio from significant losses.
 - **Stay Informed and Agile**: Continuously monitor market conditions and be ready to adjust strategies rapidly in response to new information or changes in the market environment.
 - **Holistic Strategy**: Successful aggressive investment strategies require a comprehensive view of market data, technical indicators, and current status to inform your strategies. Be bold in taking advantage of market opportunities.
