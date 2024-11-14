@@ -19,7 +19,7 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
 ```
 
 ### Data 2: Technical Current Market Indicators
-- **Purpose**: :  Formats and displays real-time technical analysis indicators for market monitoring
+- **Purpose**: :  Formats and displays real-time technical analysis indicators for market monitoring  and guide investment decisions.
 - **Contents** :  Current Market Indicators 
 
 ### Data 3: Previous Decisions

@@ -363,9 +363,9 @@ class BitcoinAnalyzer:
 
             # 차트 이미지 캡처
             chart_image = self.capture_chart()
-            print("★★★★★★★★★★★★★★★★★★★★★★★★★★★★★")
-            print(chart_image)
-            print("★★★★★★★★★★★★★★★★★★★★★★★★★★★★★")
+            # print("★★★★★★★★★★★★★★★★★★★★★★★★★★★★★")
+            # print(chart_image)
+            # print("★★★★★★★★★★★★★★★★★★★★★★★★★★★★★")
 
             if not chart_image:
                 logger.warning("Failed to capture chart image")
