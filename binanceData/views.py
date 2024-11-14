@@ -1302,8 +1302,8 @@ class UpbitDataView(APIView):
         df['Middle_Band'], df['Upper_Band'], df['Lower_Band'] = middle_band, upper_band, lower_band
 
         # Stochastic Oscillator
-        stoch_k, stoch_d = self.calculate_stochastic(df)
-        df['Stoch_K'], df['Stoch_D'] = stoch_k, stoch_d
+        # stoch_k, stoch_d = self.calculate_stochastic(df)
+        # df['Stoch_K'], df['Stoch_D'] = stoch_k, stoch_d
 
         return df
 
