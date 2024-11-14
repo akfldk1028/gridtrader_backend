@@ -52,12 +52,9 @@ def capture_upbit_chart(save_dir='captured_charts'):
         time.sleep(1)
 
         # 1초 옵션 선택
-        one_second_option = wait.until(
-            EC.element_to_be_clickable(
-                (By.CSS_SELECTOR, "cq-item[stxtap*='second']")
-            )
-        )
-        one_second_option.click()
+        one_hour_option = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,1,'minute')\"]")))
+        one_hour_option.click()
         time.sleep(2)
 
         try:

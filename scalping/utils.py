@@ -126,11 +126,15 @@ class BitcoinAnalyzer:
             time_menu.click()
             time.sleep(1)
 
-            one_second_option = wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "cq-item[stxtap*='second']"))
-            )
-            one_second_option.click()
+            # one_second_option = wait.until(
+            #     EC.element_to_be_clickable((By.CSS_SELECTOR, "cq-item[stxtap*='second']"))
+            # )
+            # one_second_option.click()
+            one_hour_option = wait.until(
+                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,1,'minute')\"]")))
+            one_hour_option.click()
             time.sleep(2)
+
 
             # MACD 추가
             study_menu = wait.until(
