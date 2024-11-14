@@ -296,7 +296,6 @@ class BitcoinAnalyzer:
                     "reason": decision.trade_reason,
                     "btc_balance": float(decision.coin_balance),
                     "krw_balance": float(decision.balance),
-                    "btc_avg_buy_price": float(decision.current_price),
                     "current_price": {current_price}
 
                 }
@@ -592,7 +591,7 @@ def perform_analysis(symbol):
         # GPT-4 분석
         decision = analyzer.analyze_with_gpt4(
             market_data,
-            reflection,
+            last_decisions,
             fear_and_greed,
             current_status
         )

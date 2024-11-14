@@ -18,11 +18,9 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
 }
 ```
 
+
 ### Data 2: Previous Decisions
 - **Purpose**: This section details the insights gleaned from the most recent trading decisions undertaken by the system. It serves to provide a historical backdrop that is instrumental in refining and honing future trading strategies. Incorporate a structured evaluation of past decisions against OHLCV data to systematically assess their effectiveness.
-        - **Effectiveness**: Were recent trades profitable and aligned with market trends? 
-        - **Missed Opportunities**: Identify any missed signals or overtrading instances.
-        - **Improvements**: Suggest one quick adjustment for immediate strategy enhancement.
 - **Contents**: 
     - Each record within `last_decisions` chronicles a distinct trading decision, encapsulating the decision's timing (`timestamp`), the action executed (`decision`), the proportion of the portfolio it impacted (`percentage`), the reasoning underpinning the decision (`reason`), and the portfolio's condition at the decision's moment (`btc_balance`, `krw_balance`, `btc_avg_buy_price`).
         - `timestamp`: Marks the exact moment the decision was recorded, expressed in milliseconds since the Unix epoch, to furnish a chronological context.
@@ -31,9 +29,18 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
         - `reason`: Details the analytical foundation or market indicators that incited the trading decision, shedding light on the decision-making process.
         - `btc_balance`: Reveals the quantity of Bitcoin within the portfolio at the decision's time, demonstrating the portfolio's market exposure.
         - `krw_balance`: Indicates the amount of Korean Won available for trading at the time of the decision, signaling liquidity.
-        - `btc_avg_buy_price`: Provides the average acquisition cost of the Bitcoin holdings, serving as a metric for evaluating the past decisions' performance and the prospective future profitability.
         - `current_price`: current crypto price
-        - 
+
+### Data 3: Previous Decisions
+- **Purpose**: :  As a trading advisor, analyze the previous trading decisions and current market price to provide a reflection.
+                    1. **Effectiveness**: Were recent trades profitable and aligned with market trends?
+                    2. **Missed Opportunities**: Identify any missed signals or overtrading instances.
+                    3. **Improvements**: Suggest one quick adjustment for immediate strategy enhancement.
+- **Contents** :  Evaluate recent scalping trades based on the following:
+                    - **Previous Decisions**: previous_decisions
+
+
+
 ### Data 3: Fear and Greed Index
 - **Purpose**: : While the Fear and Greed Index traditionally measures long-term market sentiment, for 1-minute scalping we adapt its use as follows:
 - **Contents**:

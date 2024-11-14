@@ -22,14 +22,21 @@ Example structure for JSON Data 2 (Market Analysis Data) is as follows:
 - **Purpose**: :  Formats and displays real-time technical analysis indicators for market monitoring  and guide investment decisions.
 - **Contents** :  Current Market Indicators 
 
-### Data 3: Previous Decisions
-- **Purpose**: :  As a trading advisor, analyze the previous trading decisions and current market price to provide a reflection.
-                    1. **Effectiveness**: Were recent trades profitable and aligned with market trends?
-                    2. **Missed Opportunities**: Identify any missed signals or overtrading instances.
-                    3. **Improvements**: Suggest one quick adjustment for immediate strategy enhancement.
-- **Contents** :  Evaluate recent scalping trades based on the following:
-                    - **Previous Decisions**: previous_decisions
 
+### Data 3: Previous Decisions
+- **Purpose**: This section details the insights gleaned from the most recent trading decisions undertaken by the system. It serves to provide a historical backdrop that is instrumental in refining and honing future trading strategies. Incorporate a structured evaluation of past decisions against OHLCV data to systematically assess their effectiveness.
+- **Contents**: 
+    - Each record within `last_decisions` chronicles a distinct trading decision, encapsulating the decision's timing (`timestamp`), the action executed (`decision`), the proportion of the portfolio it impacted (`percentage`), the reasoning underpinning the decision (`reason`), and the portfolio's condition at the decision's moment (`btc_balance`, `krw_balance`, `btc_avg_buy_price`).
+        - `timestamp`: Marks the exact moment the decision was recorded, expressed in milliseconds since the Unix epoch, to furnish a chronological context.
+        - `decision`: Clarifies the action taken—`buy`, `sell`, or `hold`—thus indicating the trading move made based on the analysis.
+        - `percentage`: Denotes the fraction of the portfolio allocated for the decision, mirroring the level of investment in the trading action.
+        - `reason`: Details the analytical foundation or market indicators that incited the trading decision, shedding light on the decision-making process.
+        - `btc_balance`: Reveals the quantity of Bitcoin within the portfolio at the decision's time, demonstrating the portfolio's market exposure.
+        - `krw_balance`: Indicates the amount of Korean Won available for trading at the time of the decision, signaling liquidity.
+        - `current_price`: current crypto price
+  
+  
+       
 ### Data 4: Current Investment State
 - **Purpose**: Offers a real-time overview of your investment status.
 - **Contents**:
@@ -101,15 +108,23 @@ Example structure for JSON Data (Current Investment State) is as follows:
 4. **Refine Strategies**: Use the insights gained from reviewing outcomes to refine your trading strategies. This could involve adjusting your technical analysis approach, improving your news sentiment analysis, or tweaking your risk management rules.
 
 #### Decision Making:
-6. **Synthesize Analysis**: Combine insights from market analysis, chart images, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators sentiment to identify clear and strong trading signals.
-7. **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
+5.  **Synthesize Analysis**: Combine insights from market analysis, chart images, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators sentiment to identify clear and strong trading signals.
+6.  **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
         RSI: Monitor the RSI on a short time frame (e.g., RSI_14 on a 1-minute chart). An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal). Look for confirmation from MACD trend direction to strengthen the signal.
         MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
-8.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA) along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
+7.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA) along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
         Moving Averages: Focus on Golden Crosses and Death Crosses using Moving Averages while considering MACD trend direction for additional confirmation. This combined approach helps filter out false signals and improves trade accuracy in scalping strategies. 
         Bollinger Bands: When overall trend analysis shows unfavorable conditions, utilize Bollinger Band-based scalping strategy with 20-period moving average and 2 standard deviations for quick trades, where buying opportunities emerge when price touches the lower band and shows reversal signs, while selling opportunities arise when price touches the upper band with reversal indications; implement tight stop losses and take profits as price moves toward the middle band, noting this strategy is particularly effective during sideways or ranging market conditions.
-9.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and small profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state
-10. **Minimize Market Sentiment Analysis**: In scalping, long-term market sentiment  have less impact due to the short time frames involved. Focus primarily on real-time data and avoid incorporating broader sentiment analysis unless there's immediate news affecting the price..
+8.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and small profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
+9.  **Confirm Trend Strength and Direction**:
+    - Volume Confirmation: Ensure strong volume supports the trend direction
+    - Trend Momentum: Look for strong consecutive candles in the trend direction
+    - Avoid trading during periods of low volume or choppy price action
+10. **Wait for High-Probability Setup**:
+    - Look for price action at major support/resistance levels
+    - Wait for pullbacks in strong trends rather than chasing momentum
+    - Confirm trend continuation with volume analysis
+    - Check for potential reversal patterns or divergences
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
 ### Considerations
