@@ -131,7 +131,7 @@ class BitcoinAnalyzer:
             # )
             # one_second_option.click()
             one_hour_option = wait.until(
-                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,1,'minute')\"]")))
+                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,3,'minute')\"]")))
             one_hour_option.click()
             time.sleep(2)
 
@@ -197,7 +197,7 @@ class BitcoinAnalyzer:
         for attempt in range(max_retries):
             try:
                 response = session.get(
-                    f"{base_url}/{self.symbol}/minute1/",
+                    f"{base_url}/{self.symbol}/minute3/",
                     timeout=30,
                     verify=False,
                     headers={'User-Agent': 'Mozilla/5.0'}
@@ -243,7 +243,7 @@ class BitcoinAnalyzer:
                      "content": "You are a cryptocurrency trading advisor providing reflections on past trades."},
                     {"role": "user", "content": reflection_prompt}
                 ],
-                max_tokens=500  # 짧게 유지
+                max_tokens=200  # 짧게 유지
             )
 
             return response.choices[0].message.content
@@ -269,34 +269,6 @@ class BitcoinAnalyzer:
             logger.error(f"Trade execution error: {e}")
             return False
 
-    # def get_current_status(self) -> Dict:
-    #     """Get current trading account status"""
-    #     try:
-    #         orderbook = pyupbit.get_orderbook(ticker="KRW-BTC")
-    #         current_time = orderbook['timestamp']
-    #         balances = self.upbit.get_balances()
-    #
-    #         btc_balance = Decimal('0')
-    #         krw_balance = Decimal('0')
-    #         btc_avg_buy_price = Decimal('0')
-    #
-    #         for b in balances:
-    #             if b['currency'] == "BTC":
-    #                 btc_balance = Decimal(b['balance'])
-    #                 btc_avg_buy_price = Decimal(b['avg_buy_price'])
-    #             if b['currency'] == "KRW":
-    #                 krw_balance = Decimal(b['balance'])
-    #
-    #         return json.dumps({
-    #             'current_time': current_time,
-    #             'orderbook': orderbook,
-    #             'btc_balance': str(btc_balance),
-    #             'krw_balance': str(krw_balance),
-    #             'btc_avg_buy_price': str(btc_avg_buy_price)
-    #         })
-    #     except Exception as e:
-    #         logger.error(f"Error getting current status: {e}")
-    #         return None
 
     def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
@@ -410,10 +382,10 @@ class BitcoinAnalyzer:
                 })
 
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # 이미지를 처리할 수 있는 모델로 변경
+                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
                 messages=messages,
                 response_format={"type": "json_object"},
-                max_tokens=1000
+                max_tokens=800
             )
 
 
@@ -653,26 +625,6 @@ def perform_analysis(symbol):
 
 
         return trading_record.id
-
-
-
-            # 거래 기록 저장
-            # if should_record:
-            #     reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
-            #
-            #     trading_record = TradingRecord.objects.create(
-            #         exchange='UPBIT',
-            #         coin_symbol=symbol.split('-')[1],
-            #         trade_type=decision['decision'].upper(),
-            #         trade_ratio=Decimal(str(decision['percentage'])),
-            #         trade_reason=decision['reason'],
-            #         coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
-            #         balance=Decimal(current_status_dict['krw_balance']),
-            #         current_price=Decimal(str(current_price)),
-            #         trade_reflection=reflection
-            #     )
-
-
         return None
 
     except Exception as e:
