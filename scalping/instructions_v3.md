@@ -118,8 +118,6 @@ Example structure for JSON Data (Current Investment State) is as follows:
     - Trend Momentum: Look for strong consecutive candles in the trend direction
     - Avoid trading during periods of low volume or choppy price action
 10. **Wait for High-Probability Setup**:
-    - Look for price action at major support/resistance levels
-    - Wait for pullbacks in strong trends rather than chasing momentum
     - Confirm trend continuation with volume analysis
     - Check for potential reversal patterns or divergences
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
