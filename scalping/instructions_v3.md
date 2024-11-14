@@ -69,12 +69,12 @@ Example structure for JSON Data (Current Investment State) is as follows:
 }
 ```
 ### Data 5: Current Chart Image
-- **Purpose**: Provides a real-time visual representation of the BTC price trends and technical indicators.
+- **Purpose**: Provides a real-time visual representation of the crypto price trends and technical indicators.
 - **Contents**:
-  - The image contains a 1-second candlestick chart for the KRW-BTC pair, illustrating immediate price movements.
+  - The image contains a 1-minutes candlestick chart for the KRW-BTC pair, illustrating immediate price movements.
   - Includes key technical indicators:
-    - **Moving Averages**:  15-second (red line) and 50-second (green line) to show ultra-short-term trends.
-    - **Volume Bars**: Displaying trading volume in 1-second intervals.
+    - **Main Chart**:  1-minutes mainchart.
+    - **Volume Bars**: Displaying trading volume in 1-minutes intervals.
     - **Stochastic Momentum**: Fast K (14 periods) and Slow D (3 periods) for quick momentum shifts
                                Overbought level at 80, Oversold level at 20
                                Crossovers between K and D lines signal potential trend reversals
