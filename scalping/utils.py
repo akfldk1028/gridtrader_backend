@@ -602,18 +602,6 @@ def perform_analysis(symbol):
             logger.error("Failed to get analysis decision")
             return None
 
-        trading_record = TradingRecord.objects.create(
-            exchange='UPBIT',
-            coin_symbol=symbol.split('-')[1],
-            trade_type=decision['decision'].upper(),
-            trade_ratio=Decimal(str(decision['percentage'])),
-            trade_reason=decision['reason'],
-            coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
-            balance=Decimal(current_status_dict['krw_balance']),
-            current_price=Decimal(str(current_price)),
-            trade_reflection=reflection
-        )
-        # 거래 실행 조건 확인
         should_execute = True
 
         if decision['decision'] == 'HOLD':
@@ -634,6 +622,21 @@ def perform_analysis(symbol):
             trade_success = analyzer.execute_trade(decision)
             if not trade_success:
                 logger.error("Trade execution failed")
+
+
+        trading_record = TradingRecord.objects.create(
+            exchange='UPBIT',
+            coin_symbol=symbol.split('-')[1],
+            trade_type=decision['decision'].upper(),
+            trade_ratio=Decimal(str(decision['percentage'])),
+            trade_reason=decision['reason'],
+            coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
+            balance=Decimal(current_status_dict['krw_balance']),
+            current_price=Decimal(str(current_price)),
+            trade_reflection=reflection
+        )
+        # 거래 실행 조건 확인
+
 
         return trading_record.id
 
