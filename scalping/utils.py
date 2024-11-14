@@ -335,9 +335,6 @@ class BitcoinAnalyzer:
                 f"Middle Band: {last_row[columns.index('Middle_Band')]:.2f}",
                 f"Lower Band: {last_row[columns.index('Lower_Band')]:.2f}",
                 "",
-                "=== Stochastic ===",
-                f"Stoch K: {last_row[columns.index('Stoch_K')]:.2f}",
-                f"Stoch D: {last_row[columns.index('Stoch_D')]:.2f}"
             ]
 
             return "\n".join(formatted_indicators)
