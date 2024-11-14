@@ -90,6 +90,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
          - Below 30: Oversold zone (buy signal)
          - Above 70: Overbought zone (sell signal)
      **MACD (Moving Average Convergence Divergence)**
+         - Black Line : MACD , Red Line : Signal
          - Crosses above signal line: Bullish momentum
          - Crosses below signal line: Bearish momentum
 - **Applications**:
