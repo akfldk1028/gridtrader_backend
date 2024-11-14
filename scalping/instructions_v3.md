@@ -82,11 +82,8 @@ Example structure for JSON Data (Current Investment State) is as follows:
   - Includes key technical indicators:
     - **Main Chart**:  1-minutes mainchart.
     - **Volume Bars**: Displaying trading volume in 1-minutes intervals.
-    - **Stochastic Momentum**: Fast K (14 periods) and Slow D (3 periods) for quick momentum shifts
-                               Overbought level at 80, Oversold level at 20
-                               Crossovers between K and D lines signal potential trend reversals
-                               Works best when combined with RSI and MACD for confirmation
-                               Particularly effective for identifying short-term momentum shifts in scalping
+    - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
+    - **MACD**: Moving Average Convergence Divergence tracks the relationship between two moving averages of a price. A MACD crossing above its signal line suggests bullish momentum, whereas crossing below indicates bearish momentum.
 
 
 
