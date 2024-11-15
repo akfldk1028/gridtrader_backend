@@ -136,7 +136,7 @@ class BitcoinAnalyzer:
             # )
             # one_second_option.click()
             one_hour_option = wait.until(
-                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,3,'minute')\"]")))
+                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,5,'minute')\"]")))
             one_hour_option.click()
             time.sleep(2)
 
@@ -202,7 +202,7 @@ class BitcoinAnalyzer:
         for attempt in range(max_retries):
             try:
                 response = session.get(
-                    f"{base_url}/{self.symbol}/minute3/",
+                    f"{base_url}/{self.symbol}/minute5/",
                     timeout=30,
                     verify=False,
                     headers={'User-Agent': 'Mozilla/5.0'}
