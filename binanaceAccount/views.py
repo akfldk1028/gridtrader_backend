@@ -925,8 +925,8 @@ class TradeView(UpbitBaseView):
         try:
             action = request.data.get('action')
             market = request.data.get('market', 'KRW-BTC')
-            # percentage = float(request.data.get('percentage', 100))
-            percentage = 80
+            percentage = float(request.data.get('percentage', 100))
+            # percentage = 80
 
             if action not in ['buy', 'sell']:
                 return Response({
@@ -958,7 +958,9 @@ class TradeView(UpbitBaseView):
                 # 코인 잔고 확인
                 coin_currency = market.split('-')[1]
                 coin_balance = float(self.upbit.get_balance(coin_currency))
-                amount_to_sell = coin_balance  # 전체 수량을 팔기 위해 그냥 balance 전체를 사용
+                # amount_to_sell = coin_balance  # 전체 수량을 팔기 위해 그냥 balance 전체를 사용
+                amount_to_sell = coin_balance * (percentage / 100)
+
 
                 # 최소 주문 금액 확인
                 current_price = pyupbit.get_orderbook(ticker=market)['orderbook_units'][0]["ask_price"]

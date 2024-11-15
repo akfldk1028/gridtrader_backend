@@ -100,7 +100,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 
 
 ## Technical Indicator Glossary
-- **SMA_10 & EMA_10 & MA7,25,99**: Short-term moving averages that help identify immediate trend directions. The SMA_10 (Simple Moving Average) offers a straightforward trend line, while the EMA_10 (Exponential Moving Average) gives more weight to recent prices, potentially highlighting trend changes more quickly.
+- **MA7 & MA25 & MA99**: Short-term moving averages that help identify immediate trend directions. The MA (Simple Moving Average) offers a straightforward trend line
 - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
 - **MACD**: Moving Average Convergence Divergence tracks the relationship between two moving averages of a price. A MACD crossing above its signal line suggests bullish momentum, whereas crossing below indicates bearish momentum.
 - **Bollinger Bands**: A set of three lines: the middle is a 20-day average price, and the two outer lines adjust based on price volatility. The outer bands widen with more volatility and narrow when less. They help identify when prices might be too high (touching the upper band) or too low (touching the lower band), suggesting potential market moves.
@@ -112,7 +112,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ### Instruction Workflow
 #### Pre-Decision Analysis:
 1. **Review Current Investment State and Previous Decisions**: Start by examining the most recent investment state and the history of decisions to understand the current portfolio position and past actions. Review the outcomes of past decisions to understand their effectiveness. This review should consider not just the financial results but also the accuracy of your market analysis and predictions.
-2. **Analyze Market Data**: Utilize Data 2 (Market Analysis) and Data 6 (Current Chart Image) to examine current market trends, including price movements and technical indicators. Pay special attention to the SMA_10, EMA_10, RSI_9, RSI_14, MACD, Bollinger Bands, and other key indicators for signals on potential market directions.
+2. **Analyze Market Data**: Utilize Data 2 (Market Analysis) and Data 6 (Current Chart Image) to examine current market trends, including price movements and technical indicators. Pay special attention to the MA7, MA25, MA99, RSI_14, MACD, Bollinger Bands, and other key indicators for signals on potential market directions.
 3. **Analyze Fear and Greed Index**:  Consider the index only as background market context, without directly influencing 1-minute scalping decisions while focusing on RSI and volume signals for immediate trade actions.
 4. **Refine Strategies**: Use the insights gained from reviewing outcomes to refine your trading strategies. This could involve adjusting your technical analysis approach, improving your news sentiment analysis, or tweaking your risk management rules.
 

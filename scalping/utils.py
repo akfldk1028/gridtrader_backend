@@ -590,18 +590,18 @@ def perform_analysis(symbol):
 
         should_execute = True
 
-        if decision['decision'] == 'HOLD':
-            should_execute = False
-        elif decision['decision'] == last_trade_type:
-            logger.info(f"Skipping {decision['decision']} - Same as last trade type")
-            should_execute = False
-        elif decision['decision'] == 'BUY':
-            # 매수 시에는 KRW 잔고만 확인
-            krw_balance = Decimal(current_status_dict['krw_balance'])
-            trade_amount = krw_balance
-            if trade_amount < Decimal('5000'):
-                logger.info(f"Skipping BUY - Trade amount ({trade_amount} KRW) is less than minimum (5000 KRW)")
-                should_execute = False
+        # if decision['decision'] == 'HOLD':
+        #     should_execute = False
+        # elif decision['decision'] == last_trade_type:
+        #     logger.info(f"Skipping {decision['decision']} - Same as last trade type")
+        #     should_execute = False
+        # elif decision['decision'] == 'BUY':
+        #     # 매수 시에는 KRW 잔고만 확인
+        #     krw_balance = Decimal(current_status_dict['krw_balance'])
+        #     trade_amount = krw_balance
+        #     if trade_amount < Decimal('5000'):
+        #         logger.info(f"Skipping BUY - Trade amount ({trade_amount} KRW) is less than minimum (5000 KRW)")
+        #         should_execute = False
 
         # 실제 거래 실행
         if should_execute:
