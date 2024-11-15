@@ -130,7 +130,6 @@ Example structure for JSON Data (Current Investment State) is as follows:
         MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
 9.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and  profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
 10. **Confirm Trend Strength and Direction**:
-     - Thoroughly analyze trend confirmation by examining MACD line and signal line arrangements
      - Check for potential reversal patterns or divergences
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
