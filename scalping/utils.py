@@ -56,12 +56,14 @@ class BitcoinAnalyzer:
         """현재가 조회 API 호출"""
         return self._make_api_request(f'/upbit/price/?market={self.symbol}')
 
-    def execute_trade_via_api(self, action: str, percentage: float) -> Dict:
+    def execute_trade_via_api(self, action: str, percentage: float, is_full_trade: bool) -> Dict:
         """거래 실행 API 호출"""
         data = {
             "action": action,
             "market": self.symbol,
-            "percentage": percentage
+            "percentage": percentage,
+            "is_full_trade": is_full_trade
+
         }
         return self._make_api_request('/upbit/trade/', method='POST', data=data)
 
@@ -251,16 +253,62 @@ class BitcoinAnalyzer:
             logger.error(f"Error generating reflection: {e}")
             return "반성 생성 중 오류 발생"
 
-
     def execute_trade(self, decision: Dict) -> bool:
-        """Execute trade based on analysis using API"""
+        """Execute trade based on analysis"""
         try:
+            if decision['decision'] == 'HOLD':
+                logger.info("Decision is HOLD - no trade executed")
+                return True
+
             if decision['decision'] not in ['BUY', 'SELL']:
                 return False
 
+            # 최근 매수 횟수 확인 (HOLD 제외)
+            recent_buys = TradingRecord.objects.filter(
+                exchange='UPBIT',
+                coin_symbol=self.symbol.split('-')[1],
+                trade_type='BUY'
+            ).order_by('-created_at')[:2]  # 최근 2개의 매수 기록
+            buy_count = len(recent_buys)
+
+            if decision['decision'] == 'BUY':
+                # 매수 로직
+                try:
+                    latest_buy = recent_buys[0] if recent_buys else None
+
+                    if not latest_buy:
+                        # 첫 매수는 50%
+                        is_full_trade = False
+                    else:
+                        # 두 번째 매수는 전체
+                        is_full_trade = True
+                except IndexError:
+                    is_full_trade = False
+            else:  # SELL
+                # 매도 로직
+                recent_sells = TradingRecord.objects.filter(
+                    exchange='UPBIT',
+                    coin_symbol=self.symbol.split('-')[1],
+                    trade_type='SELL'
+                ).order_by('-created_at')[:1]
+
+                if buy_count == 1:
+                    # 매수가 1번이면 전체 매도
+                    is_full_trade = True
+                else:  # buy_count == 2
+                    # 매수가 2번이면 매도도 2번에 나눠서
+                    if not recent_sells:
+                        # 첫 매도는 50%
+                        is_full_trade = False
+                    else:
+                        # 두 번째 매도는 전체
+                        is_full_trade = True
+
+            # 거래 실행
             trade_result = self.execute_trade_via_api(
                 action=decision['decision'].lower(),
-                percentage=float(decision['percentage'])
+                percentage=float(decision['percentage']),
+                is_full_trade=is_full_trade
             )
 
             return trade_result['status'] == 'success'
@@ -268,7 +316,6 @@ class BitcoinAnalyzer:
         except Exception as e:
             logger.error(f"Trade execution error: {e}")
             return False
-
 
     def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
