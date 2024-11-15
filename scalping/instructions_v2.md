@@ -134,6 +134,14 @@ Example structure for JSON Data (Current Investment State) is as follows:
 10. **Minimize Market Sentiment Analysis**: In scalping, long-term market sentiment  have less impact due to the short time frames involved. Focus primarily on real-time data and avoid incorporating broader sentiment analysis unless there's immediate news affecting the price..
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
+
+#### Decision Making:
+6. **Synthesize Analysis**: Combine insights from market analysis, chart images, news, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators and news sentiment to identify clear and strong trading signals.
+7. **Apply Aggressive Risk Management Principles**: While maintaining a balance, prioritize higher potential returns even if they come with increased risks. Ensure that any proposed action aligns with an aggressive investment strategy, considering the current portfolio balance, the investment state, and market volatility.
+8. **Incorporate Market Sentiment Analysis**: Factor in the insights gained from the Fear and Greed Index analysis alongside technical and news sentiment analysis. Assess whether current market sentiment supports or contradicts your aggressive trading actions. Use this sentiment analysis to adjust the proposed action and investment proportion, ensuring that decisions are aligned with a high-risk, high-reward strategy.
+9. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
+
+
 ### Considerations
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
 - **Maximize Returns**: Focus on strategies that maximize returns, even if they involve higher risks. aggressive position sizes where appropriate.
