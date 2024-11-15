@@ -263,52 +263,51 @@ class BitcoinAnalyzer:
             if decision['decision'] not in ['BUY', 'SELL']:
                 return False
 
-            # 전체 거래 기록 가져오기 (HOLD 제외)
-            recent_trades = TradingRecord.objects.filter(
+            # 가장 최근 매도 시점 이후의 매수 횟수만 확인
+            latest_sell = TradingRecord.objects.filter(
                 exchange='UPBIT',
-                coin_symbol=self.symbol.split('-')[1]
-            ).exclude(
-                trade_type='HOLD'
-            ).order_by('-created_at')
+                coin_symbol=self.symbol.split('-')[1],
+                trade_type='SELL'
+            ).latest('created_at').created_at if TradingRecord.objects.filter(
+                exchange='UPBIT',
+                coin_symbol=self.symbol.split('-')[1],
+                trade_type='SELL'
+            ).exists() else None
 
-            # 매수 후 매도가 완료되었는지 확인
-            buys_after_last_sell = []
-            for trade in recent_trades:
-                if trade.trade_type == 'SELL' and (
-                        trade.trade_ratio == 100 or  # 100% 매도이거나
-                        (len(buys_after_last_sell) == 1 and trade.trade_type == 'SELL')  # 1번 매수 후 매도
-                ):
-                    # 전체 매도나 1번 매수 후 매도면 새로운 사이클
-                    break
-                if trade.trade_type == 'BUY':
-                    buys_after_last_sell.append(trade)
-
-            buy_count = len(buys_after_last_sell)
+            # 최근 매도 이후의 매수 횟수 카운트
+            current_buy_count = TradingRecord.objects.filter(
+                exchange='UPBIT',
+                coin_symbol=self.symbol.split('-')[1],
+                trade_type='BUY',
+                created_at__gt=latest_sell if latest_sell else '1970-01-01'
+            ).count()
 
             if decision['decision'] == 'BUY':
-                # 매수 로직
-                if buy_count == 0:
+                if current_buy_count == 0:
                     # 첫 매수는 50%
                     is_full_trade = False
-                elif buy_count == 1:
+                elif current_buy_count == 1:
                     # 두 번째 매수는 전체
                     is_full_trade = True
                 else:
-                    # 이미 2번 매수했고 아직 매도 안 됐으면 매수 불가
                     logger.info("Already bought twice in current cycle")
                     return False
 
             else:  # SELL
-                if buy_count == 1:
+                if current_buy_count == 1:
                     # 매수가 1번이면 전체 매도
                     is_full_trade = True
-                elif buy_count == 2:
-                    # 매수가 2번이면 매도 기록 확인
-                    recent_sells = [t for t in recent_trades if t.trade_type == 'SELL']
+                elif current_buy_count == 2:
+                    # 매수가 2번이면, 현재 사이클의 매도 기록 확인
+                    has_sell_in_cycle = TradingRecord.objects.filter(
+                        exchange='UPBIT',
+                        coin_symbol=self.symbol.split('-')[1],
+                        trade_type='SELL',
+                        created_at__gt=latest_sell if latest_sell else '1970-01-01'
+                    ).exists()
                     # 매도 기록이 없으면 첫 매도 (50%), 있으면 전체 매도
-                    is_full_trade = True if recent_sells else False
+                    is_full_trade = True if has_sell_in_cycle else False
                 else:
-                    # 매수 기록이 없으면 매도 불가
                     logger.info("No buy records found in current cycle")
                     return False
 
