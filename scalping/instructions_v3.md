@@ -118,23 +118,23 @@ Example structure for JSON Data (Current Investment State) is as follows:
 
 #### Decision Making:
 5.  **Synthesize Analysis**: Combine insights from market analysis, chart images, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators sentiment to identify clear and strong trading signals.
-     - Chart Image Analysis: Pay careful attention to real-time chart images for visual confirmation of:
-     - Candlestick patterns and formations
      - Volume spikes and trends
      - Price action relative to indicators
      - Visual confirmation of technical signals
-6.  **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
+6.  **Chart Image Analysis**: Pay careful attention to real-time chart images for visual confirmation of:
+        You should also look closely at the chart image given in Data 5. Execute scalping trading to gain profits from image analysis.  
+7.  **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
         RSI: Monitor the RSI on a short time frame An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal). Look for confirmation from MACD trend direction to strengthen the signal.
         MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
-7.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA) along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
+8.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages (e.g., 1-minute or 5-minute SMA and EMA) along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
         Moving Averages: Focus on Normal and reverse arrangement of moving averages.
         Bollinger Bands: When overall trend analysis shows unfavorable conditions, utilize Bollinger Band-based scalping strategy with 20-period moving average and 2 standard deviations for quick trades, where buying opportunities emerge when price touches the lower band and shows reversal signs, while selling opportunities arise when price touches the upper band with reversal indications; Depending on the trend, the middle Bollinger band may be a selling opportunity or a buying opportunity.
-8.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and  profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
-9.  **Confirm Trend Strength and Direction**:
-    - Volume Confirmation: Ensure strong volume supports the trend direction
-    - Trend Momentum: Look for strong consecutive candles in the trend direction
-    - Check for potential reversal patterns or divergences
-10. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
+9.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and  profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
+10. **Confirm Trend Strength and Direction**:
+     - Volume Confirmation: Ensure strong volume supports the trend direction
+     - Trend Momentum: Look for strong consecutive candles in the trend direction
+     - Check for potential reversal patterns or divergences
+11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
 ### Considerations
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
