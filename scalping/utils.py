@@ -84,6 +84,9 @@ class BitcoinAnalyzer:
                 raise Exception("Failed to get balance")
 
             symbol_currency = self.symbol.split('-')[1]  # KRW-BTC -> BTC
+            print("★★★★★★★★★★★★★★★★★★★")
+            print(balance_info)
+            print("★★★★★★★★★★★★★★★★★★★")
 
             return json.dumps({
                 'current_time': current_time,
