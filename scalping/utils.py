@@ -263,7 +263,7 @@ class BitcoinAnalyzer:
             if decision['decision'] not in ['BUY', 'SELL']:
                 return False
 
-            # 최근 거래 기록 확인 (HOLD 제외하고 모든 거래)
+            # 전체 거래 기록 가져오기 (HOLD 제외)
             recent_trades = TradingRecord.objects.filter(
                 exchange='UPBIT',
                 coin_symbol=self.symbol.split('-')[1]
@@ -271,9 +271,19 @@ class BitcoinAnalyzer:
                 trade_type='HOLD'
             ).order_by('-created_at')
 
-            # 최근 매수 횟수 확인
-            recent_buys = [trade for trade in recent_trades if trade.trade_type == 'BUY']
-            buy_count = len(recent_buys[:2])  # 최근 2개의 매수만 카운트
+            # 매수 후 매도가 완료되었는지 확인
+            buys_after_last_sell = []
+            for trade in recent_trades:
+                if trade.trade_type == 'SELL' and (
+                        trade.trade_ratio == 100 or  # 100% 매도이거나
+                        (len(buys_after_last_sell) == 1 and trade.trade_type == 'SELL')  # 1번 매수 후 매도
+                ):
+                    # 전체 매도나 1번 매수 후 매도면 새로운 사이클
+                    break
+                if trade.trade_type == 'BUY':
+                    buys_after_last_sell.append(trade)
+
+            buy_count = len(buys_after_last_sell)
 
             if decision['decision'] == 'BUY':
                 # 매수 로직
@@ -284,8 +294,8 @@ class BitcoinAnalyzer:
                     # 두 번째 매수는 전체
                     is_full_trade = True
                 else:
-                    # 이미 2번 매수했으면 더 이상 매수 불가
-                    logger.info("Already bought twice")
+                    # 이미 2번 매수했고 아직 매도 안 됐으면 매수 불가
+                    logger.info("Already bought twice in current cycle")
                     return False
 
             else:  # SELL
@@ -294,12 +304,12 @@ class BitcoinAnalyzer:
                     is_full_trade = True
                 elif buy_count == 2:
                     # 매수가 2번이면 매도 기록 확인
-                    recent_sells = [trade for trade in recent_trades if trade.trade_type == 'SELL']
+                    recent_sells = [t for t in recent_trades if t.trade_type == 'SELL']
                     # 매도 기록이 없으면 첫 매도 (50%), 있으면 전체 매도
                     is_full_trade = True if recent_sells else False
                 else:
                     # 매수 기록이 없으면 매도 불가
-                    logger.info("No buy records found")
+                    logger.info("No buy records found in current cycle")
                     return False
 
             # 거래 실행
