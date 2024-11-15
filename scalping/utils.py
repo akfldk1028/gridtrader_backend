@@ -87,7 +87,7 @@ class BitcoinAnalyzer:
                 'current_time': current_time,
                 'orderbook': orderbook,
                 f'{symbol_currency.lower()}_balance': str(
-                    balance_info['data'].get(symbol_currency, {}).get('balance', '0.0')),
+                    balance_info['data'].get(symbol_currency, {}).get('coin_balance', '0.0')),
                 'krw_balance': str(balance_info['data'].get('KRW', {}).get('balance', '0.0')),
                 f'{symbol_currency.lower()}_avg_buy_price': str(
                     balance_info['data'].get(symbol_currency, {}).get('avg_buy_price', '0.0'))
