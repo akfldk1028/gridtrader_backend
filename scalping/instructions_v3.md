@@ -121,8 +121,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
      - Volume spikes and trends
      - Price action relative to indicators
      - Visual confirmation of technical signals
-6.  **Chart Image Analysis**: Pay careful attention to real-time chart images for visual confirmation of:
-        You should also look closely at the chart image given in Data 5. Execute scalping trading to gain profits from image analysis.  
+6.  **Chart Image Analysis**: Pay careful attention to real-time chart images for visual confirmation of trend patterns (support/resistance levels, price action, candlestick formations), volume indicators (spikes, trends, breakout confirmations), technical patterns (reversals, continuations, chart formations), indicator signals (RSI divergence, MACD crossovers, Bollinger Band positions), and time frame correlations to validate trading decisions and identify optimal entry/exit points for scalping opportunities. Look for convergence of multiple technical factors to confirm strong trading signals and execute trades when clear setups emerge. 
 7.  **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
         RSI: Monitor the RSI on a short time frame An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal). Look for confirmation from MACD trend direction to strengthen the signal.
         MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
@@ -132,7 +131,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 9.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and  profit targets for regular scalping trades, aggressively capitalize on optimal setups (clear RSI signals with strong volume) by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
 10. **Confirm Trend Strength and Direction**:
      - Volume Confirmation: Ensure strong volume supports the trend direction
-     - Trend Momentum: Look for strong consecutive candles in the trend direction
+     - Thoroughly analyze trend confirmation by examining MACD line and signal line arrangements (bullish when MACD crosses above signal line in normal alignment, bearish when MACD crosses below signal line in reverse alignment), verify trend alignment with multiple moving averages (particularly 20/50/200 MA arrangements and crossovers), along with volume confirmation (ensure strong volume supports the trend direction), momentum validation (look for strong consecutive candles in the trend direction), and potential reversal signals (bearish/bullish divergences, MA death/golden crosses).
      - Check for potential reversal patterns or divergences
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
