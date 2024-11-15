@@ -263,46 +263,44 @@ class BitcoinAnalyzer:
             if decision['decision'] not in ['BUY', 'SELL']:
                 return False
 
-            # 최근 매수 횟수 확인 (HOLD 제외)
-            recent_buys = TradingRecord.objects.filter(
+            # 최근 거래 기록 확인 (HOLD 제외하고 모든 거래)
+            recent_trades = TradingRecord.objects.filter(
                 exchange='UPBIT',
-                coin_symbol=self.symbol.split('-')[1],
-                trade_type='BUY'
-            ).order_by('-created_at')[:2]  # 최근 2개의 매수 기록
-            buy_count = len(recent_buys)
+                coin_symbol=self.symbol.split('-')[1]
+            ).exclude(
+                trade_type='HOLD'
+            ).order_by('-created_at')
+
+            # 최근 매수 횟수 확인
+            recent_buys = [trade for trade in recent_trades if trade.trade_type == 'BUY']
+            buy_count = len(recent_buys[:2])  # 최근 2개의 매수만 카운트
 
             if decision['decision'] == 'BUY':
                 # 매수 로직
-                try:
-                    latest_buy = recent_buys[0] if recent_buys else None
-
-                    if not latest_buy:
-                        # 첫 매수는 50%
-                        is_full_trade = False
-                    else:
-                        # 두 번째 매수는 전체
-                        is_full_trade = True
-                except IndexError:
+                if buy_count == 0:
+                    # 첫 매수는 50%
                     is_full_trade = False
-            else:  # SELL
-                # 매도 로직
-                recent_sells = TradingRecord.objects.filter(
-                    exchange='UPBIT',
-                    coin_symbol=self.symbol.split('-')[1],
-                    trade_type='SELL'
-                ).order_by('-created_at')[:1]
+                elif buy_count == 1:
+                    # 두 번째 매수는 전체
+                    is_full_trade = True
+                else:
+                    # 이미 2번 매수했으면 더 이상 매수 불가
+                    logger.info("Already bought twice")
+                    return False
 
+            else:  # SELL
                 if buy_count == 1:
                     # 매수가 1번이면 전체 매도
                     is_full_trade = True
-                else:  # buy_count == 2
-                    # 매수가 2번이면 매도도 2번에 나눠서
-                    if not recent_sells:
-                        # 첫 매도는 50%
-                        is_full_trade = False
-                    else:
-                        # 두 번째 매도는 전체
-                        is_full_trade = True
+                elif buy_count == 2:
+                    # 매수가 2번이면 매도 기록 확인
+                    recent_sells = [trade for trade in recent_trades if trade.trade_type == 'SELL']
+                    # 매도 기록이 없으면 첫 매도 (50%), 있으면 전체 매도
+                    is_full_trade = True if recent_sells else False
+                else:
+                    # 매수 기록이 없으면 매도 불가
+                    logger.info("No buy records found")
+                    return False
 
             # 거래 실행
             trade_result = self.execute_trade_via_api(
@@ -316,6 +314,8 @@ class BitcoinAnalyzer:
         except Exception as e:
             logger.error(f"Trade execution error: {e}")
             return False
+
+    # percentage = float(decision['percentage']),
 
     def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
