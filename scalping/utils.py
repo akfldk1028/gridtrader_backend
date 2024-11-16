@@ -443,7 +443,7 @@ class BitcoinAnalyzer:
                 })
 
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
+                model="gpt-4o-mini",  # 이미지를 처리할 수 있는 모델로 변경
                 messages=messages,
                 response_format={"type": "json_object"},
                 max_tokens=800

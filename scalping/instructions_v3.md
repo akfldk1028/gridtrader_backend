@@ -137,10 +137,10 @@ Example structure for JSON Data (Current Investment State) is as follows:
 7.  **Identify Overbought and Oversold Conditions**: Utilize technical indicators such as RSI (Relative Strength Index) and MACD to detect overbought or oversold conditions in the market. These conditions often precede price reversals, providing opportunities for quick trades in a scalping strategy.
         RSI: Monitor the RSI on a short time frame An RSI above 70 indicates overbought conditions (potential sell signal), while an RSI below 30 indicates oversold conditions (potential buy signal). Look for confirmation from MACD trend direction to strengthen the signal. 
         Bollinger Bands: When overall trend analysis shows unfavorable conditions, utilize Bollinger Band-based scalping strategy with 20-period moving average and 2 standard deviations for quick trades, where buying opportunities emerge when price touches the lower band and shows reversal signs, while selling opportunities arise when price touches the upper band with reversal indications; Depending on the trend, the middle Bollinger band may be a selling opportunity or a buying opportunity.
-8. **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
+8.  **Assess Short-Term and Long-Term Trends**: Focus on identifying immediate market trends using short-term moving averages along with MACD direction. Recognize trend directions to align your scalping trades accordingly.
         Moving Averages: Focus on Normal and reverse arrangement of moving averages.
         MACD: Use MACD to confirm trend direction and potential reversal points. When MACD line crosses below signal line during overbought conditions (RSI > 70), it strengthens sell signals. Conversely, when MACD crosses above signal line during oversold conditions (RSI < 30), it reinforces buy signals.
-9.  **Apply Dynamic Risk Management Principles**: While maintaining tight stops and  profit targets for regular scalping trades, aggressively capitalize on optimal setups by increasing position size and profit targets. Balance conservative protection on standard trades with aggressive profit maximization when high-probability opportunities arise, always ensuring risk alignment with current market conditions and portfolio state.
+9.  **Apply Aggressive Risk Management Principles**: While maintaining a balance, prioritize higher potential returns even if they come with increased risks. Ensure that any proposed action aligns with an aggressive investment strategy, considering the current portfolio balance, the investment state, and market volatility.
 10. **Confirm Trend Strength and Direction**:
      - Check for potential reversal patterns or divergences
 11. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
@@ -148,6 +148,16 @@ Example structure for JSON Data (Current Investment State) is as follows:
 ### Considerations
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
 - **Smart Entry & Protection**: Enter positions only when profit potential is clear and always protect capital with strict stop-losses to minimize risk exposure
+- **Maximize Returns**: Focus on strategies that maximize returns, even if they involve higher risks. aggressive position sizes where appropriate.
+- **Mitigate High Risks**: Implement stop-loss orders and other risk management techniques to protect the portfolio from significant losses.
+- **Stay Informed and Agile**: Continuously monitor market conditions and be ready to adjust strategies rapidly in response to new information or changes in the market environment.
+- **Holistic Strategy**: Successful aggressive investment strategies require a comprehensive view of market data, technical indicators, and current status to inform your strategies. Be bold in taking advantage of market opportunities.
+- Take a deep breath and work on this step by step.
+- Your response must be JSON format.
+
+### Considerations
+- **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
+- **Maximize Returns**: Focus on strategies that maximize returns, even if they involve higher risks. aggressive position sizes where appropriate.
 - **Mitigate High Risks**: Implement stop-loss orders and other risk management techniques to protect the portfolio from significant losses.
 - **Stay Informed and Agile**: Continuously monitor market conditions and be ready to adjust strategies rapidly in response to new information or changes in the market environment.
 - **Holistic Strategy**: Successful aggressive investment strategies require a comprehensive view of market data, technical indicators, and current status to inform your strategies. Be bold in taking advantage of market opportunities.
