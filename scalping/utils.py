@@ -273,19 +273,19 @@ class BitcoinAnalyzer:
                 trade_type='SELL'
             ).order_by('-created_at').first()
 
-            # 마지막 매도 이후의 거래만 체크
+            # 마지막 매도 이후의 거래만 체크 (HOLD 제외)
             if latest_sell:
                 current_cycle_trades = TradingRecord.objects.filter(
                     exchange='UPBIT',
                     coin_symbol=self.symbol.split('-')[1],
                     created_at__gt=latest_sell.created_at
-                )
+                ).exclude(trade_type='HOLD')  # HOLD 제외
             else:
-                # 매도가 없으면 모든 거래 체크
+                # 매도가 없으면 모든 거래 체크 (HOLD 제외)
                 current_cycle_trades = TradingRecord.objects.filter(
                     exchange='UPBIT',
                     coin_symbol=self.symbol.split('-')[1]
-                )
+                ).exclude(trade_type='HOLD')  # HOLD 제외
 
             # 현재 사이클의 매수/매도 횟수
             current_buy_count = current_cycle_trades.filter(trade_type='BUY').count()
