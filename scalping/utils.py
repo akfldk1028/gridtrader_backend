@@ -136,7 +136,7 @@ class BitcoinAnalyzer:
             # )
             # one_second_option.click()
             one_hour_option = wait.until(
-                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,5,'minute')\"]")))
+                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,3,'minute')\"]")))
             one_hour_option.click()
             time.sleep(2)
 
@@ -202,7 +202,7 @@ class BitcoinAnalyzer:
         for attempt in range(max_retries):
             try:
                 response = session.get(
-                    f"{base_url}/{self.symbol}/minute5/",
+                    f"{base_url}/{self.symbol}/minute3/",
                     timeout=30,
                     verify=False,
                     headers={'User-Agent': 'Mozilla/5.0'}
@@ -266,24 +266,30 @@ class BitcoinAnalyzer:
             if decision['decision'] not in ['BUY', 'SELL']:
                 return False
 
-            # 가장 최근 매도 시점 이후의 매수 횟수만 확인
+            # 마지막 매도 시점 찾기
             latest_sell = TradingRecord.objects.filter(
                 exchange='UPBIT',
                 coin_symbol=self.symbol.split('-')[1],
                 trade_type='SELL'
-            ).latest('created_at').created_at if TradingRecord.objects.filter(
-                exchange='UPBIT',
-                coin_symbol=self.symbol.split('-')[1],
-                trade_type='SELL'
-            ).exists() else None
+            ).order_by('-created_at').first()
 
-            # 최근 매도 이후의 매수 횟수 카운트
-            current_buy_count = TradingRecord.objects.filter(
-                exchange='UPBIT',
-                coin_symbol=self.symbol.split('-')[1],
-                trade_type='BUY',
-                created_at__gt=latest_sell if latest_sell else '1970-01-01'
-            ).count()
+            # 마지막 매도 이후의 거래만 체크
+            if latest_sell:
+                current_cycle_trades = TradingRecord.objects.filter(
+                    exchange='UPBIT',
+                    coin_symbol=self.symbol.split('-')[1],
+                    created_at__gt=latest_sell.created_at
+                )
+            else:
+                # 매도가 없으면 모든 거래 체크
+                current_cycle_trades = TradingRecord.objects.filter(
+                    exchange='UPBIT',
+                    coin_symbol=self.symbol.split('-')[1]
+                )
+
+            # 현재 사이클의 매수/매도 횟수
+            current_buy_count = current_cycle_trades.filter(trade_type='BUY').count()
+            current_sell_count = current_cycle_trades.filter(trade_type='SELL').count()
 
             if decision['decision'] == 'BUY':
                 if current_buy_count == 0:
@@ -297,22 +303,19 @@ class BitcoinAnalyzer:
                     return False
 
             else:  # SELL
-                if current_buy_count == 1:
-                    # 매수가 1번이면 전체 매도
-                    is_full_trade = True
-                elif current_buy_count == 2:
-                    # 매수가 2번이면, 현재 사이클의 매도 기록 확인
-                    has_sell_in_cycle = TradingRecord.objects.filter(
-                        exchange='UPBIT',
-                        coin_symbol=self.symbol.split('-')[1],
-                        trade_type='SELL',
-                        created_at__gt=latest_sell if latest_sell else '1970-01-01'
-                    ).exists()
-                    # 매도 기록이 없으면 첫 매도 (50%), 있으면 전체 매도
-                    is_full_trade = True if has_sell_in_cycle else False
-                else:
+                if current_buy_count == 0:
                     logger.info("No buy records found in current cycle")
                     return False
+                elif current_buy_count == 1:
+                    # 매수가 1번이면 전체 매도
+                    is_full_trade = True
+                else:  # current_buy_count == 2
+                    if current_sell_count == 0:
+                        # 첫 매도는 50%
+                        is_full_trade = False
+                    else:
+                        # 두 번째 매도는 전체
+                        is_full_trade = True
 
             # 거래 실행
             trade_result = self.execute_trade_via_api(
@@ -326,7 +329,6 @@ class BitcoinAnalyzer:
         except Exception as e:
             logger.error(f"Trade execution error: {e}")
             return False
-
     # percentage = float(decision['percentage']),
 
     def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
