@@ -419,11 +419,11 @@ class BitcoinAnalyzer:
             if not chart_image:
                 logger.warning("Failed to capture chart image")
                 # {"role": "user", "content": fear_and_greed},
+                # {"role": "user", "content": analysis_prompt},
 
             messages = [
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": json.dumps(market_data)},
-                {"role": "user", "content": analysis_prompt},
                 {"role": "user", "content": reflection},
                 {"role": "user", "content": current_status}
             ]
