@@ -24,7 +24,7 @@ def setup_scalping():
     schedule(
         'scalping.tasks.scalping',
         schedule_type=Schedule.MINUTES,  # MINUTES로 변경
-        minutes=3,  # 1분마다 실행
+        minutes=10,  # 1분마다 실행
         next_run=next_run,
         repeats=-1  # 무한 반복
     )

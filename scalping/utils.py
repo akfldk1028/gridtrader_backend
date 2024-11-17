@@ -136,7 +136,7 @@ class BitcoinAnalyzer:
             # )
             # one_second_option.click()
             one_hour_option = wait.until(
-                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,3,'minute')\"]")))
+                EC.element_to_be_clickable((By.XPATH, "//cq-item[@stxtap=\"Layout.setPeriodicity(1,10,'minute')\"]")))
             one_hour_option.click()
             time.sleep(2)
 
@@ -202,7 +202,7 @@ class BitcoinAnalyzer:
         for attempt in range(max_retries):
             try:
                 response = session.get(
-                    f"{base_url}/{self.symbol}/minute3/",
+                    f"{base_url}/{self.symbol}/minute10/",
                     timeout=30,
                     verify=False,
                     headers={'User-Agent': 'Mozilla/5.0'}
@@ -443,7 +443,7 @@ class BitcoinAnalyzer:
                 })
 
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # 이미지를 처리할 수 있는 모델로 변경
+                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
                 messages=messages,
                 response_format={"type": "json_object"},
                 max_tokens=800
