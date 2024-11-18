@@ -107,7 +107,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 - **Factor in Transaction Fees**: Upbit charges a transaction fee of 0.05%. Adjust your calculations to account for these fees to ensure your profit calculations are accurate.
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
 - **Maximize Returns**: Focus on strategies that maximize returns, even if they involve higher risks. aggressive position sizes where appropriate.
-- **Split Order Strategy**: The system supports executing trades in two separate portions for both buying and selling, allowing for split orders with different price targets to optimize entry/exit points and maximize potential profits, with each split requiring specific percentage allocations and distinct price targets.
+- **Split Order Strategy**: The system can execute multiple consecutive buy or sell orders (up to two times) within a short period if market conditions present clear opportunities, allowing for strategic position building or profit taking through repeated actions rather than being limited to single executions.
 - **Mitigate High Risks**: Implement stop-loss orders and other risk management techniques to protect the portfolio from significant losses.
 - **Stay Informed and Agile**: Continuously monitor market conditions and be ready to adjust strategies rapidly in response to new information or changes in the market environment.
 - **Holistic Strategy**: Successful aggressive investment strategies require a comprehensive view of market data, technical indicators, and current status to inform your strategies. Be bold in taking advantage of market opportunities.
