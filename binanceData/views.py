@@ -1285,8 +1285,8 @@ class UpbitDataView(APIView):
         if df is None or df.empty:
             return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
 
-        # df['SMA_10'] = ta.sma(df['close'], length=10)
-        # df['EMA_10'] = ta.ema(df['close'], length=10)
+        df['SMA_10'] = ta.sma(df['close'], length=10)
+        df['EMA_10'] = ta.ema(df['close'], length=10)
         df['RSI_14'] = ta.rsi(df['close'], length=14)
 
         # MACD

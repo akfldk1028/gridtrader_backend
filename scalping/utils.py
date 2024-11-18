@@ -345,8 +345,8 @@ class BitcoinAnalyzer:
                     "reason": decision.trade_reason,
                     "btc_balance": float(decision.coin_balance),
                     "krw_balance": float(decision.balance),
-                    "current_price": {current_price}
-
+                    "current_price": {current_price},
+                    "avg_buy_price": float(decision.avg_buy_price)  # btc_avg_buy_price -> avg_buy_price로 수정
                 }
                 formatted_decisions.append(str(formatted_decision))
 
@@ -629,9 +629,15 @@ def perform_analysis(symbol):
 
         last_decisions = analyzer.get_last_decisions(current_price)
         fear_and_greed = fetch_fear_and_greed_index(limit=30)
-        current_status = analyzer.get_current_status()
         reflection = analyzer.generate_trade_reflection(last_decisions, current_price)
+        current_status = analyzer.get_current_status()
         current_status_dict = json.loads(current_status)
+
+        # 평균매수가 추출
+        symbol_currency = symbol.split('-')[1]  # KRW-BTC -> BTC
+        avg_buy_price = float(current_status_dict.get(f'{symbol_currency.lower()}_avg_buy_price', '0.0'))
+
+
 
         if not current_status:
             logger.error("Failed to get current status")
@@ -680,7 +686,8 @@ def perform_analysis(symbol):
             coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
             balance=Decimal(current_status_dict['krw_balance']),
             current_price=Decimal(str(current_price)),
-            trade_reflection=reflection
+            trade_reflection=reflection,
+            avg_buy_price=Decimal(str(avg_buy_price)),  # btc_avg_buy_price -> avg_buy_price로 수정
         )
         # 거래 실행 조건 확인
 

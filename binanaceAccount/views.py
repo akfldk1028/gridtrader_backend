@@ -909,81 +909,6 @@ class BalanceView(UpbitBaseView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# class TradeView(UpbitBaseView):
-#     def post(self, request):
-#         """
-#         거래 실행 API
-#         POST /api/v1/trade/
-#
-#         Request Body:
-#         {
-#             "action": "buy" | "sell",
-#             "market": "KRW-BTC",
-#             "percentage": 100
-#         }
-#         """
-#         try:
-#             action = request.data.get('action')
-#             market = request.data.get('market', 'KRW-BTC')
-#             percentage = float(request.data.get('percentage', 100))
-#             # percentage = 80
-#
-#             if action not in ['buy', 'sell']:
-#                 return Response({
-#                     'status': 'error',
-#                     'message': 'Invalid action. Must be either "buy" or "sell"'
-#                 }, status=status.HTTP_400_BAD_REQUEST)
-#
-#             if percentage <= 0 or percentage > 100:
-#                 return Response({
-#                     'status': 'error',
-#                     'message': 'Percentage must be between 0 and 100'
-#                 }, status=status.HTTP_400_BAD_REQUEST)
-#
-#             if action == 'buy':
-#                 # KRW 잔고 확인
-#                 krw_balance = float(self.upbit.get_balance("KRW"))
-#                 amount_to_invest = krw_balance * (percentage / 100)
-#
-#                 if amount_to_invest < 5000:
-#                     return Response({
-#                         'status': 'error',
-#                         'message': 'Minimum order amount is 5000 KRW'
-#                     }, status=status.HTTP_400_BAD_REQUEST)
-#
-#                 # 수수료를 고려한 주문 실행
-#                 result = self.upbit.buy_market_order(market, amount_to_invest * 0.9995)
-#
-#             else:  # sell
-#                 # 코인 잔고 확인
-#                 coin_currency = market.split('-')[1]
-#                 coin_balance = float(self.upbit.get_balance(coin_currency))
-#                 # amount_to_sell = coin_balance  # 전체 수량을 팔기 위해 그냥 balance 전체를 사용
-#                 amount_to_sell = coin_balance * (percentage / 100)
-#
-#
-#                 # 최소 주문 금액 확인
-#                 current_price = pyupbit.get_orderbook(ticker=market)['orderbook_units'][0]["ask_price"]
-#                 if current_price * amount_to_sell < 5000:
-#                     return Response({
-#                         'status': 'error',
-#                         'message': 'Order amount is less than minimum requirement (5000 KRW)'
-#                     }, status=status.HTTP_400_BAD_REQUEST)
-#
-#                 result = self.upbit.sell_market_order(market, amount_to_sell)
-#
-#             return Response({
-#                 'status': 'success',
-#                 'data': result
-#             })
-#
-#         except Exception as e:
-#             return Response({
-#                 'status': 'error',
-#                 'message': str(e)
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 class TradeView(UpbitBaseView):
     def post(self, request):
         """
@@ -1009,10 +934,18 @@ class TradeView(UpbitBaseView):
                     'message': 'Invalid action. Must be either "buy" or "sell"'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+            # 코인의 평균매수가 조회
+            coin_currency = market.split('-')[1]
+            avg_buy_price = 0
+            balances = self.upbit.get_balances()
+            for b in balances:
+                if b['currency'] == coin_currency:
+                    avg_buy_price = float(b.get('avg_buy_price', 0))
+                    break
+
             if action == 'buy':
-                # KRW 잔고 확인
+                # 기존 buy 로직
                 krw_balance = float(self.upbit.get_balance("KRW"))
-                # is_full_trade에 따라 거래 비율 결정
                 percentage = 100 if is_full_trade else 50
                 amount_to_invest = krw_balance * (percentage / 100)
 
@@ -1022,19 +955,14 @@ class TradeView(UpbitBaseView):
                         'message': 'Minimum order amount is 5000 KRW'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-                # 수수료를 고려한 주문 실행
                 result = self.upbit.buy_market_order(market, amount_to_invest * 0.9995)
 
             else:  # sell
-                # 코인 잔고 확인
-                coin_currency = market.split('-')[1]
+                # 기존 sell 로직
                 coin_balance = float(self.upbit.get_balance(coin_currency))
-
-                # is_full_trade에 따라 거래 비율 결정
                 percentage = 100 if is_full_trade else 50
                 amount_to_sell = coin_balance * (percentage / 100)
 
-                # 최소 주문 금액 확인
                 current_price = pyupbit.get_orderbook(ticker=market)['orderbook_units'][0]["ask_price"]
                 if current_price * amount_to_sell < 5000:
                     return Response({
@@ -1044,13 +972,23 @@ class TradeView(UpbitBaseView):
 
                 result = self.upbit.sell_market_order(market, amount_to_sell)
 
+            # 거래 후 업데이트된 평균매수가 조회
+            updated_avg_buy_price = 0
+            updated_balances = self.upbit.get_balances()
+            for b in updated_balances:
+                if b['currency'] == coin_currency:
+                    updated_avg_buy_price = float(b.get('avg_buy_price', 0))
+                    break
+
             return Response({
                 'status': 'success',
                 'data': {
                     'result': result,
                     'action': action,
                     'is_full_trade': is_full_trade,
-                    'percentage': 100 if is_full_trade else 50
+                    'percentage': 100 if is_full_trade else 50,
+                    'previous_avg_buy_price': avg_buy_price,  # 거래 전 평균매수가
+                    'updated_avg_buy_price': updated_avg_buy_price  # 거래 후 평균매수가
                 }
             })
 
@@ -1059,6 +997,109 @@ class TradeView(UpbitBaseView):
                 'status': 'error',
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# class TradeView(UpbitBaseView):
+#     def post(self, request):
+#         """
+#         거래 실행 API
+#         POST /api/v1/trade/
+#
+#         Request Body:
+#         {
+#             "action": "buy" | "sell",
+#             "market": "KRW-BTC",
+#             "is_full_trade": false  # true면 전체 거래, false면 50% 거래
+#         }
+#         """
+#         try:
+#             action = request.data.get('action')
+#             market = request.data.get('market', 'KRW-BTC')
+#             percentage = float(request.data.get('percentage', 100))
+#             is_full_trade = request.data.get('is_full_trade', False)
+#
+#             if action not in ['buy', 'sell']:
+#                 return Response({
+#                     'status': 'error',
+#                     'message': 'Invalid action. Must be either "buy" or "sell"'
+#                 }, status=status.HTTP_400_BAD_REQUEST)
+#
+#             if action == 'buy':
+#                 # KRW 잔고 확인
+#                 krw_balance = float(self.upbit.get_balance("KRW"))
+#                 # is_full_trade에 따라 거래 비율 결정
+#                 percentage = 100 if is_full_trade else 50
+#                 amount_to_invest = krw_balance * (percentage / 100)
+#
+#                 if amount_to_invest < 5000:
+#                     return Response({
+#                         'status': 'error',
+#                         'message': 'Minimum order amount is 5000 KRW'
+#                     }, status=status.HTTP_400_BAD_REQUEST)
+#
+#                 # 수수료를 고려한 주문 실행
+#                 result = self.upbit.buy_market_order(market, amount_to_invest * 0.9995)
+#
+#             else:  # sell
+#                 # 코인 잔고 확인
+#                 coin_currency = market.split('-')[1]
+#                 coin_balance = float(self.upbit.get_balance(coin_currency))
+#
+#                 # is_full_trade에 따라 거래 비율 결정
+#                 percentage = 100 if is_full_trade else 50
+#                 amount_to_sell = coin_balance * (percentage / 100)
+#
+#                 # 최소 주문 금액 확인
+#                 current_price = pyupbit.get_orderbook(ticker=market)['orderbook_units'][0]["ask_price"]
+#                 if current_price * amount_to_sell < 5000:
+#                     return Response({
+#                         'status': 'error',
+#                         'message': 'Order amount is less than minimum requirement (5000 KRW)'
+#                     }, status=status.HTTP_400_BAD_REQUEST)
+#
+#                 result = self.upbit.sell_market_order(market, amount_to_sell)
+#
+#             return Response({
+#                 'status': 'success',
+#                 'data': {
+#                     'result': result,
+#                     'action': action,
+#                     'is_full_trade': is_full_trade,
+#                     'percentage': 100 if is_full_trade else 50
+#                 }
+#             })
+#
+#         except Exception as e:
+#             return Response({
+#                 'status': 'error',
+#                 'message': str(e)
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# class CurrentPriceView(UpbitBaseView):
+#     def get(self, request):
+#         """
+#         현재가 조회 API
+#         GET /api/v1/price/?market=KRW-BTC
+#         """
+#         try:
+#             market = request.query_params.get('market', 'KRW-BTC')
+#             orderbook = pyupbit.get_orderbook(ticker=market)
+#
+#             return Response({
+#                 'status': 'success',
+#                 'data': {
+#                     'market': market,
+#                     'timestamp': orderbook['timestamp'],
+#                     'ask_price': orderbook['orderbook_units'][0]["ask_price"],
+#                     'bid_price': orderbook['orderbook_units'][0]["bid_price"]
+#                 }
+#             })
+#
+#         except Exception as e:
+#             return Response({
+#                 'status': 'error',
+#                 'message': str(e)
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CurrentPriceView(UpbitBaseView):
     def get(self, request):
@@ -1070,13 +1111,23 @@ class CurrentPriceView(UpbitBaseView):
             market = request.query_params.get('market', 'KRW-BTC')
             orderbook = pyupbit.get_orderbook(ticker=market)
 
+            # 코인의 평균매수가 조회
+            coin_currency = market.split('-')[1]
+            avg_buy_price = 0
+            balances = self.upbit.get_balances()
+            for b in balances:
+                if b['currency'] == coin_currency:
+                    avg_buy_price = float(b.get('avg_buy_price', 0))
+                    break
+
             return Response({
                 'status': 'success',
                 'data': {
                     'market': market,
                     'timestamp': orderbook['timestamp'],
                     'ask_price': orderbook['orderbook_units'][0]["ask_price"],
-                    'bid_price': orderbook['orderbook_units'][0]["bid_price"]
+                    'bid_price': orderbook['orderbook_units'][0]["bid_price"],
+                    'avg_buy_price': avg_buy_price  # 평균매수가 추가
                 }
             })
 
