@@ -28,6 +28,7 @@ from pandas import Timestamp
 from datetime import datetime, timezone
 import pandas_ta as ta
 import pyupbit
+from typing import Dict, List, Any
 
 
 class KRXStockDataAPIView(APIView):
