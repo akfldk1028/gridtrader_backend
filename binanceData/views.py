@@ -1280,32 +1280,49 @@ class BinanceScalpingDataView(APIView):
 
 
 class UpbitDataView(APIView):
-    def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Calculate various indicators and add them as columns to the DataFrame."""
-        if df is None or df.empty:
+    def calculate_indicators(self, data: Dict[str, List[float]]) -> Dict[str, List[Any]]:
+        """Calculate various indicators using dictionary data."""
+        if not data or not data.get('close'):
             return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
 
-        df['SMA_10'] = ta.sma(df['close'], length=10)
-        df['EMA_10'] = ta.ema(df['close'], length=10)
-        df['RSI_14'] = ta.rsi(df['close'], length=14)
+        # Convert to DataFrame temporarily for calculations
+        df = pd.DataFrame(data)
+        result = {
+            'timestamp': data['index'],
+            'open': data['open'],
+            'high': data['high'],
+            'low': data['low'],
+            'close': data['close'],
+            'volume': data['volume'],
+        }
+
+        # Calculate indicators
+        result['SMA_10'] = self._convert_series_to_list(ta.sma(df['close'], length=10))
+        result['EMA_10'] = self._convert_series_to_list(ta.ema(df['close'], length=10))
+        result['RSI_14'] = self._convert_series_to_list(ta.rsi(df['close'], length=14))
 
         # MACD
-        df['MACD'], df['Signal_Line'], df['MACD_Histogram'] = self.calculate_macd(df)
+        macd, signal, histogram = self.calculate_macd(df)
+        result['MACD'] = self._convert_series_to_list(macd)
+        result['Signal_Line'] = self._convert_series_to_list(signal)
+        result['MACD_Histogram'] = self._convert_series_to_list(histogram)
 
-        # Moving Averages with min_periods=1
-        df['MA7'] = df['close'].rolling(window=7, min_periods=1).mean()
-        df['MA25'] = df['close'].rolling(window=25, min_periods=1).mean()
-        df['MA99'] = df['close'].rolling(window=99, min_periods=1).mean()
+        # Moving Averages
+        result['MA7'] = self._convert_series_to_list(df['close'].rolling(window=7, min_periods=1).mean())
+        result['MA25'] = self._convert_series_to_list(df['close'].rolling(window=25, min_periods=1).mean())
+        result['MA99'] = self._convert_series_to_list(df['close'].rolling(window=99, min_periods=1).mean())
 
         # Bollinger Bands
-        middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
-        df['Middle_Band'], df['Upper_Band'], df['Lower_Band'] = middle_band, upper_band, lower_band
+        middle, upper, lower = self.calculate_bollinger_bands(df)
+        result['Middle_Band'] = self._convert_series_to_list(middle)
+        result['Upper_Band'] = self._convert_series_to_list(upper)
+        result['Lower_Band'] = self._convert_series_to_list(lower)
 
-        # Stochastic Oscillator
-        # stoch_k, stoch_d = self.calculate_stochastic(df)
-        # df['Stoch_K'], df['Stoch_D'] = stoch_k, stoch_d
+        return result
 
-        return df
+    def _convert_series_to_list(self, series: pd.Series) -> List[float]:
+        """Convert pandas Series to list, handling NaN values."""
+        return [None if pd.isna(x) else float(x) for x in series]
 
     def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
             Tuple[pd.Series, pd.Series, pd.Series]:
@@ -1324,21 +1341,12 @@ class UpbitDataView(APIView):
         lower_band = middle_band - (std_dev * num_std)
         return middle_band, upper_band, lower_band
 
-    def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
-        pd.Series, pd.Series]:
-        high = df['high'].rolling(k_period).max()
-        low = df['low'].rolling(k_period).min()
-        k = 100 * (df['close'] - low) / (high - low)
-        d = k.rolling(d_period).mean()
-        return k, d
-
     @method_decorator(cache_page(60))
     def get(self, request, symbol: str = 'KRW-BTC', interval: str = 'minute1') -> Response:
         """Get candlestick data with technical indicators for scalping from Upbit."""
         limit = 1000
 
         try:
-            # Add KRW- prefix if not present
             if not symbol.startswith('KRW-'):
                 symbol = f'KRW-{symbol}'
 
@@ -1348,21 +1356,115 @@ class UpbitDataView(APIView):
             if df is None or df.empty:
                 return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
 
-            # Add technical indicators
-            df = self.calculate_indicators(df)
+            # Convert DataFrame to dictionary
+            data_dict = {
+                'index': df.index.astype(str).tolist(),
+                'open': df['open'].tolist(),
+                'high': df['high'].tolist(),
+                'low': df['low'].tolist(),
+                'close': df['close'].tolist(),
+                'volume': df['volume'].tolist()
+            }
+
+            # Calculate indicators
+            result_dict = self.calculate_indicators(data_dict)
 
             # Select last 30 data points
-            recent_data = df.iloc[-30:]
+            for key in result_dict:
+                result_dict[key] = result_dict[key][-30:]
 
-            # Handle NaN values
-            recent_data = recent_data.where(pd.notnull(recent_data), None)
-
-            # Convert to JSON and return
-            data_json = recent_data.to_json(orient='split')
-            return Response(json.loads(data_json))
+            return Response(result_dict)
 
         except Exception as e:
             return Response(
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+# class UpbitDataView(APIView):
+#     def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+#         """Calculate various indicators and add them as columns to the DataFrame."""
+#         if df is None or df.empty:
+#             return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+#
+#         df['SMA_10'] = ta.sma(df['close'], length=10)
+#         df['EMA_10'] = ta.ema(df['close'], length=10)
+#         df['RSI_14'] = ta.rsi(df['close'], length=14)
+#
+#         # MACD
+#         df['MACD'], df['Signal_Line'], df['MACD_Histogram'] = self.calculate_macd(df)
+#
+#         # Moving Averages with min_periods=1
+#         df['MA7'] = df['close'].rolling(window=7, min_periods=1).mean()
+#         df['MA25'] = df['close'].rolling(window=25, min_periods=1).mean()
+#         df['MA99'] = df['close'].rolling(window=99, min_periods=1).mean()
+#
+#         # Bollinger Bands
+#         middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
+#         df['Middle_Band'], df['Upper_Band'], df['Lower_Band'] = middle_band, upper_band, lower_band
+#
+#         # Stochastic Oscillator
+#         # stoch_k, stoch_d = self.calculate_stochastic(df)
+#         # df['Stoch_K'], df['Stoch_D'] = stoch_k, stoch_d
+#
+#         return df
+#
+#     def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
+#             Tuple[pd.Series, pd.Series, pd.Series]:
+#         fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
+#         slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
+#         macd = fast_ema - slow_ema
+#         signal = macd.ewm(span=signal_period, adjust=False).mean()
+#         histogram = macd - signal
+#         return macd, signal, histogram
+#
+#     def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
+#         pd.Series, pd.Series, pd.Series]:
+#         middle_band = df['close'].rolling(window=period).mean()
+#         std_dev = df['close'].rolling(window=period).std()
+#         upper_band = middle_band + (std_dev * num_std)
+#         lower_band = middle_band - (std_dev * num_std)
+#         return middle_band, upper_band, lower_band
+#
+#     def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
+#         pd.Series, pd.Series]:
+#         high = df['high'].rolling(k_period).max()
+#         low = df['low'].rolling(k_period).min()
+#         k = 100 * (df['close'] - low) / (high - low)
+#         d = k.rolling(d_period).mean()
+#         return k, d
+#
+#     @method_decorator(cache_page(60))
+#     def get(self, request, symbol: str = 'KRW-BTC', interval: str = 'minute1') -> Response:
+#         """Get candlestick data with technical indicators for scalping from Upbit."""
+#         limit = 1000
+#
+#         try:
+#             # Add KRW- prefix if not present
+#             if not symbol.startswith('KRW-'):
+#                 symbol = f'KRW-{symbol}'
+#
+#             # Get data from Upbit
+#             df = pyupbit.get_ohlcv(symbol, interval=interval, count=limit)
+#
+#             if df is None or df.empty:
+#                 return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+#
+#             # Add technical indicators
+#             df = self.calculate_indicators(df)
+#
+#             # Select last 30 data points
+#             recent_data = df.iloc[-30:]
+#
+#             # Handle NaN values
+#             recent_data = recent_data.where(pd.notnull(recent_data), None)
+#
+#             # Convert to JSON and return
+#             data_json = recent_data.to_json(orient='split')
+#             return Response(json.loads(data_json))
+#
+#         except Exception as e:
+#             return Response(
+#                 {'error': f'An unexpected error occurred: {str(e)}'},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
