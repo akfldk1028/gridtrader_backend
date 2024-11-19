@@ -136,6 +136,7 @@ Example structure for JSON Data (Current Investment State) is as follows:
 - **Stay Informed and Agile**: Continuously monitor market conditions and be ready to adjust strategies rapidly in response to new information or changes in the market environment.
 - **Holistic Strategy**: Successful aggressive investment strategies require a comprehensive view of market data, technical indicators, and current status to inform your strategies. Be bold in taking advantage of market opportunities.
 - Take a deep breath and work on this step by step.
+- After analyzing, tell us the numerical value of the analyzed indicator.
 - Your response must be JSON format.
 
 ## Examples
