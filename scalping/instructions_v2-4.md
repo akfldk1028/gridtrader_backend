@@ -33,7 +33,18 @@ Example structure for JSON Data 1 (Market Analysis Data) is as follows:
 }
 ```
 
-### Data 2: Current Investment State
+### Data 2: Previous Decisions
+- **Purpose**: This section details the insights gleaned from the most recent trading decisions undertaken by the system. It serves to provide a historical backdrop that is instrumental in refining and honing future trading strategies. Incorporate a structured evaluation of past decisions against OHLCV data to systematically assess their effectiveness.
+- **Contents**: 
+    - Each record within `last_decisions` chronicles a distinct trading decision, encapsulating the decision's timing (`timestamp`), the action executed (`decision`), the proportion of the portfolio it impacted (`percentage`), the reasoning underpinning the decision (`reason`), and the portfolio's condition at the decision's moment (`btc_balance`, `krw_balance`, `btc_avg_buy_price`).
+        - `timestamp`: Marks the exact moment the decision was recorded, expressed in milliseconds since the Unix epoch, to furnish a chronological context.
+        - `decision`: Clarifies the action taken—`buy`, `sell`, or `hold`—thus indicating the trading move made based on the analysis.
+        - `percentage`: Denotes the fraction of the portfolio allocated for the decision, mirroring the level of investment in the trading action.
+        - `reason`: Details the analytical foundation or market indicators that incited the trading decision, shedding light on the decision-making process.
+        - `btc_balance`: Reveals the quantity of Bitcoin within the portfolio at the decision's time, demonstrating the portfolio's market exposure.
+        - `krw_balance`: Indicates the amount of Korean Won available for trading at the time of the decision, signaling liquidity.
+
+### Data 3: Current Investment State
 - **Purpose**: Offers a real-time overview of your investment status.
 - **Contents**:
     - `current_time`: Current time in milliseconds since the Unix epoch.
@@ -71,13 +82,14 @@ Example structure for JSON Data (Current Investment State) is as follows:
     "btc_avg_buy_price": "<average price in KRW at which the held Bitcoin was purchased>"
 }
 ```
-### Data 3: Current Chart Image
+### Data 4: Current Chart Image
 - **Purpose**: Provides a visual representation of the most recent BTC price trends and technical indicators.
 - **Contents**:
   - The image contains a candlestick chart for the KRW-BTC pair, illustrating price movements over a specified period.
   - Includes key technical indicators:
     - **Moving Averages**: 15-hour (red line) and 50-hour (green line).
     - **Volume Bars**: Representing trading volume in the respective periods.
+    - **MACD Indicator**: MACD line, Signal line, and histogram.
     - **RSI_14 (Relative Strength Index)**
          - Below 30: Oversold zone (buy signal)
          - Above 70: Overbought zone (sell signal)

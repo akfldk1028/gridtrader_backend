@@ -424,7 +424,6 @@ class BitcoinAnalyzer:
             messages = [
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": json.dumps(market_data)},
-                {"role": "user", "content": reflection},
                 {"role": "user", "content": current_status}
             ]
 
