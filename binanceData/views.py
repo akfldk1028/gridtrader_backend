@@ -1325,7 +1325,7 @@ class UpbitDataView(APIView):
         """Convert pandas Series to list, handling NaN values."""
         return [None if pd.isna(x) else float(x) for x in series]
 
-    def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
+    def calculate_macd(self, df: pd.DataFrame, fast_period: int = 6, slow_period: int = 13, signal_period: int = 5) -> \
             Tuple[pd.Series, pd.Series, pd.Series]:
         fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
         slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
