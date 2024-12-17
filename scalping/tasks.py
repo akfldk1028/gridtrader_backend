@@ -15,19 +15,27 @@ def setup_scalping():
     # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
 
     Schedule.objects.filter(func='scalping.tasks.scalping').delete()
-    Schedule.objects.filter(func='scalping.tasks.analyze_coins').delete()
+    Schedule.objects.filter(func='scalping.tasks.scheduled_filter_and_save').delete()
 
     now = datetime.now()
-    next_run = now + timedelta(minutes=1)
+    next_run = now + timedelta(minutes=60)
 
 
     schedule(
-        'scalping.tasks.scalping',
+        'scalping.tasks.scheduled_filter_and_save',
         schedule_type=Schedule.MINUTES,  # MINUTES로 변경
-        minutes=10,  # 1분마다 실행
+        minutes=60,  # 1분마다 실행
         next_run=next_run,
         repeats=-1  # 무한 반복
     )
+
+    # schedule(
+    #     'scalping.tasks.scalping',
+    #     schedule_type=Schedule.MINUTES,  # MINUTES로 변경
+    #     minutes=60,  # 1분마다 실행
+    #     next_run=next_run,
+    #     repeats=-1  # 무한 반복
+    # )
     # schedule(
     #     'scalping.tasks.analyze_coins',  # 실행할 함수
     #     schedule_type=Schedule.MINUTES,   # 분 단위 실행
@@ -35,6 +43,36 @@ def setup_scalping():
     #     next_run=next_run,               # 다음 실행 시간
     #     repeats=-1                       # 무한 반복
     # )
+
+
+def scheduled_filter_and_save():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/upbit/?all_last=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                time.sleep(5)
+            continue
+        finally:
+            session.close()
+
+    return None
+
+
 def scalping():
     try:
         print("Calling perform_analysis function")

@@ -14,6 +14,11 @@ import time
 from datetime import datetime, timedelta
 from .analysis.StochasticRSI import StochasticRSI
 from .analysis.rsi import RSIAnalyzer
+from .analysis.UltimateRSIAnalyzer import UltimateRSIAnalyzer
+from .analysis.SqueezeMomentumIndicator import SqueezeMomentumIndicator
+import concurrent.futures
+
+
 from .analysis.IchimokuIndicator import IchimokuIndicator
 import numpy as np
 import math
@@ -29,6 +34,7 @@ from datetime import datetime, timezone
 import pandas_ta as ta
 import pyupbit
 from typing import Dict, List, Any
+from .models import TradingRecord
 
 
 class KRXStockDataAPIView(APIView):
@@ -931,10 +937,10 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
     def get_bitcoin_data(self, symbol):
         try:
-            fifteen_min_candles = self.get_extended_kline_data(symbol, '30m')
-            thirty_min_candles = self.get_extended_kline_data(symbol, '1h')
-            hourly_candles = self.get_extended_kline_data(symbol, '2h')
-            daily_candles = self.get_extended_kline_data(symbol, '6h')
+            fifteen_min_candles = self.get_extended_kline_data(symbol, '1h')
+            thirty_min_candles = self.get_extended_kline_data(symbol, '2h')
+            hourly_candles = self.get_extended_kline_data(symbol, '1d')
+            daily_candles = self.get_extended_kline_data(symbol, '1w')
 
             # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
             # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
@@ -976,13 +982,19 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                     float)
 
                 # Calculate additional technical indicators
-                for ma in [5, 10, 20, 50, 100, 200]:
-                    df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
+                # for ma in [5, 10, 20, 50, 100, 200]:
+                #     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
+                #
+                # # Bollinger Bands
+                # period = 20
+                # multiplier = 2.0
+                # df["MA"] = df["close"].rolling(window=period).mean()
 
-                # Bollinger Bands
-                period = 20
-                multiplier = 2.0
-                df["MA"] = df["close"].rolling(window=period).mean()
+                analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
+                df = analyzer.get_dataframe()
+                indicator = SqueezeMomentumIndicator(df)
+                df = indicator.get_dataframe()
+
                 # df["STD"] = df["close"].rolling(window=period).std()
                 # df["Upper"] = df["MA"] + (df["STD"] * multiplier)
                 # df["Lower"] = df["MA"] - (df["STD"] * multiplier)
@@ -993,26 +1005,25 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 # df['MACD'] = exp1 - exp2
                 # df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
 
-                StochasticRSI(df)
-                RSIAnalyzer(df)
+                # StochasticRSI(df)
+                # RSIAnalyzer(df)
                 # 시간 프레임별 일목균형표 설정값 정의
-                if timeframe == '15min':
-                    ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
-                elif timeframe == '30min':
-                    ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-                elif timeframe == '2hourly':
-                    ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-                elif timeframe == '6hourly':
-                    ichimoku_settings = {'tenkan': 20, 'kijun': 60, 'senkou_b': 120, 'displacement': 30}
-                else:
-                    # 기본 설정값
-                    ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-
-                # Stochastic RSI and RSI are already calculated, so we don't need to add them here
-
-                ichimoku = IchimokuIndicator(df, **ichimoku_settings)
-                ichimoku_df = ichimoku.get_ichimoku()
-                df = pd.merge(df, ichimoku_df, on='timestamp', how='left')
+                # if timeframe == '15min':
+                #     ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
+                # elif timeframe == '30min':
+                #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+                # elif timeframe == '2hourly':
+                #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+                # elif timeframe == '6hourly':
+                #     ichimoku_settings = {'tenkan': 20, 'kijun': 60, 'senkou_b': 120, 'displacement': 30}
+                # else:
+                #     # 기본 설정값
+                #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+                #
+                #
+                # ichimoku = IchimokuIndicator(df, **ichimoku_settings)
+                # ichimoku_df = ichimoku.get_ichimoku()
+                # df = pd.merge(df, ichimoku_df, on='timestamp', how='left')
 
                 import numpy as np
                 df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
@@ -1027,10 +1038,10 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
                 return records
 
             return {
-                '15min': process_candles(fifteen_min_candles, '30min'),
-                '30min': process_candles(thirty_min_candles, '1hourly'),
-                'hourly': process_candles(hourly_candles, '2hourly'),
-                'daily': process_candles(daily_candles, '6hourly')
+                '1hour': process_candles(fifteen_min_candles, '1h'),
+                '2hour': process_candles(thirty_min_candles, '2h'),
+                'daily': process_candles(hourly_candles, '1d'),
+                'weekly': process_candles(daily_candles, '1w')
             }
 
         except Exception as e:
@@ -1279,161 +1290,400 @@ class BinanceScalpingDataView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
+# http://127.0.0.1:8000/api/v1/binanceData/upbit/?symbol=KRW-BTC
+# http://127.0.0.1:8000/api/v1/binanceData/upbit/?all_last=true
 class UpbitDataView(APIView):
-    def calculate_indicators(self, data: Dict[str, List[float]]) -> Dict[str, List[Any]]:
-        """Calculate various indicators using dictionary data."""
+    # 미리 정의된 20개 심볼 리스트 (예시)
+    # PREDEFINED_SYMBOLS = [
+    #     'KRW-BTC', 'KRW-ETH', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE',
+    #     'KRW-AAVE', 'KRW-SUI', 'KRW-PEPE', 'KRW-CTC', 'KRW-SOL',
+    #     'KRW-TRX', 'KRW-HBAR', 'KRW-LINK', 'KRW-SEI', 'KRW-DOT',
+    #     'KRW-IQ', 'KRW-ADA', 'KRW-VET', 'KRW-SAND', 'KRW-ALGO'
+    # ]
+    PREDEFINED_SYMBOLS = [
+        'KRW-BTC', 'KRW-ETH', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE',
+        'KRW-DOT', 'KRW-BCH', 'KRW-LTC', 'KRW-EOS', 'KRW-SOL',
+        'KRW-TRX', 'KRW-AAVE', 'KRW-HBAR', 'KRW-NEO', 'KRW-ONT',
+        'KRW-ATOM', 'KRW-ADA', 'KRW-VET', 'KRW-THETA', 'KRW-ALGO'
+    ]
+    def calculate_indicators(self, data: Dict[str, List[float]]) -> pd.DataFrame:
         if not data or not data.get('close'):
-            return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+            return pd.DataFrame()
 
-        # Convert to DataFrame temporarily for calculations
         df = pd.DataFrame(data)
-        result = {
-            'timestamp': data['index'],
-            'open': data['open'],
-            'high': data['high'],
-            'low': data['low'],
-            'close': data['close'],
-            'volume': data['volume'],
+        analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
+        df = analyzer.get_dataframe()
+        indicator = SqueezeMomentumIndicator(df)
+        df = indicator.get_dataframe()
+        return df
+
+    # def get_all_last_data(self, request):
+    #     """
+    #     모든 미리 정의된 KRW 마켓 심볼에 대해 마지막 한 행의 데이터를 가져오는 메서드
+    #     URL 예: /api/v1/binanceData/upbit/?all_last=true
+    #     """
+    #     limit = 500
+    #     # intervals = {
+    #     #     '1hour': 'minute60',
+    #     #     '4hour': 'minute240',
+    #     #     '1day': 'day',
+    #     #     '1week': 'week'
+    #     # }
+    #     intervals = {
+    #         '15m': 'minute15',
+    #         '1hour': 'minute60',
+    #         '1day': 'day',
+    #     }
+    #     # 미리 정의된 심볼 리스트 사용
+    #     all_symbols = self.PREDEFINED_SYMBOLS
+    #     result_all_symbols = {}
+    #
+    #     try:
+    #         for sym in all_symbols:
+    #             symbol_results = {}
+    #             for label, iv in intervals.items():
+    #                 df = pyupbit.get_ohlcv(sym, interval=iv, count=limit)
+    #                 if df is None or df.empty:
+    #                     symbol_results[label] = {'error': f'No data available for {iv}'}
+    #                     continue
+    #
+    #                 df.reset_index(inplace=True)
+    #                 df.rename(columns={'index': 'timestamp'}, inplace=True)
+    #                 data_dict = {
+    #                     'timestamp': df['timestamp'].astype(str).tolist(),
+    #                     'open': df['open'].tolist(),
+    #                     'high': df['high'].tolist(),
+    #                     'low': df['low'].tolist(),
+    #                     'close': df['close'].tolist(),
+    #                     'volume': df['volume'].tolist()
+    #                 }
+    #
+    #                 df_with_indicators = self.calculate_indicators(data_dict)
+    #
+    #                 if 'timestamp' not in df_with_indicators.columns:
+    #                     df_with_indicators.reset_index(inplace=True)
+    #                     df_with_indicators.rename(columns={'index': 'timestamp'}, inplace=True)
+    #
+    #                 # 마지막 한 행만 추출
+    #                 last_row = df_with_indicators.iloc[-1].to_dict()
+    #                 symbol_results[label] = last_row
+    #             result_all_symbols[sym] = symbol_results
+    #
+    #         return Response(result_all_symbols)
+    #
+    #     except Exception as e:
+    #         return Response(
+    #             {'error': f'An unexpected error occurred: {str(e)}'},
+    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #         )
+
+
+
+    def get_all_last_data(self, request):
+        """
+        모든 미리 정의된 KRW 마켓 심볼에 대해 조건을 만족하는 심볼을 필터링하고, TradingRecord 모델에 저장하는 메서드
+        URL 예: /api/v1/binanceData/upbit/?all_last=true
+        """
+        limit = 500
+        intervals = {
+            '4hour': 'minute240',
+            '1day': 'day',
         }
-
-        # Calculate indicators
-        result['SMA_10'] = self._convert_series_to_list(ta.sma(df['close'], length=10))
-        result['EMA_10'] = self._convert_series_to_list(ta.ema(df['close'], length=10))
-        result['RSI_14'] = self._convert_series_to_list(ta.rsi(df['close'], length=14))
-
-        # MACD
-        macd, signal, histogram = self.calculate_macd(df)
-        result['MACD'] = self._convert_series_to_list(macd)
-        result['Signal_Line'] = self._convert_series_to_list(signal)
-        result['MACD_Histogram'] = self._convert_series_to_list(histogram)
-
-        # Moving Averages
-        result['MA7'] = self._convert_series_to_list(df['close'].rolling(window=7, min_periods=1).mean())
-        result['MA25'] = self._convert_series_to_list(df['close'].rolling(window=25, min_periods=1).mean())
-        result['MA99'] = self._convert_series_to_list(df['close'].rolling(window=99, min_periods=1).mean())
-
-        # Bollinger Bands
-        middle, upper, lower = self.calculate_bollinger_bands(df)
-        result['Middle_Band'] = self._convert_series_to_list(middle)
-        result['Upper_Band'] = self._convert_series_to_list(upper)
-        result['Lower_Band'] = self._convert_series_to_list(lower)
-
-        return result
-
-    def _convert_series_to_list(self, series: pd.Series) -> List[float]:
-        """Convert pandas Series to list, handling NaN values."""
-        return [None if pd.isna(x) else float(x) for x in series]
-
-    def calculate_macd(self, df: pd.DataFrame, fast_period: int = 6, slow_period: int = 13, signal_period: int = 5) -> \
-            Tuple[pd.Series, pd.Series, pd.Series]:
-        fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
-        slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
-        macd = fast_ema - slow_ema
-        signal = macd.ewm(span=signal_period, adjust=False).mean()
-        histogram = macd - signal
-        return macd, signal, histogram
-
-    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
-        pd.Series, pd.Series, pd.Series]:
-        middle_band = df['close'].rolling(window=period).mean()
-        std_dev = df['close'].rolling(window=period).std()
-        upper_band = middle_band + (std_dev * num_std)
-        lower_band = middle_band - (std_dev * num_std)
-        return middle_band, upper_band, lower_band
-
-    @method_decorator(cache_page(60))
-    def get(self, request, symbol: str = 'KRW-BTC', interval: str = 'minute1') -> Response:
-        """Get candlestick data with technical indicators for scalping from Upbit."""
-        limit = 1000
+        all_symbols = self.PREDEFINED_SYMBOLS
+        filtered_symbols = []
 
         try:
-            if not symbol.startswith('KRW-'):
-                symbol = f'KRW-{symbol}'
+            for sym in all_symbols:
+                all_intervals_pass = True  # 모든 인터벌이 조건을 만족하는지 여부
 
-            # Get data from Upbit
-            df = pyupbit.get_ohlcv(symbol, interval=interval, count=limit)
+                for label, iv in intervals.items():
+                    try:
+                        df = pyupbit.get_ohlcv(sym, interval=iv, count=limit)
+                        if df is None or df.empty:
+                            print(f'No data available for {sym} in interval {iv}')
+                            all_intervals_pass = False
+                            break  # 해당 심볼은 조건을 만족할 수 없음
 
-            if df is None or df.empty:
-                return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+                        df.reset_index(inplace=True)
+                        df.rename(columns={'index': 'timestamp'}, inplace=True)
+                        data_dict = {
+                            'timestamp': df['timestamp'].astype(str).tolist(),
+                            'open': df['open'].tolist(),
+                            'high': df['high'].tolist(),
+                            'low': df['low'].tolist(),
+                            'close': df['close'].tolist(),
+                            'volume': df['volume'].tolist()
+                        }
 
-            # Convert DataFrame to dictionary
-            data_dict = {
-                'index': df.index.astype(str).tolist(),
-                'open': df['open'].tolist(),
-                'high': df['high'].tolist(),
-                'low': df['low'].tolist(),
-                'close': df['close'].tolist(),
-                'volume': df['volume'].tolist()
-            }
+                        df_with_indicators = self.calculate_indicators(data_dict)
 
-            # Calculate indicators
-            result_dict = self.calculate_indicators(data_dict)
+                        if 'timestamp' not in df_with_indicators.columns:
+                            df_with_indicators.reset_index(inplace=True)
+                            df_with_indicators.rename(columns={'index': 'timestamp'}, inplace=True)
 
-            # Select last 30 data points
-            for key in result_dict:
-                result_dict[key] = result_dict[key][-30:]
+                        # 마지막 한 행만 추출
+                        last_row = df_with_indicators.iloc[-1].to_dict()
 
-            return Response(result_dict)
+                        # NaN 처리: NaN을 None으로 대체
+                        last_row_clean = {k: (v if pd.notna(v) else None) for k, v in last_row.items()}
+
+                        # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
+                        if not (last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0)):
+                            all_intervals_pass = False
+                            break  # 해당 심볼은 조건을 만족할 수 없음
+
+
+                        # # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
+                        # if not (last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0) and
+                        #         last_row_clean.get('SqueezeColor', '').lower() in {'lime', 'maroon'}):
+                        #     all_intervals_pass = False
+                        #     break  # 해당 심볼은 조건을 만족할 수 없음
+
+                    except Exception as interval_e:
+                        # 로그 남기기
+                        print(f'Error processing symbol {sym} for interval {label}: {str(interval_e)}')
+                        all_intervals_pass = False
+                        break
+
+                if all_intervals_pass:
+                    filtered_symbols.append(sym)
+                    print(f'Symbol {sym} meets the criteria and is added to the list.')
+
+            if filtered_symbols:
+                # TradingRecord 모델에 저장
+                TradingRecord.objects.create(symbols=filtered_symbols)
+                print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
+            else:
+                print('No symbols met the criteria.')
+
+            return Response({"symbols_saved": filtered_symbols})
 
         except Exception as e:
+            # 로그 남기기
+            print(f'Error processing symbols: {str(e)}')
             return Response(
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+
+
+    def get(self, request):
+        all_last = request.GET.get('all_last', 'false').lower() == 'true'
+        if all_last:
+            return self.get_all_last_data(request)
+        else:
+            # 기존 로직
+            limit = 1000
+            symbol = request.GET.get('symbol', 'KRW-BTC')
+
+            if not symbol.startswith('KRW-'):
+                symbol = f'KRW-{symbol}'
+
+            intervals = {
+                '1hour': 'minute60',
+                '4hour': 'minute240',
+                '1day': 'day',
+                '1week': 'week'
+            }
+
+            result_all_intervals = {}
+
+            try:
+                for label, iv in intervals.items():
+                    df = pyupbit.get_ohlcv(symbol, interval=iv, count=limit)
+                    if df is None or df.empty:
+                        result_all_intervals[label] = {'error': f'No data available for {iv}'}
+                        continue
+
+                    df.reset_index(inplace=True)
+                    df.rename(columns={'index': 'timestamp'}, inplace=True)
+
+                    data_dict = {
+                        'timestamp': df['timestamp'].astype(str).tolist(),
+                        'open': df['open'].tolist(),
+                        'high': df['high'].tolist(),
+                        'low': df['low'].tolist(),
+                        'close': df['close'].tolist(),
+                        'volume': df['volume'].tolist()
+                    }
+
+                    df_with_indicators = self.calculate_indicators(data_dict)
+
+                    if 'timestamp' not in df_with_indicators.columns:
+                        df_with_indicators.reset_index(inplace=True)
+                        df_with_indicators.rename(columns={'index': 'timestamp'}, inplace=True)
+
+                    df_with_indicators = df_with_indicators.iloc[-30:]
+                    records = df_with_indicators.to_dict(orient='records')
+
+                    result_all_intervals[label] = records
+
+                return Response(result_all_intervals)
+
+            except Exception as e:
+                return Response(
+                    {'error': f'An unexpected error occurred: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+
 # class UpbitDataView(APIView):
-#     def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-#         """Calculate various indicators and add them as columns to the DataFrame."""
-#         if df is None or df.empty:
-#             return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+#     def calculate_indicators(self, data: Dict[str, List[float]]) -> pd.DataFrame:
+#         """Calculate various indicators using dictionary data and return a DataFrame."""
+#         if not data or not data.get('close'):
+#             # 빈 DataFrame 반환하거나 예외 처리
+#             return pd.DataFrame()
 #
-#         df['SMA_10'] = ta.sma(df['close'], length=10)
-#         df['EMA_10'] = ta.ema(df['close'], length=10)
-#         df['RSI_14'] = ta.rsi(df['close'], length=14)
+#         # Convert to DataFrame temporarily for calculations
+#         df = pd.DataFrame(data)
 #
-#         # MACD
-#         df['MACD'], df['Signal_Line'], df['MACD_Histogram'] = self.calculate_macd(df)
-#
-#         # Moving Averages with min_periods=1
-#         df['MA7'] = df['close'].rolling(window=7, min_periods=1).mean()
-#         df['MA25'] = df['close'].rolling(window=25, min_periods=1).mean()
-#         df['MA99'] = df['close'].rolling(window=99, min_periods=1).mean()
-#
-#         # Bollinger Bands
-#         middle_band, upper_band, lower_band = self.calculate_bollinger_bands(df)
-#         df['Middle_Band'], df['Upper_Band'], df['Lower_Band'] = middle_band, upper_band, lower_band
-#
-#         # Stochastic Oscillator
-#         # stoch_k, stoch_d = self.calculate_stochastic(df)
-#         # df['Stoch_K'], df['Stoch_D'] = stoch_k, stoch_d
+#         # 인디케이터 계산 (예: UltimateRSIAnalyzer, SqueezeMomentumIndicator)
+#         analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
+#         df = analyzer.get_dataframe()
+#         indicator = SqueezeMomentumIndicator(df)
+#         df = indicator.get_dataframe()
 #
 #         return df
 #
-#     def calculate_macd(self, df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> \
-#             Tuple[pd.Series, pd.Series, pd.Series]:
-#         fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
-#         slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
-#         macd = fast_ema - slow_ema
-#         signal = macd.ewm(span=signal_period, adjust=False).mean()
-#         histogram = macd - signal
-#         return macd, signal, histogram
+#     def get(self, request):
+#         """Get candlestick data with technical indicators for multiple intervals."""
+#         limit = 1000
+#         symbol = request.GET.get('symbol', 'KRW-BTC')
 #
-#     def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
-#         pd.Series, pd.Series, pd.Series]:
-#         middle_band = df['close'].rolling(window=period).mean()
-#         std_dev = df['close'].rolling(window=period).std()
-#         upper_band = middle_band + (std_dev * num_std)
-#         lower_band = middle_band - (std_dev * num_std)
-#         return middle_band, upper_band, lower_band
+#         try:
+#             if not symbol.startswith('KRW-'):
+#                 symbol = f'KRW-{symbol}'
 #
-#     def calculate_stochastic(self, df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> Tuple[
-#         pd.Series, pd.Series]:
-#         high = df['high'].rolling(k_period).max()
-#         low = df['low'].rolling(k_period).min()
-#         k = 100 * (df['close'] - low) / (high - low)
-#         d = k.rolling(d_period).mean()
-#         return k, d
+#             # 원하는 interval을 딕셔너리로 정의
+#             intervals = {
+#                 '1hour': 'minute60',
+#                 '4hour': 'minute240',
+#                 '1day': 'day',
+#                 '1week': 'week'
+#             }
+#
+#             result_all_intervals = {}
+#
+#             for label, iv in intervals.items():
+#                 df = pyupbit.get_ohlcv(symbol, interval=iv, count=limit)
+#
+#                 if df is None or df.empty:
+#                     result_all_intervals[label] = {'error': f'No data available for {iv}'}
+#                     continue
+#
+#                 # dict로 변환하기 전에 index를 컬럼으로 변환 후 timestamp 컬럼으로 이름 변경
+#                 df.reset_index(inplace=True)
+#                 df.rename(columns={'index': 'timestamp'}, inplace=True)
+#
+#                 # Dict 형태로 변환하기 위해 dictionary 생성
+#                 data_dict = {
+#                     'timestamp': df['timestamp'].astype(str).tolist(),
+#                     'open': df['open'].tolist(),
+#                     'high': df['high'].tolist(),
+#                     'low': df['low'].tolist(),
+#                     'close': df['close'].tolist(),
+#                     'volume': df['volume'].tolist()
+#                 }
+#
+#                 # 인디케이터 계산
+#                 df_with_indicators = self.calculate_indicators(data_dict)
+#
+#                 # 다시 timestamp 컬럼이 사라졌다면 복구 (calculate_indicators에서는 index 사용)
+#                 if 'timestamp' not in df_with_indicators.columns:
+#                     # df_with_indicators는 calculate_indicators에서 index 사용
+#                     # 원래 timestamp를 담기 위해 다시 reset_index 후 rename 필요
+#                     df_with_indicators.reset_index(inplace=True)
+#                     df_with_indicators.rename(columns={'index': 'timestamp'}, inplace=True)
+#
+#                 # 마지막 30개만 추출 (원한다면)
+#                 df_with_indicators = df_with_indicators.iloc[-30:]
+#
+#                 # 각 행을 하나의 딕셔너리로 변환
+#                 records = df_with_indicators.to_dict(orient='records')
+#
+#                 # 각 레코드는 다음 형태를 갖게 됨:
+#                 # [{'timestamp': '2023-08-20 00:00:00', 'open': ..., 'high': ..., 'low': ..., 'close': ..., 'volume': ..., 'UltimateRSI':..., 'SqueezeMomentum':...}, ...]
+#
+#                 result_all_intervals[label] = records
+#
+#             return Response(result_all_intervals)
+#
+#         except Exception as e:
+#             return Response(
+#                 {'error': f'An unexpected error occurred: {str(e)}'},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
+
+
+# class UpbitDataView(APIView):
+#     def calculate_indicators(self, data: Dict[str, List[float]]) -> Dict[str, List[Any]]:
+#         """Calculate various indicators using dictionary data."""
+#         if not data or not data.get('close'):
+#             return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
+#
+#         # Convert to DataFrame temporarily for calculations
+#         df = pd.DataFrame(data)
+#         # result = {
+#         #     'timestamp': data['index'],
+#         #     'open': data['open'],
+#         #     'high': data['high'],
+#         #     'low': data['low'],
+#         #     'close': data['close'],
+#         #     'volume': data['volume'],
+#         # }
+#         #
+#         # # Calculate indicators
+#         # result['SMA_10'] = self._convert_series_to_list(ta.sma(df['close'], length=10))
+#         # result['EMA_10'] = self._convert_series_to_list(ta.ema(df['close'], length=10))
+#         # result['RSI_14'] = self._convert_series_to_list(ta.rsi(df['close'], length=14))
+#         #
+#         # # MACD
+#         # macd, signal, histogram = self.calculate_macd(df)
+#         # result['MACD'] = self._convert_series_to_list(macd)
+#         # result['Signal_Line'] = self._convert_series_to_list(signal)
+#         # result['MACD_Histogram'] = self._convert_series_to_list(histogram)
+#         #
+#         # # Moving Averages
+#         # result['MA7'] = self._convert_series_to_list(df['close'].rolling(window=7, min_periods=1).mean())
+#         # result['MA25'] = self._convert_series_to_list(df['close'].rolling(window=25, min_periods=1).mean())
+#         # result['MA99'] = self._convert_series_to_list(df['close'].rolling(window=99, min_periods=1).mean())
+#         #
+#         # # Bollinger Bands
+#         # middle, upper, lower = self.calculate_bollinger_bands(df)
+#         # result['Middle_Band'] = self._convert_series_to_list(middle)
+#         # result['Upper_Band'] = self._convert_series_to_list(upper)
+#         # result['Lower_Band'] = self._convert_series_to_list(lower)
+#         analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
+#         df = analyzer.get_dataframe()
+#         indicator = SqueezeMomentumIndicator(df)
+#         df = indicator.get_dataframe()
+#
+#
+#
+#         return df
+#
+#     # def _convert_series_to_list(self, series: pd.Series) -> List[float]:
+#     #     """Convert pandas Series to list, handling NaN values."""
+#     #     return [None if pd.isna(x) else float(x) for x in series]
+#     #
+#     # def calculate_macd(self, df: pd.DataFrame, fast_period: int = 6, slow_period: int = 13, signal_period: int = 5) -> \
+#     #         Tuple[pd.Series, pd.Series, pd.Series]:
+#     #     fast_ema = df['close'].ewm(span=fast_period, adjust=False).mean()
+#     #     slow_ema = df['close'].ewm(span=slow_period, adjust=False).mean()
+#     #     macd = fast_ema - slow_ema
+#     #     signal = macd.ewm(span=signal_period, adjust=False).mean()
+#     #     histogram = macd - signal
+#     #     return macd, signal, histogram
+#     #
+#     # def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, num_std: int = 2) -> Tuple[
+#     #     pd.Series, pd.Series, pd.Series]:
+#     #     middle_band = df['close'].rolling(window=period).mean()
+#     #     std_dev = df['close'].rolling(window=period).std()
+#     #     upper_band = middle_band + (std_dev * num_std)
+#     #     lower_band = middle_band - (std_dev * num_std)
+#     #     return middle_band, upper_band, lower_band
 #
 #     @method_decorator(cache_page(60))
 #     def get(self, request, symbol: str = 'KRW-BTC', interval: str = 'minute1') -> Response:
@@ -1441,7 +1691,6 @@ class UpbitDataView(APIView):
 #         limit = 1000
 #
 #         try:
-#             # Add KRW- prefix if not present
 #             if not symbol.startswith('KRW-'):
 #                 symbol = f'KRW-{symbol}'
 #
@@ -1451,21 +1700,28 @@ class UpbitDataView(APIView):
 #             if df is None or df.empty:
 #                 return Response({'error': 'No data available'}, status=status.HTTP_404_NOT_FOUND)
 #
-#             # Add technical indicators
-#             df = self.calculate_indicators(df)
+#             # Convert DataFrame to dictionary
+#             data_dict = {
+#                 'index': df.index.astype(str).tolist(),
+#                 'open': df['open'].tolist(),
+#                 'high': df['high'].tolist(),
+#                 'low': df['low'].tolist(),
+#                 'close': df['close'].tolist(),
+#                 'volume': df['volume'].tolist()
+#             }
+#
+#             # Calculate indicators
+#             result_dict = self.calculate_indicators(data_dict)
 #
 #             # Select last 30 data points
-#             recent_data = df.iloc[-30:]
+#             for key in result_dict:
+#                 result_dict[key] = result_dict[key][-30:]
 #
-#             # Handle NaN values
-#             recent_data = recent_data.where(pd.notnull(recent_data), None)
-#
-#             # Convert to JSON and return
-#             data_json = recent_data.to_json(orient='split')
-#             return Response(json.loads(data_json))
+#             return Response(result_dict)
 #
 #         except Exception as e:
 #             return Response(
 #                 {'error': f'An unexpected error occurred: {str(e)}'},
 #                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
 #             )
+#
