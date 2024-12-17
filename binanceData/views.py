@@ -1388,6 +1388,7 @@ class UpbitDataView(APIView):
         intervals = {
             '4hour': 'minute240',
             '1day': 'day',
+            '1week': 'week'
         }
         all_symbols = self.PREDEFINED_SYMBOLS
         filtered_symbols = []
@@ -1427,17 +1428,17 @@ class UpbitDataView(APIView):
                         # NaN 처리: NaN을 None으로 대체
                         last_row_clean = {k: (v if pd.notna(v) else None) for k, v in last_row.items()}
 
-                        # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
-                        if not (last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0)):
-                            all_intervals_pass = False
-                            break  # 해당 심볼은 조건을 만족할 수 없음
-
-
                         # # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
-                        # if not (last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0) and
-                        #         last_row_clean.get('SqueezeColor', '').lower() in {'lime', 'maroon'}):
+                        # if not (last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0)):
                         #     all_intervals_pass = False
                         #     break  # 해당 심볼은 조건을 만족할 수 없음
+
+
+                        # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
+                        if not (last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0) and
+                                last_row_clean.get('SqueezeColor', '').lower() in {'lime', 'maroon'}):
+                            all_intervals_pass = False
+                            break  # 해당 심볼은 조건을 만족할 수 없음
 
                     except Exception as interval_e:
                         # 로그 남기기
