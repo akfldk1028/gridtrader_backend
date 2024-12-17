@@ -55,7 +55,7 @@ def setup_scalping():
     #     repeats=-1                       # 무한 반복
     # )
 
-def binance_savee():
+def binance_save():
     """Fetch Bitcoin data with technical indicators from API"""
     import requests
 
