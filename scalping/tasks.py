@@ -16,6 +16,7 @@ def setup_scalping():
 
     Schedule.objects.filter(func='scalping.tasks.scalping').delete()
     Schedule.objects.filter(func='scalping.tasks.scheduled_filter_and_save').delete()
+    Schedule.objects.filter(func='scalping.tasks.binance_save').delete()
 
     now = datetime.now()
     next_run = now + timedelta(minutes=60)
@@ -28,6 +29,16 @@ def setup_scalping():
         next_run=next_run,
         repeats=-1  # 무한 반복
     )
+
+
+    schedule(
+        'scalping.tasks.binance_save',
+        schedule_type=Schedule.MINUTES,  # MINUTES로 변경
+        minutes=60,  # 1분마다 실행
+        next_run=next_run,
+        repeats=-1  # 무한 반복
+    )
+
 
     # schedule(
     #     'scalping.tasks.scalping',
@@ -43,6 +54,33 @@ def setup_scalping():
     #     next_run=next_run,               # 다음 실행 시간
     #     repeats=-1                       # 무한 반복
     # )
+
+def binance_savee():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/llm-bitcoin-data/?all_last=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                time.sleep(5)
+            continue
+        finally:
+            session.close()
+
+    return None
 
 
 def scheduled_filter_and_save():

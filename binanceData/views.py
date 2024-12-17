@@ -17,6 +17,7 @@ from .analysis.rsi import RSIAnalyzer
 from .analysis.UltimateRSIAnalyzer import UltimateRSIAnalyzer
 from .analysis.SqueezeMomentumIndicator import SqueezeMomentumIndicator
 import concurrent.futures
+from .models import BinanceTradingSummary
 
 
 from .analysis.IchimokuIndicator import IchimokuIndicator
@@ -894,21 +895,38 @@ class BinanceAPIView(APIView):
             raise
 
 
-class BinanceLLMChartDataAPIView(BinanceAPIView):
-    def get(self, request):
-        try:
-            print("Processing request...")
-            symbol = request.GET.get('symbol', '')
-            print(symbol)
-            data = self.get_bitcoin_data(symbol)
-            if data is None:
-                return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response(data)
-        except Exception as e:
-            print(f"Error processing request for symbol {symbol}: {str(e)}")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# scalping/views.py
 
-    def get_extended_kline_data(self, symbol, interval, total_candles=2000):
+
+# GET http://127.0.0.1:8000/api/v1/binanceData/llm-bitcoin-data/?all_last=true
+# GET http://127.0.0.1:8000/api/v1/binanceData/llm-bitcoin-data/?all_last=false&symbol=BTCUSDT
+
+class BinanceLLMChartDataAPIView(APIView):
+    # 미리 정의된 다양한 심볼 리스트
+    # PREDEFINED_SYMBOLS = [
+    #     'BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT',
+    #     'DOTUSDT', 'BCHUSDT', 'LTCUSDT', 'EOSUSDT', 'SOLUSDT',
+    #     'TRXUSDT', 'AAVEUSDT', 'HBARUSDT', 'NEOUSDT', 'ONTUSDT',
+    #     'ATOMUSDT', 'VETUSDT', 'THETAUSDT', 'ALGOUSDT', 'UNIUSDT'
+    # ]
+    PREDEFINED_SYMBOLS = [
+        'BTCUSDT', 'ETHUSDT','AAVEUSDT', 'CELOUSDT', 'LINKUSDT', 'MKRUSDT',
+        'SOLUSDT', 'STXUSDT', 'UMAUSDT', 'UNIUSDT', 'XLMUSDT', 'XRPUSDT',
+        'BNBUSDT', 'LDOUSDT', 'OPUSDT', 'SUIUSDT', 'WLDUSDT'
+    ]
+    def calculate_indicators(self, data: Dict[str, List[float]]) -> pd.DataFrame:
+        if not data or not data.get('close'):
+            return pd.DataFrame()
+
+        df = pd.DataFrame(data)
+        # UltimateRSIAnalyzer와 SqueezeMomentumIndicator는 커스텀 클래스으로 가정
+        analyzer = UltimateRSIAnalyzer(df, length=9, smoType1='RMA', smoType2='EMA', smooth=7)
+        df = analyzer.get_dataframe()
+        indicator = SqueezeMomentumIndicator(df)
+        df = indicator.get_dataframe()
+        return df
+
+    def get_extended_kline_data(self, symbol: str, interval: str, total_candles: int = 2000) -> List[List[Any]]:
         binance_api_url = "https://api.binance.com/api/v3/klines"
         limit = 500  # Binance API limit per request
         all_candles = []
@@ -935,97 +953,26 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
         return all_candles[:total_candles]
 
-    def get_bitcoin_data(self, symbol):
+    def get_bitcoin_data(self, symbol: str) -> Dict[str, Any]:
         try:
-            fifteen_min_candles = self.get_extended_kline_data(symbol, '1h')
-            thirty_min_candles = self.get_extended_kline_data(symbol, '2h')
-            hourly_candles = self.get_extended_kline_data(symbol, '1d')
-            daily_candles = self.get_extended_kline_data(symbol, '1w')
+            one_hour_candles = self.get_extended_kline_data(symbol, '1h')
+            two_hour_candles = self.get_extended_kline_data(symbol, '2h')
+            one_day_candles = self.get_extended_kline_data(symbol, '1d')
+            one_week_candles = self.get_extended_kline_data(symbol, '1w')
 
-            # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
-            # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
-            # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, limit=500)
-            # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, limit=500)
-
-            # end_date = datetime.now()
-            # start_date_15min = end_date - timedelta(days=7)  # Last 7 days
-            # start_date_30min = end_date - timedelta(days=15)  # Last 14 days
-            # start_date_hourly = end_date - timedelta(days=30)  # Last 30 days
-            # start_date_daily = end_date - timedelta(days=730)  # Last 365 days
-            #
-            # print("Fetching data...")
-            #
-            # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,
-            #                                                         start_date_15min.strftime("%d %b %Y %H:%M:%S"),
-            #                                                         end_date.strftime("%d %b %Y %H:%M:%S"))
-            #
-            # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
-            #                                                        start_date_30min.strftime("%d %b %Y %H:%M:%S"),
-            #                                                        end_date.strftime("%d %b %Y %H:%M:%S"))
-            #
-            # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
-            #                                                    start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
-            #                                                    end_date.strftime("%d %b %Y %H:%M:%S"))
-            #
-            # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
-            #                                                   start_date_daily.strftime("%d %b %Y %H:%M:%S"),
-            #                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
-
-            def process_candles(candles, timeframe):
-                df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                    'quote_asset_volume', 'number_of_trades',
-                                                    'taker_buy_base_asset_volume',
-                                                    'taker_buy_quote_asset_volume', 'ignore'])
+            def process_candles(candles: List[List[Any]], timeframe: str) -> List[Dict[str, Any]]:
+                df = pd.DataFrame(candles, columns=[
+                    'timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+                    'quote_asset_volume', 'number_of_trades',
+                    'taker_buy_base_asset_volume',
+                    'taker_buy_quote_asset_volume', 'ignore'
+                ])
                 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
                 df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
-                    float)
+                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
 
-                # Calculate additional technical indicators
-                # for ma in [5, 10, 20, 50, 100, 200]:
-                #     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
-                #
-                # # Bollinger Bands
-                # period = 20
-                # multiplier = 2.0
-                # df["MA"] = df["close"].rolling(window=period).mean()
-
-                analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
-                df = analyzer.get_dataframe()
-                indicator = SqueezeMomentumIndicator(df)
-                df = indicator.get_dataframe()
-
-                # df["STD"] = df["close"].rolling(window=period).std()
-                # df["Upper"] = df["MA"] + (df["STD"] * multiplier)
-                # df["Lower"] = df["MA"] - (df["STD"] * multiplier)
-
-                # MACD
-                # exp1 = df['close'].ewm(span=12, adjust=False).mean()
-                # exp2 = df['close'].ewm(span=26, adjust=False).mean()
-                # df['MACD'] = exp1 - exp2
-                # df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
-
-                # StochasticRSI(df)
-                # RSIAnalyzer(df)
-                # 시간 프레임별 일목균형표 설정값 정의
-                # if timeframe == '15min':
-                #     ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
-                # elif timeframe == '30min':
-                #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-                # elif timeframe == '2hourly':
-                #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-                # elif timeframe == '6hourly':
-                #     ichimoku_settings = {'tenkan': 20, 'kijun': 60, 'senkou_b': 120, 'displacement': 30}
-                # else:
-                #     # 기본 설정값
-                #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
-                #
-                #
-                # ichimoku = IchimokuIndicator(df, **ichimoku_settings)
-                # ichimoku_df = ichimoku.get_ichimoku()
-                # df = pd.merge(df, ichimoku_df, on='timestamp', how='left')
-
-                import numpy as np
+                # 인디케이터 계산
+                df = self.calculate_indicators(df.to_dict(orient='list'))
                 df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
                 df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
@@ -1037,16 +984,304 @@ class BinanceLLMChartDataAPIView(BinanceAPIView):
 
                 return records
 
-            return {
-                '1hour': process_candles(fifteen_min_candles, '1h'),
-                '2hour': process_candles(thirty_min_candles, '2h'),
-                'daily': process_candles(hourly_candles, '1d'),
-                'weekly': process_candles(daily_candles, '1w')
+            data = {
+                '1h': process_candles(one_hour_candles, '1h'),
+                '2h': process_candles(two_hour_candles, '2h'),
+                '1d': process_candles(one_day_candles, '1d'),
+                '1w': process_candles(one_week_candles, '1w')
             }
+
+            return data
 
         except Exception as e:
             print(f"An error occurred: {e}")
-            return None
+            return {}
+
+    def get_all_last_data(self, request) -> Response:
+        try:
+            long_symbols = []
+            short_symbols = []
+
+            # 멀티스레딩을 사용하여 심볼 병렬 처리
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = {executor.submit(self.get_trading_symbols, symbol): symbol for symbol in
+                           self.PREDEFINED_SYMBOLS}
+                for future in concurrent.futures.as_completed(futures):
+                    symbol = futures[future]
+                    try:
+                        trading_records = future.result()
+                        if not trading_records:
+                            continue
+
+                        # 모든 interval이 롱 조건을 만족하는지 검사
+                        if all(
+                                record['rsi'] > record['rsi_signal'] and
+                                record['squeeze_color'] and record['squeeze_color'].lower() in {'lime', 'maroon'}
+                                for record in trading_records.values()
+                        ):
+                            long_symbols.append(symbol)
+                        # 모든 interval이 숏 조건을 만족하는지 검사
+                        elif all(
+                                record['rsi'] < record['rsi_signal'] and
+                                record['squeeze_color'] and record['squeeze_color'].lower() in {'red', 'green'}
+                                for record in trading_records.values()
+                        ):
+                            short_symbols.append(symbol)
+
+                    except Exception as e:
+                        print(f"Error processing symbol {symbol}: {e}")
+
+            # 중복 제거
+            long_symbols = list(set(long_symbols))
+            short_symbols = list(set(short_symbols))
+
+            # Trading Summary 저장
+            BinanceTradingSummary.objects.create(
+                long_symbols=long_symbols,
+                short_symbols=short_symbols
+            )
+
+            return Response({
+                "long_symbols": long_symbols,
+                "short_symbols": short_symbols
+            })
+
+        except Exception as e:
+            print(f"Error processing all_last=true request: {e}")
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def get_trading_symbols(self, symbol: str) -> Dict[str, Any]:
+        try:
+            # 원하는 인터벌로 데이터 가져오기
+            two_hour_candles = self.get_extended_kline_data(symbol, '2h')
+            one_day_candles = self.get_extended_kline_data(symbol, '1d')
+            one_week_candles = self.get_extended_kline_data(symbol, '1w')
+
+            def process_candles(candles: List[List[Any]], timeframe: str) -> Dict[str, Any]:
+                df = pd.DataFrame(candles, columns=[
+                    'timestamp', 'open', 'high', 'low', 'close', 'volume',
+                    'close_time', 'quote_asset_volume', 'number_of_trades',
+                    'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+                ])
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+                df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+
+                # 인디케이터 계산
+                df_with_indicators = self.calculate_indicators(df.to_dict(orient='list'))
+
+                if 'timestamp' not in df_with_indicators.columns:
+                    df_with_indicators.reset_index(inplace=True)
+                    df_with_indicators.rename(columns={'index': 'timestamp'}, inplace=True)
+
+                # 마지막 한 행만 추출
+                last_row = df_with_indicators.iloc[-1].to_dict()
+
+                # NaN 처리: NaN을 None으로 대체
+                last_row_clean = {k: (v if pd.notna(v) else None) for k, v in last_row.items()}
+
+                # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 'lime' 또는 'maroon'
+                if last_row_clean.get('RSI', 0) > last_row_clean.get('RSI_signal', 0):
+                    if last_row_clean.get('SqueezeColor', '').lower() in {'lime', 'maroon'}:
+                        position = 'long'
+                elif last_row_clean.get('RSI', 0) < last_row_clean.get('RSI_signal', 0):
+                    if last_row_clean.get('SqueezeColor', '').lower() in {'red', 'green'}:
+                        position = 'short'
+                else:
+                    position = 'hold'
+
+                return {
+                    'symbol': symbol,
+                    'interval': timeframe,
+                    'rsi': last_row_clean.get('RSI'),
+                    'rsi_signal': last_row_clean.get('RSI_signal'),
+                    'squeeze_color': last_row_clean.get('SqueezeColor'),
+                    'position': position
+                }
+
+            trading_records = {}
+            for interval, candles in [('2h', two_hour_candles), ('1d', one_day_candles), ('1w', one_week_candles)]:
+                if not candles:
+                    continue
+                record = process_candles(candles, interval)
+                trading_records[interval] = record
+
+            return trading_records
+
+        except Exception as e:
+            print(f"An error occurred while processing symbol {symbol}: {e}")
+            return {}
+
+    def get(self, request):
+        all_last = request.GET.get('all_last', 'false').lower() == 'true'
+        if all_last:
+            return self.get_all_last_data(request)
+        else:
+            # 기존 로직 유지
+            symbol = request.GET.get('symbol', 'BTCUSDT')
+            data = self.get_bitcoin_data(symbol)
+            if not data:
+                return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(data)
+
+
+
+# class BinanceLLMChartDataAPIView(BinanceAPIView):
+#     def get(self, request):
+#         try:
+#             print("Processing request...")
+#             symbol = request.GET.get('symbol', '')
+#             print(symbol)
+#             data = self.get_bitcoin_data(symbol)
+#             if data is None:
+#                 return Response({"error": "Failed to fetch data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             return Response(data)
+#         except Exception as e:
+#             print(f"Error processing request for symbol {symbol}: {str(e)}")
+#             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#     def get_extended_kline_data(self, symbol, interval, total_candles=2000):
+#         binance_api_url = "https://api.binance.com/api/v3/klines"
+#         limit = 500  # Binance API limit per request
+#         all_candles = []
+#
+#         while len(all_candles) < total_candles:
+#             params = {
+#                 'symbol': symbol,
+#                 'interval': interval,
+#                 'limit': limit
+#             }
+#             if all_candles:
+#                 params['endTime'] = all_candles[0][0] - 1
+#
+#             try:
+#                 response = requests.get(binance_api_url, params=params, timeout=10)
+#                 response.raise_for_status()
+#                 candles = response.json()
+#                 if not candles:
+#                     break
+#                 all_candles = candles + all_candles
+#             except requests.exceptions.RequestException as e:
+#                 print(f"Error fetching data for {symbol}, {interval}: {e}")
+#                 break
+#
+#         return all_candles[:total_candles]
+
+    # def get_bitcoin_data(self, symbol):
+    #     try:
+    #         fifteen_min_candles = self.get_extended_kline_data(symbol, '1h')
+    #         thirty_min_candles = self.get_extended_kline_data(symbol, '2h')
+    #         hourly_candles = self.get_extended_kline_data(symbol, '1d')
+    #         daily_candles = self.get_extended_kline_data(symbol, '1w')
+    #
+    #         # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE, limit=500)
+    #         # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, limit=500)
+    #         # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, limit=500)
+    #         # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, limit=500)
+    #
+    #         # end_date = datetime.now()
+    #         # start_date_15min = end_date - timedelta(days=7)  # Last 7 days
+    #         # start_date_30min = end_date - timedelta(days=15)  # Last 14 days
+    #         # start_date_hourly = end_date - timedelta(days=30)  # Last 30 days
+    #         # start_date_daily = end_date - timedelta(days=730)  # Last 365 days
+    #         #
+    #         # print("Fetching data...")
+    #         #
+    #         # fifteen_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,
+    #         #                                                         start_date_15min.strftime("%d %b %Y %H:%M:%S"),
+    #         #                                                         end_date.strftime("%d %b %Y %H:%M:%S"))
+    #         #
+    #         # thirty_min_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,
+    #         #                                                        start_date_30min.strftime("%d %b %Y %H:%M:%S"),
+    #         #                                                        end_date.strftime("%d %b %Y %H:%M:%S"))
+    #         #
+    #         # hourly_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,
+    #         #                                                    start_date_hourly.strftime("%d %b %Y %H:%M:%S"),
+    #         #                                                    end_date.strftime("%d %b %Y %H:%M:%S"))
+    #         #
+    #         # daily_candles = self.client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,
+    #         #                                                   start_date_daily.strftime("%d %b %Y %H:%M:%S"),
+    #         #                                                   end_date.strftime("%d %b %Y %H:%M:%S"))
+    #
+    #         def process_candles(candles, timeframe):
+    #             df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+    #                                                 'quote_asset_volume', 'number_of_trades',
+    #                                                 'taker_buy_base_asset_volume',
+    #                                                 'taker_buy_quote_asset_volume', 'ignore'])
+    #             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+    #             df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+    #             df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(
+    #                 float)
+    #
+    #             # Calculate additional technical indicators
+    #             # for ma in [5, 10, 20, 50, 100, 200]:
+    #             #     df[f"MA{ma}"] = df["close"].rolling(window=ma).mean()
+    #             #
+    #             # # Bollinger Bands
+    #             # period = 20
+    #             # multiplier = 2.0
+    #             # df["MA"] = df["close"].rolling(window=period).mean()
+    #
+    #             analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
+    #             df = analyzer.get_dataframe()
+    #             indicator = SqueezeMomentumIndicator(df)
+    #             df = indicator.get_dataframe()
+    #
+    #             # df["STD"] = df["close"].rolling(window=period).std()
+    #             # df["Upper"] = df["MA"] + (df["STD"] * multiplier)
+    #             # df["Lower"] = df["MA"] - (df["STD"] * multiplier)
+    #
+    #             # MACD
+    #             # exp1 = df['close'].ewm(span=12, adjust=False).mean()
+    #             # exp2 = df['close'].ewm(span=26, adjust=False).mean()
+    #             # df['MACD'] = exp1 - exp2
+    #             # df['Signal Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+    #
+    #             # StochasticRSI(df)
+    #             # RSIAnalyzer(df)
+    #             # 시간 프레임별 일목균형표 설정값 정의
+    #             # if timeframe == '15min':
+    #             #     ichimoku_settings = {'tenkan': 7, 'kijun': 22, 'senkou_b': 44, 'displacement': 22}
+    #             # elif timeframe == '30min':
+    #             #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+    #             # elif timeframe == '2hourly':
+    #             #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+    #             # elif timeframe == '6hourly':
+    #             #     ichimoku_settings = {'tenkan': 20, 'kijun': 60, 'senkou_b': 120, 'displacement': 30}
+    #             # else:
+    #             #     # 기본 설정값
+    #             #     ichimoku_settings = {'tenkan': 9, 'kijun': 26, 'senkou_b': 52, 'displacement': 26}
+    #             #
+    #             #
+    #             # ichimoku = IchimokuIndicator(df, **ichimoku_settings)
+    #             # ichimoku_df = ichimoku.get_ichimoku()
+    #             # df = pd.merge(df, ichimoku_df, on='timestamp', how='left')
+    #
+    #             import numpy as np
+    #             df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
+    #             df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
+    #
+    #             records = df.to_dict(orient='records')
+    #             for record in records:
+    #                 for key, value in record.items():
+    #                     if pd.isna(value) or value in [np.inf, -np.inf]:
+    #                         record[key] = None
+    #
+    #             return records
+    #
+    #         return {
+    #             '1hour': process_candles(fifteen_min_candles, '1h'),
+    #             '2hour': process_candles(thirty_min_candles, '2h'),
+    #             'daily': process_candles(hourly_candles, '1d'),
+    #             'weekly': process_candles(daily_candles, '1w')
+    #         }
+    #
+    #     except Exception as e:
+    #         print(f"An error occurred: {e}")
+    #         return None
 
 class BinanceScalpingDataView(APIView):
 
@@ -1311,7 +1546,7 @@ class UpbitDataView(APIView):
             return pd.DataFrame()
 
         df = pd.DataFrame(data)
-        analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=14)
+        analyzer = UltimateRSIAnalyzer(df, length=9, smoType1='RMA', smoType2='EMA', smooth=7)
         df = analyzer.get_dataframe()
         indicator = SqueezeMomentumIndicator(df)
         df = indicator.get_dataframe()
