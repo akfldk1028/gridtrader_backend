@@ -1546,7 +1546,7 @@ class UpbitDataView(APIView):
             return pd.DataFrame()
 
         df = pd.DataFrame(data)
-        analyzer = UltimateRSIAnalyzer(df, length=14, smoType1='RMA', smoType2='EMA', smooth=9)
+        analyzer = UltimateRSIAnalyzer(df, length=9, smoType1='RMA', smoType2='EMA', smooth=7)
         df = analyzer.get_dataframe()
         indicator = SqueezeMomentumIndicator(df)
         df = indicator.get_dataframe()
