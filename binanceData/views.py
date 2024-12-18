@@ -1690,6 +1690,7 @@ class UpbitDataView(APIView):
                 TradingRecord.objects.create(symbols=filtered_symbols)
                 print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
             else:
+                TradingRecord.objects.create(symbols=[])
                 print('No symbols met the criteria.')
 
             return Response({"symbols_saved": filtered_symbols})
