@@ -1,12 +1,20 @@
 from django.contrib import admin
 from .models import TradingRecord
-from .models import BinanceTradingSummary
+from .models import BinanceTradingSummary, KoreaStockData, StockData
 
 @admin.register(TradingRecord)
 class TradingRecordAdmin(admin.ModelAdmin):
     list_display = ('id', 'symbols', 'created_at')
     search_fields = ('symbols',)
+@admin.register(KoreaStockData)
+class KoreaStockDataAdmin(admin.ModelAdmin):
+    list_display = ('id', 'symbols', 'created_at')
+    search_fields = ('symbols',)
 
+@admin.register(StockData)
+class StockDataAdmin(admin.ModelAdmin):
+    list_display = ('id', 'symbols', 'created_at')
+    search_fields = ('symbols',)
 
 @admin.register(BinanceTradingSummary)
 class BinanceTradingSummaryAdmin(admin.ModelAdmin):

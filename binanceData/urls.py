@@ -9,5 +9,7 @@ urlpatterns = [
     path('scalping/<str:symbol>/<str:interval>/', views.BinanceScalpingDataView.as_view(),),
     # path('upbit/<str:symbol>/<str:interval>/', views.UpbitDataView.as_view(), ),
     path('upbit/', views.UpbitDataView.as_view(), ),
+    path('stockData/', views.stockDataView.as_view(), ),
+    path('KoreaStockData/', views.KoreaStockDataView.as_view(), ),
 
 ]
