@@ -1967,7 +1967,9 @@ class UpbitDataView(APIView):
 
 
 # /api/v1/binanceData/stockData/?all_last=true
+# https://gridtrade.one/api/v1/binanceData/stockData/?all_last=true
 #http://127.0.0.1:8000/api/v1/binanceData/stockData/?symbol=AAPL
+# https://www.myfinpl.com/investment/stock/sector/consumer-defensive#goog_rewarded
 class stockDataView(APIView):
 
     # PREDEFINED_SYMBOLS = [
@@ -2081,6 +2083,7 @@ class stockDataView(APIView):
             'close': df['close'].tolist(),
             'volume': df['volume'].tolist()
         }
+
     def get_symbol_status(self, symbol, intervals, limit):
         """
         심볼과 간격별 데이터를 확인하고 조건에 맞는지 여부를 반환합니다.
@@ -2089,22 +2092,37 @@ class stockDataView(APIView):
             for label, interval in intervals.items():
                 df = self.get_stock_data(symbol, interval, limit)
                 if df is None or df.empty:
-                    return False  # 조건 불만족
+                    return False  # 데이터 없음, 조건 불만족
 
                 formatted_data = self.format_stock_data(df)
                 df_with_indicators = self.calculate_indicators(formatted_data)
 
+                if df_with_indicators.empty:
+                    return False  # 지표 계산 실패, 조건 불만족
+
                 last_row = df_with_indicators.iloc[-1].to_dict()
 
-                # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
-                if not (last_row.get('RSI', 0) > last_row.get('RSI_signal', 0) and
-                        last_row.get('SqueezeColor', '').lower() in {'lime', 'maroon'}):
+                # 각 간격별로 다른 조건 적용
+                if interval in {"1d", "1wk"}:
+                    # 일봉 및 주봉: RSI > RSI_signal AND SqueezeColor가 'lime' 또는 'maroon'
+                    condition = (
+                            last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
+                            last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                    )
+                elif interval == "1mo":
+                    # 월봉: SqueezeColor가 'lime' 또는 'maroon'만 확인
+                    condition = last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                else:
+                    # 지원되지 않는 간격
+                    condition = False
+
+                if not condition:
                     return False  # 조건 불만족
 
             return True  # 모든 간격에 대해 조건 만족
         except Exception as e:
             print(f"Error processing symbol {symbol}: {str(e)}")
-            return False  # 조건 불만족 또는 에
+            return False  # 에러 발생 시 조건 불만족
 
     def get_all_last_data(self, request):
         limit = 500
@@ -2192,8 +2210,8 @@ class stockDataView(APIView):
 
 
 # http://127.0.0.1:8000/api/v1/binanceData/KoreaStockData/?all_last=true
-#http://127.0.0.1:8000/api/v1/binanceData/KoreaStockData/?symbol=005930
-
+# http://127.0.0.1:8000/api/v1/binanceData/KoreaStockData/?symbol=005930
+# https://gridtrade.one/api/v1/binanceData/KoreaStockData/?all_last=true
 class KoreaStockDataView(APIView):
     # 한국 주식 심볼 (예: KRX 코드 사용)
     PREDEFINED_SYMBOLS = [
@@ -2373,31 +2391,71 @@ class KoreaStockDataView(APIView):
 
     def get_symbol_status(self, symbol, intervals, limit):
         """
-        심볼 데이터를 가져와 조건에 맞는지 확인합니다 (미국 주식과 동일한 조건).
+        심볼과 간격별 데이터를 확인하고 조건에 맞는지 여부를 반환합니다.
         """
         try:
             for label, interval in intervals.items():
                 df = self.get_stock_data(symbol, interval, limit)
                 if df is None or df.empty:
-                    return False  # 조건 불만족
+                    return False  # 데이터 없음, 조건 불만족
 
                 formatted_data = self.format_stock_data(df)
                 df_with_indicators = self.calculate_indicators(formatted_data)
 
                 if df_with_indicators.empty:
-                    return False  # 지표 계산 실패
+                    return False  # 지표 계산 실패, 조건 불만족
 
                 last_row = df_with_indicators.iloc[-1].to_dict()
 
-                # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
-                if not (last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
-                        last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}):
+                # 각 간격별로 다른 조건 적용
+                if interval in {"1d", "1wk"}:
+                    # 일봉 및 주봉: RSI > RSI_signal AND SqueezeColor가 'lime' 또는 'maroon'
+                    condition = (
+                            last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
+                            last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                    )
+                elif interval == "1mo":
+                    # 월봉: SqueezeColor가 'lime' 또는 'maroon'만 확인
+                    condition = last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                else:
+                    # 지원되지 않는 간격
+                    condition = False
+
+                if not condition:
                     return False  # 조건 불만족
 
             return True  # 모든 간격에 대해 조건 만족
         except Exception as e:
             print(f"Error processing symbol {symbol}: {str(e)}")
-            return False  # 조건 불만족 또는 에러
+            return False  # 에러 발생 시 조건 불만족
+
+    # def get_symbol_status(self, symbol, intervals, limit):
+    #     """
+    #     심볼 데이터를 가져와 조건에 맞는지 확인합니다 (미국 주식과 동일한 조건).
+    #     """
+    #     try:
+    #         for label, interval in intervals.items():
+    #             df = self.get_stock_data(symbol, interval, limit)
+    #             if df is None or df.empty:
+    #                 return False  # 조건 불만족
+    #
+    #             formatted_data = self.format_stock_data(df)
+    #             df_with_indicators = self.calculate_indicators(formatted_data)
+    #
+    #             if df_with_indicators.empty:
+    #                 return False  # 지표 계산 실패
+    #
+    #             last_row = df_with_indicators.iloc[-1].to_dict()
+    #
+    #             # 조건 체크: RSI > RSI_signal 및 SqueezeColor가 lime 또는 maroon
+    #             if not (last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
+    #                     last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}):
+    #                 return False  # 조건 불만족
+    #
+    #         return True  # 모든 간격에 대해 조건 만족
+    #     except Exception as e:
+    #         print(f"Error processing symbol {symbol}: {str(e)}")
+    #         return False  # 조건 불만족 또는 에러
 
     def get_all_last_data(self, request):
         limit = 500
