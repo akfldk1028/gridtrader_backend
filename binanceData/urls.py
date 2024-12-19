@@ -11,5 +11,5 @@ urlpatterns = [
     path('upbit/', views.UpbitDataView.as_view(), ),
     path('stockData/', views.stockDataView.as_view(), ),
     path('KoreaStockData/', views.KoreaStockDataView.as_view(), ),
-
+    path('currentPrice/', views.getCurrentPrice.as_view(), ),
 ]

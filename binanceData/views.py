@@ -2549,3 +2549,21 @@ class KoreaStockDataView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
+class getCurrentPrice(APIView):
+
+    def get(self, request):
+        try:
+            symbol = request.GET.get('symbol', 'BTCUSDT')  # 기본 심볼: AAPL
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+            response = requests.get(url)
+            if response.status_code != 200:
+                print(f"Error fetching current price: {response.status_code} - {response.text}")
+                return None
+            data = response.json()
+            if 'price' not in data:
+                print(f"Error: 'price' not found in response: {data}")
+                return None
+            return float(data['price'])
+        except Exception as e:
+            print(f"Exception fetching current price for {symbol}: {e}")
+            return None
