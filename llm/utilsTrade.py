@@ -276,10 +276,10 @@ def  perform_new_analysis():
 
     futures_usdt_balance = get_future_account("get-future-balance")
     available_Balance = futures_usdt_balance["availableBalance"]
-    print(available_Balance)
+    # print(available_Balance) 30.36172625
     futures_positions = get_future_account("get-future-position")
     filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
-    print(filtered_positions)
+    # print(filtered_positions) []
     currentPrice = get_current_price(symbol)
 
     # {
