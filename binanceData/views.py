@@ -978,6 +978,8 @@ class BinanceLLMChartDataAPIView(APIView):
                 df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), None)
                 df['timestamp'] = df['timestamp'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
 
+                df = pd.DataFrame(df).tail(20)
+
                 records = df.to_dict(orient='records')
                 for record in records:
                     for key, value in record.items():

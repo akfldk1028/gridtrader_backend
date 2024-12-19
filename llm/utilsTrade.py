@@ -241,7 +241,8 @@ def get_last_decisions(self, num_decisions: int = 3, current_price = 100000000) 
 
 
 # TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
-def analyze_with_gpt4(market_data, reflection, fear_and_greed, current_status: str):
+
+def analyze_with_gpt4(market_data, trendline_prices_str, available_Balance, filtered_positions, currentPrice, last_decisions):
     try:
             # 현재 파일의 디렉토리 경로를 가져옴
         import os
@@ -255,7 +256,9 @@ def analyze_with_gpt4(market_data, reflection, fear_and_greed, current_status: s
         messages = [
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": json.dumps(market_data)},
-                {"role": "user", "content": current_status}
+                {"role": "user", "content": trendline_prices_str},
+                {"role": "user", "content": trendline_prices_str},
+
         ]
         openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -307,6 +310,8 @@ def  perform_new_analysis():
 
     # bitcoin_data = get_bitcoin_data(vt_symbol)
     bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
+
+
     intervals = ['1h', '2h','1d', '1w']
 
     trendline_prices = get_trendlines_prices(vt_symbol, intervals)
