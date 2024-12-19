@@ -4,8 +4,9 @@ from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
 from datetime import time, datetime, timedelta
 from TradeStrategy.models import StrategyConfig
-from .utils import perform_analysis  # 여기에 기존 분석 로직을 넣습니다.
-from .ETH import perform_eth_analysis  # 여기에 기존 분석 로직을 넣습니다.
+from .utils import perform_analysis
+from .utilsTrade import perform_new_analysis
+from .ETH import perform_eth_analysis
 
 from asgiref.sync import sync_to_async
 import asyncio
@@ -17,27 +18,26 @@ def setup_bitcoin_analysis_task():
     # TODO 장기적관점엣 보는거 뭐 하루에한번하는걸로 한번 만들어야할듯? 뉴스만? 기술 1일 3일 결론도출해서 내 메인 AI에 음.. 한번씩만넣어야하나 ? 퍼센트를 나눠서?TASK
     # TASK1(초단기) 40 TASK2(중기) 40 TASK3(장기) 20 이런식으로?
 
-    Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
-    Schedule.objects.filter(func='llm.tasks.run_eth_analysis').delete()
+    # Schedule.objects.filter(func='llm.tasks.run_bitcoin_analysis').delete()
+    # Schedule.objects.filter(func='llm.tasks.run_eth_analysis').delete()
+    Schedule.objects.filter(func='llm.tasks.run_new_bitcoin_analysis').delete()
 
     now = datetime.now()
-    next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-    next_eth_hour = now.replace(minute=5, second=0, microsecond=0) + timedelta(hours=1)
+    next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=2)
 
     # 다음 실행 시간을 오전 9시 10분으로 설정
     # next_hour = now.replace(hour=16, minute=55, second=0, microsecond=0)
     if now > next_hour:
         next_hour += timedelta(days=1)
-    if now > next_eth_hour:
-        next_eth_hour += timedelta(days=1)
 
-    # schedule(
-    #     'llm.tasks.run_bitcoin_analysis',
-    #     schedule_type=Schedule.CRON,
-    #     cron="35 0,4,8,12,16,20 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
-    #     next_run=next_hour,
-    #     repeats=-1  # 무한 반복
-    # )
+
+    schedule(
+        'llm.tasks.run_new_bitcoin_analysis',
+        schedule_type=Schedule.CRON,
+        cron="35 2 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
+        next_run=next_hour,
+        repeats=-1  # 무한 반복
+    )
     # schedule(
     #     'llm.tasks.run_eth_analysis',
     #     schedule_type=Schedule.CRON,
@@ -87,26 +87,23 @@ def update_strategy_config():
         logger.error(f"Error updating StrategyConfig: {str(e)}")
 
 
-# async def run_bitcoin_analysis_async():
-#     print("Starting Bitcoin analysis task")
-#     try:
-#         print("Calling perform_analysis function")
-#         result = await perform_analysis()
-#         print("Creating AnalysisResult object")
-#         analysis_result = await sync_to_async(AnalysisResult.objects.create)(
-#             symbol=result['symbol'],
-#             result_string=result['result_string'],
-#             current_price=result['current_price'],
-#             price_prediction=result['price_prediction'],
-#             confidence=float(result['confidence']) if result['confidence'] else None,
-#             selected_strategy=result['selected_strategy'],
-#             korean_summary = result['korean_summary'] if 'korean_summary' in result else ""
-#         )
-#         await sync_to_async(update_strategy_config)()
-#         return f"Analysis completed successfully in seconds. AnalysisResult id: {analysis_result.id}"
-#     except Exception as e:
-#         print(f"Error in run_bitcoin_analysis task: {str(e)}")
-#         raise
+
+
+def run_new_bitcoin_analysis():
+    print("Starting Bitcoin analysis task")
+    try:
+        print("Calling perform_analysis function")
+        result = perform_new_analysis()
+        # result = asyncio.run(perform_analysis())
+        if result is None:
+            print("Analysis failed▣▣▣▣▣▣▣▣▣▣▣")
+
+        return f"Analysis completed successfully in seconds."
+    except Exception as e:
+        print(f"Error in run_bitcoin_analysis task: {str(e)}")
+        raise
+
+
 
 
 def run_bitcoin_analysis():

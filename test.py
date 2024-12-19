@@ -1,5 +1,4 @@
 import os
-from crewai import Agent, Task, Crew, Process
 from binance.exceptions import BinanceAPIException
 import pandas as pd
 import numpy as np
@@ -216,10 +215,10 @@ def get_current_price(symbol, max_retries=5, retry_delay=1):
 def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
         try:
-            # decisions = TradingRecord.objects.order_by('-created_at')[:num_decisions]
+            decisions = TradingRecord.objects.order_by('-created_at')[:num_decisions]
 
             formatted_decisions = []
-            for decision in formatted_decisions:
+            for decision in decisions:
                 formatted_decision = {
                     "timestamp": int(decision.created_at.timestamp() * 1000),
                     "decision": decision.trade_type.lower(),
@@ -240,7 +239,7 @@ def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) 
 # TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
 # 기존 get_current_bitcoin_price 함수 내용...
 
-def  perform_new_analysis():
+def perform_new_analysis():
     config = get_strategy_config()
     if not config:
         print("Strategy configuration is invalid.")
@@ -276,13 +275,12 @@ def  perform_new_analysis():
 
     futures_usdt_balance = get_future_account("get-future-balance")
     available_Balance = futures_usdt_balance["availableBalance"]
-    print(available_Balance)
     futures_positions = get_future_account("get-future-position")
+    print(futures_positions)
+
     filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
-    print(filtered_positions)
     currentPrice = get_current_price(symbol)
-    print(currentPrice)
-    return  "0"
+    return "00"
     # last_decisions = get_last_decisions(current_price)
 
     # GPT-4 분석
