@@ -31,7 +31,7 @@ class Analysis(CommonModel):
     # 분석 관련 필드
     korean_summary = models.TextField(null=True, blank=True)
     result_string = models.TextField(null=True, blank=True)
-    current_price = models.FloatField(default=0, null=True, blank=True)
+    current_price = models.DecimalField('현재 가격', max_digits=20, decimal_places=2, default=Decimal('0.00'))
     price_prediction = models.CharField(max_length=10, null=True, blank=True)
     confidence = models.FloatField(null=True, blank=True)
     selected_strategy = models.CharField(max_length=20)
@@ -45,7 +45,6 @@ class Analysis(CommonModel):
     # 잔고 관련 필드
     coin_balance = models.DecimalField('코인 보유량', max_digits=20, decimal_places=8, default=Decimal('0.00000000'))
     balance = models.DecimalField('보유 자산', max_digits=20, decimal_places=2, default=Decimal('0.00'))
-    current_price = models.DecimalField('현재 가격', max_digits=20, decimal_places=2, default=Decimal('0.00'))
     avg_buy_price = models.DecimalField('평균 매수가', max_digits=20, decimal_places=2, default=Decimal('0.00'))
 
 
