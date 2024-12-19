@@ -2550,20 +2550,24 @@ class KoreaStockDataView(APIView):
                 )
 
 class getCurrentPrice(APIView):
-
     def get(self, request):
         try:
-            symbol = request.GET.get('symbol', 'BTCUSDT')  # 기본 심볼: AAPL
+            symbol = request.GET.get('symbol', 'BTCUSDT')  # 기본 심볼: BTCUSDT
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
             response = requests.get(url)
+
             if response.status_code != 200:
                 print(f"Error fetching current price: {response.status_code} - {response.text}")
-                return None
+                return Response({"error": "Failed to fetch data from Binance API"}, status=500)
+
             data = response.json()
             if 'price' not in data:
                 print(f"Error: 'price' not found in response: {data}")
-                return None
-            return float(data['price'])
+                return Response({"error": "'price' key not found in API response"}, status=500)
+
+            # 성공적으로 가격을 가져온 경우
+            return Response({"symbol": symbol, "price": float(data['price'])}, status=200)
+
         except Exception as e:
             print(f"Exception fetching current price for {symbol}: {e}")
-            return None
+            return Response({"error": str(e)}, status=500)

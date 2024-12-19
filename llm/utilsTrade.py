@@ -281,6 +281,11 @@ def  perform_new_analysis():
     filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
     print(filtered_positions)
     currentPrice = get_current_price(symbol)
+
+    # {
+    #     "symbol": "BTCUSDT",
+    #     "price": 101083.64
+    # }
     print(currentPrice)
     return  "0"
     # last_decisions = get_last_decisions(current_price)
