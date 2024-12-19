@@ -17,6 +17,9 @@ import requests
 from rest_framework.test import APIRequestFactory
 from binanceData.views import BinanceLLMChartDataAPIView
 from rest_framework.response import Response
+from .models import Analysis
+from openai import OpenAI
+import json
 
 # Binance 클라이언트 초기화
 symbol = "BTCUSDT"
@@ -201,7 +204,8 @@ def get_current_price(symbol, max_retries=5, retry_delay=1):
         try:
             response = requests.get(base_url, params=params, timeout=60)
             response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
-            return response
+            data = response.json()  # JSON 응답 데이터 파싱
+            return data
         except requests.exceptions.RequestException as e:
             print(f"API 호출 실패 (시도 {attempt + 1}/{max_retries}): {e}")
             if attempt < max_retries - 1:
@@ -213,20 +217,19 @@ def get_current_price(symbol, max_retries=5, retry_delay=1):
     return None  # 이 줄은 실행되지 않지만, 함수의 모든 경로에서 반환값이 있음을 보장합니다.
 
 
-def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) -> str:
+def get_last_decisions(self, num_decisions: int = 3, current_price = 100000000) -> str:
         """Fetch recent trading decisions from database"""
         try:
-            # decisions = TradingRecord.objects.order_by('-created_at')[:num_decisions]
+            decisions = Analysis.objects.order_by('-created_at')[:num_decisions]
 
             formatted_decisions = []
-            for decision in formatted_decisions:
+            for decision in decisions:
                 formatted_decision = {
                     "timestamp": int(decision.created_at.timestamp() * 1000),
-                    "decision": decision.trade_type.lower(),
-                    "percentage": float(decision.trade_ratio),
-                    "reason": decision.trade_reason,
-                    "btc_balance": float(decision.coin_balance),
-                    "krw_balance": float(decision.balance),
+                    "decision": decision.selected_strategy.lower(),
+                    "reason": decision.result_string,
+                    "balance": float(decision.balance),
+                    "coin_balance": float(decision.coin_balance),
                     "current_price": {current_price},
                     "avg_buy_price": float(decision.avg_buy_price)  # btc_avg_buy_price -> avg_buy_price로 수정
                 }
@@ -238,7 +241,58 @@ def get_last_decisions(self, num_decisions: int = 5, current_price = 100000000) 
 
 
 # TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
-# 기존 get_current_bitcoin_price 함수 내용...
+def analyze_with_gpt4(market_data, reflection, fear_and_greed, current_status: str):
+    try:
+            # 현재 파일의 디렉토리 경로를 가져옴
+        import os
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        instructions_path = os.path.join(current_dir, 'instructions_v3.md')
+
+        with open(instructions_path, 'r', encoding='utf-8') as file:
+                instructions = file.read()
+
+        messages = [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": json.dumps(market_data)},
+                {"role": "user", "content": current_status}
+        ]
+        openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+        response = openai_client.chat.completions.create(
+                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
+                messages=messages,
+                response_format={"type": "json_object"},
+                max_tokens=800
+        )
+
+
+        result = json.loads(response.choices[0].message.content)
+        print(str(result))
+        print("----------------------------")
+            # 응답 검증 및 기본값 설정
+        if not isinstance(result, dict):
+            raise ValueError("GPT response is not a dictionary")
+
+        # 필수 필드 검증 및 기본값 설정
+        validated_result = {
+                "decision": result.get("decision", "HOLD").upper(),
+                "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
+                "reason": str(result.get("reason", "No reason provided"))
+                }
+
+        if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
+                validated_result["decision"] = "HOLD"
+
+        return validated_result
+
+    except Exception as e:
+        return {
+                "decision": "HOLD",
+                "percentage": 0,
+                "reason": f"Analysis failed: {str(e)}"
+        }
+
 
 def  perform_new_analysis():
     config = get_strategy_config()
@@ -286,32 +340,16 @@ def  perform_new_analysis():
     #     "symbol": "BTCUSDT",
     #     "price": 101083.64
     # }
-    print(currentPrice)
-    return  "0"
-    # last_decisions = get_last_decisions(current_price)
+    print(trendline_prices_str)
+    last_decisions = get_last_decisions(currentPrice)
 
     # GPT-4 분석
-    # decision = analyzer.analyze_with_gpt4(
+    # decision = analyze_with_gpt4(
     #     bitcoin_data,
-    #     last_decisions,
+    #     trendline_prices_str,
     #     available_Balance,
-    #     filtered_positions
-    # )
-    #
-    #
-    #
-    # trading_record = TradingRecord.objects.create(
-    #     exchange='UPBIT',
-    #     coin_symbol=symbol.split('-')[1],
-    #     trade_type=decision['decision'].upper(),
-    #     trade_ratio=Decimal(str(decision['percentage'])),
-    #     trade_reason=decision['reason'],
-    #     coin_balance=Decimal(current_status_dict[f'{symbol.split("-")[1].lower()}_balance']),
-    #     balance=Decimal(current_status_dict['krw_balance']),
-    #     current_price=Decimal(str(current_price)),
-    #     trade_reflection=reflection,
-    #     avg_buy_price=Decimal(str(avg_buy_price)),  # btc_avg_buy_price -> avg_buy_price로 수정
+    #     filtered_positions,
+    #     currentPrice,
+    #     last_decisions,
     # )
 
-
-# last_decisions

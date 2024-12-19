@@ -40,7 +40,6 @@ class Analysis(CommonModel):
     symbol = models.CharField(max_length=20 , null=True, blank=True)
     trade_type = models.CharField('거래 유형', max_length=4, choices=TRADE_TYPES, default='HOLD')
     trade_amount_krw = models.DecimalField('거래 금액', max_digits=20, decimal_places=2, default=Decimal('0.00'))
-    coin_balance = models.DecimalField('코인 보유량', max_digits=20, decimal_places=8, default=Decimal('0.00000000'))
 
     # 잔고 관련 필드
     coin_balance = models.DecimalField('코인 보유량', max_digits=20, decimal_places=8, default=Decimal('0.00000000'))

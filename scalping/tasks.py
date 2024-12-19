@@ -23,34 +23,57 @@ def setup_scalping():
     now = datetime.now()
     next_run = now + timedelta(minutes=60)
 
-    # TASK1: 아침 8시 30분
-    morning_time = time(8, 30)
-    morning_datetime = datetime.combine(now.date(), morning_time)
+    # TASK1: 아침 8시 30분 및 오후 4시
+    korea_morning_time = time(8, 30)
+    korea_afternoon_time = time(16, 0)
+    korea_morning_datetime = datetime.combine(now.date(), korea_morning_time)
+    korea_afternoon_datetime = datetime.combine(now.date(), korea_afternoon_time)
 
-    # TASK2: 저녁 11시 30분
-    evening_time = time(23, 30)
-    evening_datetime = datetime.combine(now.date(), evening_time)
+    # TASK2: 저녁 11시 30분 및 오전 7시
+    stock_evening_time = time(23, 30)
+    stock_morning_time = time(7, 0)
+    stock_evening_datetime = datetime.combine(now.date(), stock_evening_time)
+    stock_morning_datetime = datetime.combine(now.date(), stock_morning_time)
 
-    # 만약 현재 시간이 이미 지정된 시간보다 늦다면 다음 날로 설정
-    if morning_datetime < now:
-        morning_datetime += timedelta(days=1)
+    # 다음 날로 시간 조정 (현재 시간이 이미 지정된 시간보다 늦었다면)
+    if korea_morning_datetime < now:
+        korea_morning_datetime += timedelta(days=1)
 
-    if evening_datetime < now:
-        evening_datetime += timedelta(days=1)
-        # TASK1 스케줄 설정: 아침 8시 30분
+    if korea_afternoon_datetime < now:
+        korea_afternoon_datetime += timedelta(days=1)
+
+    if stock_evening_datetime < now:
+        stock_evening_datetime += timedelta(days=1)
+
+    if stock_morning_datetime < now:
+        stock_morning_datetime += timedelta(days=1)
+
+    # TASK1 스케줄 설정: 아침 8시 30분 및 오후 4시
     schedule(
-            'scalping.tasks.koreaStockSymbol',
-            schedule_type=Schedule.DAILY,
-            next_run=morning_datetime,
-            repeats=-1  # 무한 반복
+        'scalping.tasks.koreaStockSymbol',
+        schedule_type=Schedule.DAILY,
+        next_run=korea_morning_datetime,
+        repeats=-1  # 무한 반복
+    )
+    schedule(
+        'scalping.tasks.koreaStockSymbol',
+        schedule_type=Schedule.DAILY,
+        next_run=korea_afternoon_datetime,
+        repeats=-1  # 무한 반복
     )
 
-    # TASK2 스케줄 설정: 저녁 11시 30분
+    # TASK2 스케줄 설정: 저녁 11시 30분 및 오전 7시
     schedule(
-            'scalping.tasks.stockSymbol',
-            schedule_type=Schedule.DAILY,
-            next_run=evening_datetime,
-            repeats=-1  # 무한 반복
+        'scalping.tasks.stockSymbol',
+        schedule_type=Schedule.DAILY,
+        next_run=stock_evening_datetime,
+        repeats=-1  # 무한 반복
+    )
+    schedule(
+        'scalping.tasks.stockSymbol',
+        schedule_type=Schedule.DAILY,
+        next_run=stock_morning_datetime,
+        repeats=-1  # 무한 반복
     )
 
 
