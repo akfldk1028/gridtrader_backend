@@ -326,7 +326,7 @@ def  perform_new_analysis():
         '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
         '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_6h.items()}
     }
-
+    print(trendline_prices_str)
 
 
     if not bitcoin_data:
