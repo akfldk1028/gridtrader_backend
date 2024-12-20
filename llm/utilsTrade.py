@@ -400,13 +400,14 @@ def perform_new_analysis():
         prices_1d = get_trendline_prices_for_interval(trendline_prices, '1d')
         prices_1w = get_trendline_prices_for_interval(trendline_prices, '1w')
 
-        # Convert trendline prices to string format
-        trendline_prices_str = {
+
+        # Convert trendline prices to JSON string
+        trendline_prices_str = json.dumps({
             '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_1h.items()},
             '2h': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
             '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_1d.items()},
             '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_1w.items()}
-        }
+        })
         print(trendline_prices_str)
 
         if not bitcoin_data:
