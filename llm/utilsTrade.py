@@ -305,9 +305,6 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
 
         return validated_result
 
-    except openai.error.OpenAIError as oe:
-        # OpenAI API 관련 오류 처리
-        print(f"OpenAI API 오류: {oe}")
     except Exception as e:
         # 기타 예외 처리
         print(f"오류 발생: {e}")
