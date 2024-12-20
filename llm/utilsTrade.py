@@ -306,15 +306,12 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         return validated_result
 
     except Exception as e:
-        # 기타 예외 처리
-        print(f"오류 발생: {e}")
+        return {
+            "decision": "HOLD",
+            "percentage": 0,
+            "reason": f"Analysis failed: {str(e)}"
+        }
 
-    # 실패 시 기본 HOLD 결정 반환
-    return {
-        "decision": "HOLD",
-        "percentage": 0,
-        "reason": "분석 실패."
-    }
 
 # def analyze_with_gpt4(market_data, trendline_prices_str, current_status, currentPrice, last_decisions):
 #     try:
