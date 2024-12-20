@@ -300,7 +300,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         }
 
 
-def  perform_new_analysis():
+def perform_new_analysis():
     try:
         config = get_strategy_config()
         if not config:
@@ -312,75 +312,78 @@ def  perform_new_analysis():
 
         print(f"Current grid_strategy: {grid_strategy}")
 
-        # bitcoin_data = get_bitcoin_data(vt_symbol)
+        # Fetch Bitcoin data
         bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
 
-
-        intervals = ['1h', '2h','1d', '1w']
+        intervals = ['1h', '2h', '1d', '1w']
 
         trendline_prices = get_trendlines_prices(vt_symbol, intervals)
-        prices_15m = get_trendline_prices_for_interval(trendline_prices, '1h')
-        prices_30m = get_trendline_prices_for_interval(trendline_prices, '2h')
-        prices_2h = get_trendline_prices_for_interval(trendline_prices, '1d')
-        prices_6h = get_trendline_prices_for_interval(trendline_prices, '1w')
-        # 트렌드 라인 가격 데이터를 문자열로 변환
+        prices_1h = get_trendline_prices_for_interval(trendline_prices, '1h')
+        prices_2h = get_trendline_prices_for_interval(trendline_prices, '2h')
+        prices_1d = get_trendline_prices_for_interval(trendline_prices, '1d')
+        prices_1w = get_trendline_prices_for_interval(trendline_prices, '1w')
+
+        # Convert trendline prices to string format
         trendline_prices_str = {
-            '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_15m.items()},
-            '2h': {k: [f"{price:.2f}" for price in v] for k, v in prices_30m.items()},
-            '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
-            '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_6h.items()}
+            '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_1h.items()},
+            '2h': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
+            '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_1d.items()},
+            '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_1w.items()}
         }
         print(trendline_prices_str)
-        # {'1h': {'RecentSteepHigh': ['102661.54', '102661.54'],
-        #         'RecentSteepLow': ['100917.78', '102860.05', '251629.54', '240887.57', '98951.64'],
-        #         'LongTermHigh': ['102661.54', '102661.54'], 'LongTermLow': ['96149.40']},
-        #  '2h': {'RecentSteepHigh': [], 'RecentSteepLow': ['135162.75', '80826.79', '97941.23', '102651.61', '83853.47'],
-        #         'LongTermHigh': [], 'LongTermLow': ['69351.27']},
-        #  '1d': {'RecentSteepHigh': [], 'RecentSteepLow': ['64123.08', '75717.37', '145495.18', '69543.12', '74018.58'],
-        #         'LongTermHigh': [], 'LongTermLow': ['51502.27']},
-        #  '1w': {'RecentSteepHigh': [], 'RecentSteepLow': ['39818.17', '44931.06', '56335.50', '56516.66', '50352.39'],
-        #         'LongTermHigh': [], 'LongTermLow': ['20543.08']}}
 
         if not bitcoin_data:
             print("Failed to fetch bitcoin data.")
             return None
 
+        # Fetch account balances and positions
         futures_usdt_balance = get_future_account("get-future-balance")
-        available_balance= futures_usdt_balance["availableBalance"]
-        # print(available_Balance) 30.36172625
+        available_balance = futures_usdt_balance.get("availableBalance", 0)
+
         futures_positions = get_future_account("get-future-position")
         filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
+
+        if not filtered_positions:
+            print(f"No positions found for symbol: {vt_symbol}")
+            return None  # Or handle as needed
+
+        first_position = filtered_positions[0]
+
         current_status = {
             "availableBalance": available_balance,
             "positions": filtered_positions
         }
-        current_status = json.dumps(current_status, ensure_ascii=False, indent=4)
+        current_status_json = json.dumps(current_status, ensure_ascii=False, indent=4)
 
-        currentPrice = get_current_price(symbol)
+        current_price_data = get_current_price(symbol)
+        current_price = current_price_data.get('price') if current_price_data else None
 
         print(trendline_prices_str)
-        last_decisions = get_last_decisions(currentPrice)
+        last_decisions = get_last_decisions(current_price if current_price else 100000000)
 
-        # GPT-4 분석
+        # GPT-4 analysis
         decision = analyze_with_gpt4(
             bitcoin_data,
             trendline_prices_str,
-            current_status,
-            currentPrice,
+            current_status_json,
+            current_price,
             last_decisions,
         )
 
+        if not decision:
+            print("Decision analysis failed.")
+            return None
 
+        # Create trading record
         trading_record = Analysis.objects.create(
             symbol=vt_symbol,
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
-            coin_balance=Decimal(filtered_positions['positionAmt']),
+            coin_balance=Decimal(first_position.get('positionAmt', 0)),
             balance=Decimal(available_balance),
-            current_price=Decimal(str(currentPrice)),
-            avg_buy_price=Decimal(filtered_positions['entryPrice']),
+            current_price=Decimal(str(current_price)) if current_price else Decimal(0),
+            avg_buy_price=Decimal(first_position.get('entryPrice', 0)),
         )
-
 
     except Exception as e:
         print(f"Analysis error: {e}")
