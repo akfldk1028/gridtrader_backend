@@ -344,11 +344,8 @@ def perform_new_analysis():
         futures_positions = get_future_account("get-future-position")
         filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
 
-        if not filtered_positions:
-            print(f"No positions found for symbol: {vt_symbol}")
-            return None  # Or handle as needed
+        print(filtered_positions)
 
-        first_position = filtered_positions[0]
 
         current_status = {
             "availableBalance": available_balance,
@@ -359,7 +356,6 @@ def perform_new_analysis():
         current_price_data = get_current_price(symbol)
         current_price = current_price_data.get('price') if current_price_data else None
 
-        print(trendline_prices_str)
         last_decisions = get_last_decisions(current_price if current_price else 100000000)
 
         # GPT-4 analysis
@@ -380,10 +376,7 @@ def perform_new_analysis():
             symbol=vt_symbol,
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
-            coin_balance=Decimal(first_position.get('positionAmt', 0)),
             balance=Decimal(available_balance),
-            current_price=Decimal(str(current_price)) if current_price else Decimal(0),
-            avg_buy_price=Decimal(first_position.get('entryPrice', 0)),
         )
 
     except Exception as e:
