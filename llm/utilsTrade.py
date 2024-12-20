@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from .models import Analysis
 from openai import OpenAI
 import json
+from decimal import Decimal
 
 # Binance 클라이언트 초기화
 symbol = "BTCUSDT"
@@ -242,13 +243,13 @@ def get_last_decisions(self, num_decisions: int = 3, current_price = 100000000) 
 
 # TODO 이전의 RESULT STRING 값들 가져와서 추론 하기
 
-def analyze_with_gpt4(market_data, trendline_prices_str, available_Balance, filtered_positions, currentPrice, last_decisions):
+def analyze_with_gpt4(market_data, trendline_prices_str, current_status, currentPrice, last_decisions):
     try:
             # 현재 파일의 디렉토리 경로를 가져옴
         import os
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        instructions_path = os.path.join(current_dir, 'instructions_v3.md')
+        instructions_path = os.path.join(current_dir, 'instructions_v1.md')
 
         with open(instructions_path, 'r', encoding='utf-8') as file:
                 instructions = file.read()
@@ -257,13 +258,15 @@ def analyze_with_gpt4(market_data, trendline_prices_str, available_Balance, filt
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": json.dumps(market_data)},
                 {"role": "user", "content": trendline_prices_str},
-                {"role": "user", "content": trendline_prices_str},
+                {"role": "user", "content": current_status},
+                {"role": "user", "content": currentPrice},
+                {"role": "user", "content": last_decisions},
 
         ]
         openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
         response = openai_client.chat.completions.create(
-                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
+                model="o1-mini-2024-09-12",  # 이미지를 처리할 수 있는 모델로 변경
                 messages=messages,
                 response_format={"type": "json_object"},
                 max_tokens=800
@@ -298,71 +301,87 @@ def analyze_with_gpt4(market_data, trendline_prices_str, available_Balance, filt
 
 
 def  perform_new_analysis():
-    config = get_strategy_config()
-    if not config:
-        print("Strategy configuration is invalid.")
+    try:
+        config = get_strategy_config()
+        if not config:
+            print("Strategy configuration is invalid.")
+            return None
+
+        vt_symbol = config['vt_symbol']
+        grid_strategy = config['grid_strategy']
+
+        print(f"Current grid_strategy: {grid_strategy}")
+
+        # bitcoin_data = get_bitcoin_data(vt_symbol)
+        bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
+
+
+        intervals = ['1h', '2h','1d', '1w']
+
+        trendline_prices = get_trendlines_prices(vt_symbol, intervals)
+        prices_15m = get_trendline_prices_for_interval(trendline_prices, '1h')
+        prices_30m = get_trendline_prices_for_interval(trendline_prices, '2h')
+        prices_2h = get_trendline_prices_for_interval(trendline_prices, '1d')
+        prices_6h = get_trendline_prices_for_interval(trendline_prices, '1w')
+        # 트렌드 라인 가격 데이터를 문자열로 변환
+        trendline_prices_str = {
+            '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_15m.items()},
+            '2h': {k: [f"{price:.2f}" for price in v] for k, v in prices_30m.items()},
+            '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
+            '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_6h.items()}
+        }
+        print(trendline_prices_str)
+        # {'1h': {'RecentSteepHigh': ['102661.54', '102661.54'],
+        #         'RecentSteepLow': ['100917.78', '102860.05', '251629.54', '240887.57', '98951.64'],
+        #         'LongTermHigh': ['102661.54', '102661.54'], 'LongTermLow': ['96149.40']},
+        #  '2h': {'RecentSteepHigh': [], 'RecentSteepLow': ['135162.75', '80826.79', '97941.23', '102651.61', '83853.47'],
+        #         'LongTermHigh': [], 'LongTermLow': ['69351.27']},
+        #  '1d': {'RecentSteepHigh': [], 'RecentSteepLow': ['64123.08', '75717.37', '145495.18', '69543.12', '74018.58'],
+        #         'LongTermHigh': [], 'LongTermLow': ['51502.27']},
+        #  '1w': {'RecentSteepHigh': [], 'RecentSteepLow': ['39818.17', '44931.06', '56335.50', '56516.66', '50352.39'],
+        #         'LongTermHigh': [], 'LongTermLow': ['20543.08']}}
+
+        if not bitcoin_data:
+            print("Failed to fetch bitcoin data.")
+            return None
+
+        futures_usdt_balance = get_future_account("get-future-balance")
+        available_balance= futures_usdt_balance["availableBalance"]
+        # print(available_Balance) 30.36172625
+        futures_positions = get_future_account("get-future-position")
+        filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
+        current_status = {
+            "availableBalance": available_balance,
+            "positions": filtered_positions
+        }
+        current_status = json.dumps(current_status, ensure_ascii=False, indent=4)
+
+        currentPrice = get_current_price(symbol)
+
+        print(trendline_prices_str)
+        last_decisions = get_last_decisions(currentPrice)
+
+        # GPT-4 분석
+        decision = analyze_with_gpt4(
+            bitcoin_data,
+            trendline_prices_str,
+            current_status,
+            currentPrice,
+            last_decisions,
+        )
+
+
+        trading_record = Analysis.objects.create(
+            symbol=vt_symbol,
+            trade_type=decision['decision'].upper(),
+            result_string=decision['reason'],
+            coin_balance=Decimal(filtered_positions['positionAmt']),
+            balance=Decimal(available_balance),
+            current_price=Decimal(str(currentPrice)),
+            avg_buy_price=Decimal(filtered_positions['entryPrice']),
+        )
+
+
+    except Exception as e:
+        print(f"Analysis error: {e}")
         return None
-
-    vt_symbol = config['vt_symbol']
-    grid_strategy = config['grid_strategy']
-
-    print(f"Current grid_strategy: {grid_strategy}")
-
-    # bitcoin_data = get_bitcoin_data(vt_symbol)
-    bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
-
-
-    intervals = ['1h', '2h','1d', '1w']
-
-    trendline_prices = get_trendlines_prices(vt_symbol, intervals)
-    prices_15m = get_trendline_prices_for_interval(trendline_prices, '1h')
-    prices_30m = get_trendline_prices_for_interval(trendline_prices, '2h')
-    prices_2h = get_trendline_prices_for_interval(trendline_prices, '1d')
-    prices_6h = get_trendline_prices_for_interval(trendline_prices, '1w')
-    # 트렌드 라인 가격 데이터를 문자열로 변환
-    trendline_prices_str = {
-        '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_15m.items()},
-        '2h': {k: [f"{price:.2f}" for price in v] for k, v in prices_30m.items()},
-        '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
-        '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_6h.items()}
-    }
-    print(trendline_prices_str)
-    # {'1h': {'RecentSteepHigh': ['102661.54', '102661.54'],
-    #         'RecentSteepLow': ['100917.78', '102860.05', '251629.54', '240887.57', '98951.64'],
-    #         'LongTermHigh': ['102661.54', '102661.54'], 'LongTermLow': ['96149.40']},
-    #  '2h': {'RecentSteepHigh': [], 'RecentSteepLow': ['135162.75', '80826.79', '97941.23', '102651.61', '83853.47'],
-    #         'LongTermHigh': [], 'LongTermLow': ['69351.27']},
-    #  '1d': {'RecentSteepHigh': [], 'RecentSteepLow': ['64123.08', '75717.37', '145495.18', '69543.12', '74018.58'],
-    #         'LongTermHigh': [], 'LongTermLow': ['51502.27']},
-    #  '1w': {'RecentSteepHigh': [], 'RecentSteepLow': ['39818.17', '44931.06', '56335.50', '56516.66', '50352.39'],
-    #         'LongTermHigh': [], 'LongTermLow': ['20543.08']}}
-
-    if not bitcoin_data:
-        print("Failed to fetch bitcoin data.")
-        return None
-
-    futures_usdt_balance = get_future_account("get-future-balance")
-    available_Balance = futures_usdt_balance["availableBalance"]
-    # print(available_Balance) 30.36172625
-    futures_positions = get_future_account("get-future-position")
-    filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
-    # print(filtered_positions) []
-    currentPrice = get_current_price(symbol)
-
-    # {
-    #     "symbol": "BTCUSDT",
-    #     "price": 101083.64
-    # }
-    print(trendline_prices_str)
-    last_decisions = get_last_decisions(currentPrice)
-
-    # GPT-4 분석
-    # decision = analyze_with_gpt4(
-    #     bitcoin_data,
-    #     trendline_prices_str,
-    #     available_Balance,
-    #     filtered_positions,
-    #     currentPrice,
-    #     last_decisions,
-    # )
-
