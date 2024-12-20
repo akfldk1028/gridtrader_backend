@@ -416,7 +416,7 @@ def perform_new_analysis():
         current_status_json = json.dumps(current_status, ensure_ascii=False, indent=4)
 
         current_price_data = get_current_price(symbol)
-        current_price = current_price_data.get('price') if current_price_data else None
+        current_price = current_price_data.get('price') if current_price_data else 0
 
         last_decisions = get_last_decisions(current_price if current_price else 100000000)
 
@@ -439,6 +439,7 @@ def perform_new_analysis():
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
             balance=Decimal(available_balance),
+            current_price=Decimal(current_price)
         )
 
     except Exception as e:

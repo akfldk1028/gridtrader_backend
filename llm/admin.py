@@ -10,6 +10,6 @@ class AnalysisResultAdmin(admin.ModelAdmin):
 
 @admin.register(Analysis)
 class AnalysisResultAdmin(admin.ModelAdmin):
-    list_display = ('symbol', 'current_price','result_string', 'selected_strategy', 'balance', 'coin_balance')
+    list_display = ('symbol', 'created_at',  'trade_type', 'current_price', 'result_string', 'selected_strategy', 'balance', 'coin_balance')
     list_filter = ('symbol',  'selected_strategy')
     search_fields = ('symbol',)
