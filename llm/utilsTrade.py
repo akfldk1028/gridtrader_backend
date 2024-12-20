@@ -261,8 +261,8 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         messages = [
             {"role": "system", "content": instructions},
             {"role": "user", "content": json.dumps(market_data)},
-            {"role": "user", "content": trendline_prices_str},
-            {"role": "user", "content": current_status},
+            {"role": "user", "content": json.dumps(trendline_prices_str)},  # 수정된 부분
+            {"role": "user", "content": json.dumps(current_status)},
             {"role": "user", "content": str(currentPrice)},  # 문자열로 변환
             {"role": "user", "content": last_decisions},
         ]
