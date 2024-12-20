@@ -11,17 +11,16 @@ Your role is to serve as an advanced virtual assistant for Bitcoin trading, spec
 Example structure for JSON Data 1 (Market Analysis Data) is as follows:
 ```json
 {
-
-              "timestamp": "2024-11-25T00:00:00",
-            "open": 97900.05,
-            "high": 98871.8,
-            "low": 90791.1,
-            "close": 97185.18,
-            "volume": 237818.37314,
-            "ARSI": 85.58220427264294,
-            "ARSI_signal": 69.17334234555415,
-            "SqueezeMomentum": 18029.894014285714,
-            "SqueezeColor": "lime"
+  "timestamp": "2024-11-25T00:00:00",
+  "open": 97900.05,
+  "high": 98871.8,
+  "low": 90791.1,
+  "close": 97185.18,
+  "volume": 237818.37314,
+  "RSI": 85.58220427264294,
+  "RSI_signal": 69.17334234555415,
+  "SqueezeMomentum": 18029.894014285714,
+  "SqueezeColor": "lime"
   
   
 }
@@ -65,17 +64,6 @@ Example structure for JSON Data (Current Investment State) is as follows:
     "btc_avg_buy_price": "<average price in KRW at which the held Bitcoin was purchased>"
 }
 ```
-### Data 3: Current Chart Image
-- **Purpose**: Provides a visual representation of the most recent BTC price trends and technical indicators.
-- **Contents**:
-  - The image contains a candlestick chart for the KRW-BTC pair, illustrating price movements over a specified period.
-  - Includes key technical indicators:
-    - **Moving Averages**: 15-hour (red line) and 50-hour (green line).
-    - **Volume Bars**: Representing trading volume in the respective periods.
-    - **RSI_14 (Relative Strength Index)**
-         - Below 30: Oversold zone (buy signal)
-         - Above 70: Overbought zone (sell signal)
-  - **Bollinger Bands**: A set of three lines: the middle is a 20-day average price, and the two outer lines adjust based on price volatility. The outer bands widen with more volatility and narrow when less. They help identify when prices might be too high (touching the upper band) or too low (touching the lower band), suggesting potential market moves.
 
 ## Technical Indicator Glossary
 - **RSI_14**: The Relative Strength Index measures overbought or oversold conditions on a scale of 0 to 100. Measures overbought or oversold conditions. Values below 30 or above 70 indicate potential buy or sell signals respectively.
