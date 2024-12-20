@@ -416,6 +416,7 @@ def perform_new_analysis():
         current_status_json = json.dumps(current_status, ensure_ascii=False, indent=4)
 
         current_price_data = get_current_price(symbol)
+        print(current_price_data)
         current_price = current_price_data.get('price') if current_price_data else 0
 
         last_decisions = get_last_decisions(current_price if current_price else 100000000)
