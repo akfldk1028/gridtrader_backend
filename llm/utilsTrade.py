@@ -327,7 +327,15 @@ def  perform_new_analysis():
         '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_6h.items()}
     }
     print(trendline_prices_str)
-
+    # {'1h': {'RecentSteepHigh': ['102661.54', '102661.54'],
+    #         'RecentSteepLow': ['100917.78', '102860.05', '251629.54', '240887.57', '98951.64'],
+    #         'LongTermHigh': ['102661.54', '102661.54'], 'LongTermLow': ['96149.40']},
+    #  '2h': {'RecentSteepHigh': [], 'RecentSteepLow': ['135162.75', '80826.79', '97941.23', '102651.61', '83853.47'],
+    #         'LongTermHigh': [], 'LongTermLow': ['69351.27']},
+    #  '1d': {'RecentSteepHigh': [], 'RecentSteepLow': ['64123.08', '75717.37', '145495.18', '69543.12', '74018.58'],
+    #         'LongTermHigh': [], 'LongTermLow': ['51502.27']},
+    #  '1w': {'RecentSteepHigh': [], 'RecentSteepLow': ['39818.17', '44931.06', '56335.50', '56516.66', '50352.39'],
+    #         'LongTermHigh': [], 'LongTermLow': ['20543.08']}}
 
     if not bitcoin_data:
         print("Failed to fetch bitcoin data.")
