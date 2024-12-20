@@ -18,8 +18,7 @@ from rest_framework.test import APIRequestFactory
 from binanceData.views import BinanceLLMChartDataAPIView
 from rest_framework.response import Response
 from .models import Analysis
-# from openai import OpenAI
-import openai  # 표준 OpenAI 라이브러리 임포트
+from openai import OpenAI
 
 import json
 from decimal import Decimal
@@ -248,8 +247,10 @@ def get_last_decisions(self, num_decisions: int = 3, current_price = 100000000) 
 def analyze_with_gpt4(market_data, trendline_prices_str, current_status, currentPrice, last_decisions):
     try:
         # OpenAI API 키 설정
-        openai.api_key = settings.OPENAI_API_KEY
 
+        client = OpenAI(
+            api_key=settings.OPENAI_API_KEY,  # This is the default and can be omitted
+        )
         # 지침 파일 읽기
         current_dir = os.path.dirname(os.path.abspath(__file__))
         instructions_path = os.path.join(current_dir, 'instructions_v1.md')
@@ -268,7 +269,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         ]
 
         # OpenAI API 호출
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o",  # 올바른 모델 이름
             messages=messages,
             max_tokens=800,
