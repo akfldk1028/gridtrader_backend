@@ -264,9 +264,10 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
 
         ]
         openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            # model = "o1-mini",  # 이미지를 처리할 수 있는 모델로 변경
 
         response = openai_client.chat.completions.create(
-                model="o1-mini",  # 이미지를 처리할 수 있는 모델로 변경
+                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
                 messages=messages,
                 response_format={"type": "json_object"},
                 max_tokens=800
