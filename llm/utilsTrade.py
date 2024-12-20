@@ -272,9 +272,8 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         response = client.chat.completions.create(
             model="gpt-4o",  # 올바른 모델 이름
             messages=messages,
-            max_tokens=800,
-            n=1,
-            stop=None,
+            response_format={"type": "json_object"},
+
         )
 
         # 응답 내용 추출
