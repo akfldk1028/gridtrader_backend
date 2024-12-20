@@ -18,7 +18,9 @@ from rest_framework.test import APIRequestFactory
 from binanceData.views import BinanceLLMChartDataAPIView
 from rest_framework.response import Response
 from .models import Analysis
-from openai import OpenAI
+# from openai import OpenAI
+import openai  # 표준 OpenAI 라이브러리 임포트
+
 import json
 from decimal import Decimal
 
@@ -245,60 +247,134 @@ def get_last_decisions(self, num_decisions: int = 3, current_price = 100000000) 
 
 def analyze_with_gpt4(market_data, trendline_prices_str, current_status, currentPrice, last_decisions):
     try:
-            # 현재 파일의 디렉토리 경로를 가져옴
-        import os
+        # OpenAI API 키 설정
+        openai.api_key = settings.OPENAI_API_KEY
 
+        # 지침 파일 읽기
         current_dir = os.path.dirname(os.path.abspath(__file__))
         instructions_path = os.path.join(current_dir, 'instructions_v1.md')
 
         with open(instructions_path, 'r', encoding='utf-8') as file:
-                instructions = file.read()
+            instructions = file.read()
 
+        # 대화 메시지 구성
         messages = [
-                {"role": "system", "content": instructions},
-                {"role": "user", "content": json.dumps(market_data)},
-                {"role": "user", "content": trendline_prices_str},
-                {"role": "user", "content": current_status},
-                {"role": "user", "content": currentPrice},
-                {"role": "user", "content": last_decisions},
-
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": json.dumps(market_data)},
+            {"role": "user", "content": trendline_prices_str},
+            {"role": "user", "content": current_status},
+            {"role": "user", "content": str(currentPrice)},  # 문자열로 변환
+            {"role": "user", "content": last_decisions},
         ]
-        openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            # model = "o1-mini",  # 이미지를 처리할 수 있는 모델로 변경
 
-        response = openai_client.chat.completions.create(
-                model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
-                messages=messages,
-                response_format={"type": "json_object"},
-                max_tokens=800
+        # OpenAI API 호출
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",  # 올바른 모델 이름
+            messages=messages,
+            max_tokens=800,
+            n=1,
+            stop=None,
         )
 
+        # 응답 내용 추출
+        response_content = response.choices[0].message.content
 
-        result = json.loads(response.choices[0].message.content)
+        # JSON으로 파싱 시도
+        try:
+            result = json.loads(response_content)
+        except json.JSONDecodeError:
+            print("GPT-4 응답을 JSON으로 파싱하는 데 실패했습니다.")
+            print("응답 내용:", response_content)
+            raise
+
         print(str(result))
         print("----------------------------")
-            # 응답 검증 및 기본값 설정
-        if not isinstance(result, dict):
-            raise ValueError("GPT response is not a dictionary")
 
-        # 필수 필드 검증 및 기본값 설정
+        # 결과 검증 및 기본값 설정
+        if not isinstance(result, dict):
+            raise ValueError("GPT 응답이 사전 형식이 아닙니다.")
+
         validated_result = {
-                "decision": result.get("decision", "HOLD").upper(),
-                "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
-                "reason": str(result.get("reason", "No reason provided"))
-                }
+            "decision": result.get("decision", "HOLD").upper(),
+            "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
+            "reason": str(result.get("reason", "No reason provided"))
+        }
 
         if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
-                validated_result["decision"] = "HOLD"
+            validated_result["decision"] = "HOLD"
 
         return validated_result
 
+    except openai.error.OpenAIError as oe:
+        # OpenAI API 관련 오류 처리
+        print(f"OpenAI API 오류: {oe}")
     except Exception as e:
-        return {
-                "decision": "HOLD",
-                "percentage": 0,
-                "reason": f"Analysis failed: {str(e)}"
-        }
+        # 기타 예외 처리
+        print(f"오류 발생: {e}")
+
+    # 실패 시 기본 HOLD 결정 반환
+    return {
+        "decision": "HOLD",
+        "percentage": 0,
+        "reason": "분석 실패."
+    }
+
+# def analyze_with_gpt4(market_data, trendline_prices_str, current_status, currentPrice, last_decisions):
+#     try:
+#             # 현재 파일의 디렉토리 경로를 가져옴
+#         import os
+#
+#         current_dir = os.path.dirname(os.path.abspath(__file__))
+#         instructions_path = os.path.join(current_dir, 'instructions_v1.md')
+#
+#         with open(instructions_path, 'r', encoding='utf-8') as file:
+#                 instructions = file.read()
+#
+#         messages = [
+#                 {"role": "system", "content": instructions},
+#                 {"role": "user", "content": json.dumps(market_data)},
+#                 {"role": "user", "content": trendline_prices_str},
+#                 {"role": "user", "content": current_status},
+#                 {"role": "user", "content": currentPrice},
+#                 {"role": "user", "content": last_decisions},
+#
+#         ]
+#         openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+#             # model = "o1-mini",  # 이미지를 처리할 수 있는 모델로 변경
+#
+#         response = openai_client.chat.completions.create(
+#                 model="gpt-4o",  # 이미지를 처리할 수 있는 모델로 변경
+#                 messages=messages,
+#                 response_format={"type": "json_object"},
+#                 max_tokens=800
+#         )
+#
+#
+#         result = json.loads(response.choices[0].message.content)
+#         print(str(result))
+#         print("----------------------------")
+#             # 응답 검증 및 기본값 설정
+#         if not isinstance(result, dict):
+#             raise ValueError("GPT response is not a dictionary")
+#
+#         # 필수 필드 검증 및 기본값 설정
+#         validated_result = {
+#                 "decision": result.get("decision", "HOLD").upper(),
+#                 "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
+#                 "reason": str(result.get("reason", "No reason provided"))
+#                 }
+#
+#         if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
+#                 validated_result["decision"] = "HOLD"
+#
+#         return validated_result
+#
+#     except Exception as e:
+#         return {
+#                 "decision": "HOLD",
+#                 "percentage": 0,
+#                 "reason": f"Analysis failed: {str(e)}"
+#         }
 
 
 def perform_new_analysis():
