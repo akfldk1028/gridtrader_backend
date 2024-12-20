@@ -277,16 +277,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         )
 
         # 응답 내용 추출
-        response_content = response.choices[0].message.content
-
-        # JSON으로 파싱 시도
-        try:
-            result = json.loads(response_content)
-        except json.JSONDecodeError:
-            print("GPT-4 응답을 JSON으로 파싱하는 데 실패했습니다.")
-            print("응답 내용:", response_content)
-            raise
-
+        result = json.loads(response.choices[0].message.content)
         print(str(result))
         print("----------------------------")
 
