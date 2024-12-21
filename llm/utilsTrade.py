@@ -385,7 +385,16 @@ def perform_new_analysis():
         prices_1d = get_trendline_prices_for_interval(trendline_prices, '1d')
         prices_1w = get_trendline_prices_for_interval(trendline_prices, '1w')
 
-
+        # {"1h": {"RecentSteepHigh": ["98035.43", "99608.75", "96584.75", "98035.43"],
+        #         "RecentSteepLow": ["92260.19", "102015.30", "104162.20", "96036.08", "268604.69"],
+        #         "LongTermHigh": ["98035.43", "98035.43"], "LongTermLow": ["96744.57"]},
+        #  "2h": {"RecentSteepHigh": ["99608.68", "99608.68"],
+        #         "RecentSteepLow": ["136709.74", "81270.92", "98732.73", "103538.72", "84359.02"],
+        #         "LongTermHigh": ["99608.68", "99608.68"], "LongTermLow": ["69562.46"]},
+        #  "1d": {"RecentSteepHigh": [], "RecentSteepLow": ["64279.73", "75994.12", "146494.73", "69755.92", "74277.73"],
+        #         "LongTermHigh": [], "LongTermLow": ["51528.19"]},
+        #  "1w": {"RecentSteepHigh": [], "RecentSteepLow": ["39863.44", "44985.84", "56411.49", "56592.99", "50417.25"],
+        #         "LongTermHigh": [], "LongTermLow": ["20552.50"]}}
         # Convert trendline prices to JSON string
         trendline_prices_str = json.dumps({
             '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_1h.items()},

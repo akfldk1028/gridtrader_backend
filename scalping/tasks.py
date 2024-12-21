@@ -132,8 +132,7 @@ def stockSymbol():
         except Exception as e:
             print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
             if attempt < 3 - 1:
-                time.sleep(5)
-            continue
+                continue
         finally:
             session.close()
 
@@ -161,8 +160,7 @@ def koreaStockSymbol():
         except Exception as e:
             print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
             if attempt < 3 - 1:
-                time.sleep(5)
-            continue
+              continue
         finally:
             session.close()
 
@@ -189,8 +187,7 @@ def binance_save():
         except Exception as e:
             print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
             if attempt < 3 - 1:
-                time.sleep(5)
-            continue
+                continue
         finally:
             session.close()
 
@@ -217,8 +214,7 @@ def scheduled_filter_and_save():
         except Exception as e:
             print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
             if attempt < 3 - 1:
-                time.sleep(5)
-            continue
+                continue
         finally:
             session.close()
 
