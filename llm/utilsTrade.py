@@ -269,13 +269,18 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         ]
 
         # OpenAI API 호출
+        # response = client.chat.completions.create(
+        #     model="o1-mini",  # 올바른 모델 이름
+        #     messages=messages,
+        #     response_format={"type": "json_object"},
+        #
+        # )
         response = client.chat.completions.create(
             model="o1-mini",  # 올바른 모델 이름
             messages=messages,
-            response_format={"type": "json_object"},
+            response_format="json",  # 올바른 형식으로 수정
 
         )
-
         # 응답 내용 추출
         result = json.loads(response.choices[0].message.content)
         print(str(result))
