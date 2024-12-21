@@ -277,7 +277,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         # )
         response = client.chat.completions.create(
             model="o1-mini",  # 올바른 모델 이름
-            messages=messages,c
+            messages=messages
         )
         # 응답 내용 추출
         result = json.loads(response.choices[0].message.content)
