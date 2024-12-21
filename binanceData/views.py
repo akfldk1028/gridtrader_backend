@@ -2017,7 +2017,15 @@ class stockDataView(APIView):
         'MDLZ',  # 몬델리즈
         'CHD',  # 처치 앤드 드와이트 (소비재)
         'MKC',  # 맥코믹 (향신료)
-        'SJM'  # JM 스머커 (식품)
+        'SJM',  # JM 스머커 (식품)
+
+        'CONE', 'FATE', 'EXAS', 'ONON', 'SPLK',
+        'REGN', 'BIIB', 'INCY', 'ALXN',
+        'ROST', 'TAP', 'CPRT', 'KORS',
+        'HES', 'PXD', 'APA', 'OIL',
+        'COF', 'MTB', 'CBOE', 'FITB', 'RF',
+        'FLIR', 'VRSK', 'IFF', 'NVR', 'DOV',
+        'TEAM', 'WDAY', 'ANET', 'PTON'
     ]
 
     @staticmethod
