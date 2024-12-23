@@ -260,7 +260,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
 
         # 대화 메시지 구성
         messages = [
-            {"role": "system", "content": instructions},
+            {"role": "user", "content": instructions},
             {"role": "user", "content": json.dumps(market_data)},
             {"role": "user", "content": json.dumps(trendline_prices_str)},  # 수정된 부분
             {"role": "user", "content": json.dumps(current_status)},
@@ -270,7 +270,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
 
         # OpenAI API 호출
         # response = client.chat.completions.create(
-        #     model="o1-mini",  # 올바른 모델 이름
+        #     model="o1-mini",  # 올바른 모델 이
         #     messages=messages,
         #     response_format={"type": "json_object"},
         #
