@@ -286,11 +286,20 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
             raise ValueError("API 응답이 비어있거나 'choices' 속성이 없습니다.")
 
         # 응답 파싱
-        result = response.choices[0].message.content
+        raw_content = response.choices[0].message.content
 
-        # 결과 검증 및 기본값 설정
-        if not isinstance(result, dict):
-            raise ValueError("GPT 응답이 사전 형식이 아닙니다.")
+
+        # 코드 블록(````json`) 제거
+        if raw_content.startswith("```json") and raw_content.endswith("```"):
+            raw_content = raw_content[7:-3].strip()
+
+        # JSON 파싱
+        try:
+            result = json.loads(raw_content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"JSONDecodeError: {e}, 응답 내용: {raw_content}")
+
+
 
         validated_result = {
             "decision": result.get("decision", "HOLD").upper(),
