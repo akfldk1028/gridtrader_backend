@@ -280,10 +280,18 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
             messages=messages
         )
         # 응답 내용 추출
-        result = json.loads(response.choices[0].message.content)
-        print(str(result))
-        print("----------------------------")
+        print("Raw API Response:", response)
 
+        if not response or not hasattr(response, 'choices'):
+            raise ValueError("API 응답이 비어있거나 'choices' 속성이 없습니다.")
+
+        # 응답 파싱
+        try:
+            result = json.loads(response.choices[0].message.content)
+        except json.JSONDecodeError as e:
+            print(f"JSONDecodeError: {e}")
+            print("응답 내용:", response.choices[0].message.content)
+            raise
         # 결과 검증 및 기본값 설정
         if not isinstance(result, dict):
             raise ValueError("GPT 응답이 사전 형식이 아닙니다.")
@@ -428,6 +436,8 @@ def perform_new_analysis():
         current_status_json = json.dumps(current_status, ensure_ascii=False, indent=4)
 
         current_price_data = get_current_price(symbol)
+        # {'symbol': 'BTCUSDT', 'price': 98708.49}
+
         print(current_price_data)
         current_price = current_price_data.get('price') if current_price_data else 0
 
