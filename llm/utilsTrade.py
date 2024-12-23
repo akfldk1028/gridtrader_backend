@@ -282,10 +282,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         # 응답 내용 추출
         print("Raw API Response:", response)
 
-        if not response or not hasattr(response, 'choices'):
-            raise ValueError("API 응답이 비어있거나 'choices' 속성이 없습니다.")
 
-        # 응답 파싱
         raw_content = response.choices[0].message.content
 
 
