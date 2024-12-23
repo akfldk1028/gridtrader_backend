@@ -6,7 +6,6 @@ import numpy as np
 import re
 from datetime import datetime
 from django.conf import settings
-from TradeStrategy.models import StrategyConfig
 # from common.models import CommonModel
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -19,6 +18,7 @@ from binanceData.views import BinanceLLMChartDataAPIView
 from rest_framework.response import Response
 from .models import Analysis
 from openai import OpenAI
+from TradeStrategy.models import StrategyConfig
 
 import json
 from decimal import Decimal
@@ -297,11 +297,22 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
             raise ValueError(f"JSONDecodeError: {e}, 응답 내용: {raw_content}")
 
 
+        grid_strategy = "RegularGrid"
+        # 결정에 따른 grid_strategy 설정
+        decision = result.get("decision", "HOLD").upper()
+        if decision == "BUY":
+            grid_strategy = "LongGrid"
+        elif decision == "SELL":
+            grid_strategy = "ShortGrid"
+        else:
+            grid_strategy = "RegularGrid"
 
         validated_result = {
             "decision": result.get("decision", "HOLD").upper(),
             "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
-            "reason": str(result.get("reason", "No reason provided"))
+            "reason": str(result.get("reason", "No reason provided")),
+            "grid_strategy": grid_strategy  # 추가된 부분
+
         }
 
         if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
@@ -313,7 +324,8 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         return {
             "decision": "HOLD",
             "percentage": 0,
-            "reason": f"Analysis failed: {str(e)}"
+            "reason": f"Analysis failed: {str(e)}",
+            "grid_strategy": "RegularGrid"  # 오류 발생 시 기본 전략 설정
         }
 
 
@@ -373,6 +385,46 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
 #                 "percentage": 0,
 #                 "reason": f"Analysis failed: {str(e)}"
 #         }
+
+def update_strategy_config():
+    try:
+        # StrategyConfig 모델에서 설정 찾기
+        strategy_config = StrategyConfig.objects.get(name='240824')
+
+        # 현재 config 가져오기
+        current_config = strategy_config.config
+
+        # 각 Symbol별로 최신 분석 결과 가져오기
+        symbols = ['BTCUSDT', 'ETHUSDT']
+        for symbol in symbols:
+            latest_analysis = Analysis.objects.filter(symbol=symbol).order_by('-created_at').first()
+
+            if latest_analysis:
+                selected_strategy = latest_analysis.selected_strategy
+
+                # Symbol에 따라 적절한 설정 업데이트
+                if symbol == 'BTCUSDT':
+                    if 'INIT' in current_config and 'setting' in current_config['INIT']:
+                        current_config['INIT']['setting']['grid_strategy'] = selected_strategy
+                elif symbol == 'ETHUSDT':
+                    if 'ETH' in current_config and 'setting' in current_config['ETH']:
+                        current_config['ETH']['setting']['grid_strategy'] = selected_strategy
+
+                print(f"Updated StrategyConfig grid_strategy for {symbol} to {selected_strategy}")
+            else:
+                print(f"No AnalysisResult found for {symbol}")
+
+        # 업데이트된 config 저장
+        strategy_config.config = current_config
+        strategy_config.save()
+
+    except StrategyConfig.DoesNotExist:
+        print("StrategyConfig with name '240824' not found")
+    except Exception as e:
+        print(f"Error updating StrategyConfig: {str(e)}")
+
+
+
 
 
 def perform_new_analysis():
@@ -453,10 +505,15 @@ def perform_new_analysis():
             current_price,
             last_decisions,
         )
-
         if not decision:
             print("Decision analysis failed.")
             return None
+
+
+        grid_strategy = decision['grid_strategy']
+
+
+
 
         # Create trading record
         trading_record = Analysis.objects.create(
@@ -464,9 +521,12 @@ def perform_new_analysis():
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
             balance=Decimal(available_balance),
-            current_price=Decimal(current_price)
+            current_price=Decimal(current_price),
+            selected_strategy=grid_strategy,
+            price_prediction=decision['percentage']
         )
-
+        update_strategy_config()
+        return f"Analysis completed successfully in seconds. AnalysisResult id: {trading_record.id}"
     except Exception as e:
         print(f"Analysis error: {e}")
         return None
