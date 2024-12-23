@@ -23,21 +23,19 @@ def setup_bitcoin_analysis_task():
     Schedule.objects.filter(func='llm.tasks.run_new_bitcoin_analysis').delete()
 
     now = datetime.now()
-    next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=2)
-
-    # 다음 실행 시간을 오전 9시 10분으로 설정
-    # next_hour = now.replace(hour=16, minute=55, second=0, microsecond=0)
-    if now > next_hour:
-        next_hour += timedelta(days=1)
-
+    next_run = now.replace(minute=55, second=0, microsecond=0)
+    if now >= next_run:
+        next_run += timedelta(hours=1)
 
     schedule(
         'llm.tasks.run_new_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron="35 2 * * *",  # 매일 오전 3시, 오전 9시, 오후 3시, 오후 10시에 실행
-        next_run=next_hour,
+        cron="55 * * * *",  # 매 시간 55분에 실행
+        next_run=next_run,
         repeats=-1  # 무한 반복
     )
+
+
     # schedule(
     #     'llm.tasks.run_eth_analysis',
     #     schedule_type=Schedule.CRON,
