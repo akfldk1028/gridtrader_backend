@@ -480,7 +480,7 @@ def perform_new_analysis():
         futures_positions = get_future_account("get-future-position")
         filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
 
-        print(filtered_positions)
+        print(filtered_positions["positionAmt"])
 
 
         current_status = {
@@ -521,6 +521,7 @@ def perform_new_analysis():
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
             balance=Decimal(available_balance),
+            coin_balance=Decimal(filtered_positions["positionAmt"]),
             current_price=Decimal(current_price),
             selected_strategy=grid_strategy,
             price_prediction=decision['percentage']
