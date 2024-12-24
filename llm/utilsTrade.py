@@ -512,8 +512,12 @@ def perform_new_analysis():
 
         grid_strategy = decision['grid_strategy']
 
-
-
+        # [{'symbol': 'BTCUSDT', 'positionAmt': '0.008', 'entryPrice': '94501.4', 'breakEvenPrice': '94548.6507',
+        #   'markPrice': '94520.10000000', 'unRealizedProfit': '0.14960000', 'liquidationPrice': '90089.53755020',
+        #   'leverage': '20', 'maxNotionalValue': '100000000', 'marginType': 'isolated', 'isolatedMargin': '38.32736480',
+        #   'isAutoAddMargin': 'false', 'positionSide': 'BOTH', 'notional': '756.16080000',
+        #   'isolatedWallet': '38.17776480', 'updateTime': 1735017608142, 'isolated': True, 'adlQuantile': 2,
+        #   'profit_percentage': 0.4}]
 
         # Create trading record
         trading_record = Analysis.objects.create(
@@ -521,7 +525,7 @@ def perform_new_analysis():
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
             balance=Decimal(available_balance),
-            coin_balance=Decimal(filtered_positions["positionAmt"]),
+            coin_balance=Decimal(filtered_positions[0]["positionAmt"]),
             current_price=Decimal(current_price),
             selected_strategy=grid_strategy,
             price_prediction=decision['percentage']
