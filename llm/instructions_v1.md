@@ -173,8 +173,6 @@ Example Structure for JSON Data:
 - **Longer Timeframes (e.g., Weekly, Monthly)**: Offer higher reliability as they capture broader market trends and reduce the noise associated with short-term fluctuations.
 - **Shorter Timeframes (e.g., Minutes, Hours)**: Provide more frequent signals but may be less reliable due to increased market noise and volatility.
 
-When developing trading strategies, it is crucial to consider the timeframe of the indicators used. Higher timeframes generally yield more dependable signals, making them preferable for long-term trading strategies, while shorter timeframes can be useful for more active, short-term trading approaches.
-
 ---
 
 
