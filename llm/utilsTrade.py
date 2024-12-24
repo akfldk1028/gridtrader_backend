@@ -480,7 +480,7 @@ def perform_new_analysis():
         futures_positions = get_future_account("get-future-position")
         filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
 
-        print(filtered_positions["positionAmt"])
+        # print(filtered_positions["positionAmt"])
 
 
         current_status = {
