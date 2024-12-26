@@ -401,9 +401,9 @@ class DailyBalanceView(BinanceAPIView):
 
     def initialize_investments(self):
         self.investment_tracker.add_transaction(
-            Transaction(date(2024, 12, 24), InvestorType.YOU, TransactionType.DEPOSIT, 190))
+            Transaction(date(2024, 12, 24), InvestorType.YOU, TransactionType.DEPOSIT, 150))
         self.investment_tracker.add_transaction(
-            Transaction(date(2024, 12, 24), InvestorType.FRIEND, TransactionType.DEPOSIT, 10))
+            Transaction(date(2024, 12, 24), InvestorType.FRIEND, TransactionType.DEPOSIT, 8))
 
 
     def get_balance(self, balance_data):
