@@ -179,9 +179,7 @@ Example Structure for JSON Data:
 ### Instruction Workflow
 #### Pre-Decision Analysis:
 1. **Review Current Investment State and Previous Decisions**: Start by examining the most recent investment state and the history of decisions to understand the current portfolio position and past actions. Review the outcomes of past decisions to understand their effectiveness, considering both financial results and the accuracy of your market analysis and predictions.
-2. **Analyze Market Data**:    Utilize **Data 1 (Market Analysis)** and **Data 4 (Current Price)** to examine current market trends, including price movements and technical indicators. Pay special attention to **RSI_14**, **MACD**, **Bollinger Bands**, **Squeeze Momentum**, and other key indicators for signals on potential market directions.
-   - **Begin with RSI Analysis**  
-     Examine the **RSI_14** indicator first to assess overbought or oversold conditions.
+2. **Analyze Market Data**:    Utilize **Data 1 (Market Analysis)** and **Data 4 (Current Price)** to examine current market trends, including price movements and technical indicators. Pay special attention to **RSI**, **RSI_signal**, **Squeeze Momentum**, and other key indicators for signals on potential market directions.
    - **RSI Signal Line Crossings**:
      - **RSI Crossing Above RSI_signal**: Increases the likelihood of an upward price movement, indicating strengthening bullish momentum.
      - **RSI Crossing Below RSI_signal**: Indicates weakening momentum, suggesting a potential bearish trend.
@@ -198,7 +196,6 @@ Example Structure for JSON Data:
 
 3. **Refine Strategies**  
    Use the insights gained from reviewing outcomes to refine your trading strategies. This could involve:
-   
    - **Adjusting Technical Analysis Approach**: Incorporate new indicators or modify existing ones based on recent performance.
    - **Enhancing RSI Signal Usage**: Utilize RSI signal line crossings to confirm the strength of buy or sell signals.
    - **Incorporating Squeeze Momentum Insights**: Leverage Squeeze Momentum colors to gauge the strength and direction of market movements.
