@@ -988,13 +988,17 @@ class BinanceLLMChartDataAPIView(APIView):
 
                 return records
 
+            # data = {
+            #     '1h': process_candles(one_hour_candles, '1h'),
+            #     '2h': process_candles(two_hour_candles, '2h'),
+            #     '1d': process_candles(one_day_candles, '1d'),
+            #     '1w': process_candles(one_week_candles, '1w')
+            # }
             data = {
-                '1h': process_candles(one_hour_candles, '1h'),
                 '2h': process_candles(two_hour_candles, '2h'),
                 '1d': process_candles(one_day_candles, '1d'),
                 '1w': process_candles(one_week_candles, '1w')
             }
-
             return data
 
         except Exception as e:
@@ -2004,10 +2008,9 @@ class stockDataView(APIView):
 
         # 소비재 및 통신 (경기방어주 추가)
         'KO', 'PEP', 'MCD', 'SBUX', 'YUM', 'DPZ', 'PG', 'CL', 'KMB', 'EL',
-        'T', 'VZ', 'TMUS', 'WMT', 'TGT', 'COST',
+        'T', 'VZ', 'TMUS', 'WMT', 'TGT', 'COST', 'GEV'
 
         # 추가된 경기방어주
-        'DPZ',  # 도미노피자
         'KHC',  # 크래프트 하인즈
         'GIS',  # 제너럴 밀스
         'HSY',  # 허쉬
@@ -2025,7 +2028,14 @@ class stockDataView(APIView):
         'HES', 'PXD', 'APA', 'OIL',
         'COF', 'MTB', 'CBOE', 'FITB', 'RF',
         'FLIR', 'VRSK', 'IFF', 'NVR', 'DOV',
-        'TEAM', 'WDAY', 'ANET', 'PTON'
+        'TEAM', 'WDAY', 'ANET', 'PTON',
+
+        # 나스닥 신규 추가
+        'ABNB', 'HOOD', 'COIN', 'AFRM', 'SOFI', 'DUOL', 'BMBL', 'GTLB',
+
+        # 뉴욕증권거래소 신규 추가
+        'TTAN', 'PONY', 'NOTE', 'UBER', 'SPOT',
+        'RBLX', 'U', 'MTTR', 'WIMI', 'VUZI', 'SNAP', 'DIS', 'FVRR', 'UPST', 'PATH' ,'S'
     ]
 
     @staticmethod

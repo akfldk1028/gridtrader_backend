@@ -153,7 +153,7 @@ Example Structure for JSON Data:
   - **Principle**: It utilizes Bollinger Bands and Keltner Channels to identify squeeze conditions. When the Bollinger Bands contract within the Keltner Channels, it signifies a squeeze. The momentum is then calculated using linear regression analysis to assess the strength and direction of the impending price movement.
   - **Color Interpretation**:
     - **Maroon & Lime**: Indicate that upward momentum is strengthening.
-    - **Red & Green**: Indicate that momentum is weakening.
+    - **Red & Green**: Indicate that downward momentum is strengthening.
   - **Additional Information**:
     - **Timeframe Reliability**: Higher timeframes (e.g., weekly, monthly) provide more reliable signals compared to shorter timeframes (e.g., minutes, hours). Signals derived from longer timeframes are generally more trustworthy as they reflect larger market trends.
 
@@ -170,8 +170,8 @@ Example Structure for JSON Data:
 - Conversely, when **RSI crosses below RSI_signal**, it indicates that the momentum is weakening, which may lead to a price decline.
 
 **Timeframe Considerations**:
-- **Longer Timeframes (e.g., Weekly, Monthly)**: Offer higher reliability as they capture broader market trends and reduce the noise associated with short-term fluctuations.
-- **Shorter Timeframes (e.g., Minutes, Hours)**: Provide more frequent signals but may be less reliable due to increased market noise and volatility.
+- **Longer Timeframes (e.g., Weekly, daily)**: Offer higher reliability as they capture broader market trends and reduce the noise associated with short-term fluctuations.
+- **Shorter Timeframes (e.g. Hours)**: Provide more frequent signals but may be less reliable due to increased market noise and volatility.
 
 ---
 
@@ -199,13 +199,12 @@ Example Structure for JSON Data:
    - **Adjusting Technical Analysis Approach**: Incorporate new indicators or modify existing ones based on recent performance.
    - **Enhancing RSI Signal Usage**: Utilize RSI signal line crossings to confirm the strength of buy or sell signals.
    - **Incorporating Squeeze Momentum Insights**: Leverage Squeeze Momentum colors to gauge the strength and direction of market movements.
-   - **Improving News Sentiment Analysis**: Integrate recent crypto news to align trading decisions with market sentiment.
    - **Tweaking Risk Management Rules**: Adjust position sizes, stop-loss levels, and other risk parameters to better manage potential losses and optimize returns.
 
 #### Decision Making:
-6. **Synthesize Analysis**: Combine insights from market analysis, chart images, news, and the current investment state to form a coherent view of the market. Look for convergence between technical indicators and news sentiment to identify clear and strong trading signals.
+6. **Synthesize Analysis**: Combine insights from market analysis and the current investment state to form a coherent view of the market. Look for convergence between technical indicators and news sentiment to identify clear and strong trading signals.
 7. **Apply Aggressive Risk Management Principles**: While maintaining a balance, prioritize higher potential returns even if they come with increased risks. Ensure that any proposed action aligns with an aggressive investment strategy, considering the current portfolio balance, the investment state, and market volatility.
-8. **Incorporate Market Sentiment Analysis**: Factor in the insights gained from the Fear and Greed Index analysis alongside technical and news sentiment analysis. Assess whether current market sentiment supports or contradicts your aggressive trading actions. Use this sentiment analysis to adjust the proposed action and investment proportion, ensuring that decisions are aligned with a high-risk, high-reward strategy.
+8. **Futures trading**: Please keep in mind that this is not a regular spot transaction, but a futures transaction. You must evaluate it by clearly distinguishing whether it is a long or short position.
 9. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 
 ### Considerations
