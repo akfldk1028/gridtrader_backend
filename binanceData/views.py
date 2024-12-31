@@ -2000,27 +2000,21 @@ class stockDataView(APIView):
         'SLB', 'HAL', 'PSX', 'OXY', 'EOG', 'F', 'GM', 'DE', 'NOC', 'LMT',
 
         # 클라우드 및 SaaS (뉴욕거래소와 나스닥 혼합)
-        'ORCL', 'SAP', 'INTU', 'NOW', 'ADP', 'SNOW', 'MDB', 'CRM', 'ZM', 'TWLO',
+        # -> 여기서 'MDB', 'CRM' 두 번째 등장분 제거
+        'ORCL', 'SAP', 'INTU', 'NOW', 'ADP', 'SNOW', 'ZM', 'TWLO',
         'CRWD', 'DDOG',
 
         # 헬스케어 및 제약
-        'MRK', 'BMY', 'ABT', 'TMO', 'ZBH', 'SYK', 'BDX', 'CI',
+        # -> 여기서 'TMO' 두 번째 등장분 제거
+        'MRK', 'BMY', 'ABT', 'ZBH', 'SYK', 'BDX', 'CI',
 
         # 소비재 및 통신 (경기방어주 추가)
-        'KO', 'PEP', 'MCD', 'SBUX', 'YUM', 'DPZ', 'PG', 'CL', 'KMB', 'EL',
-        'T', 'VZ', 'TMUS', 'WMT', 'TGT', 'COST', 'GEV'
+        # -> 여기서 'KO', 'MCD', 'PG', 'CL', 'KMB', 'EL', 'T', 'WMT', 'COST' 제거
+        'PEP', 'SBUX', 'YUM', 'DPZ', 'VZ', 'TMUS', 'TGT', 'GEV',
 
         # 추가된 경기방어주
-        'KHC',  # 크래프트 하인즈
-        'GIS',  # 제너럴 밀스
-        'HSY',  # 허쉬
-        'CLX',  # 클로락스
-        'HRL',  # 호멜푸드
-        'CPB',  # 캠벨수프
-        'MDLZ',  # 몬델리즈
-        'CHD',  # 처치 앤드 드와이트 (소비재)
-        'MKC',  # 맥코믹 (향신료)
-        'SJM',  # JM 스머커 (식품)
+        # -> 여기서 'MDLZ' 제거
+        'KHC', 'GIS', 'HSY', 'CLX', 'HRL', 'CPB', 'CHD', 'MKC', 'SJM',
 
         'CONE', 'FATE', 'EXAS', 'ONON', 'SPLK',
         'REGN', 'BIIB', 'INCY', 'ALXN',
@@ -2034,10 +2028,39 @@ class stockDataView(APIView):
         'ABNB', 'HOOD', 'COIN', 'AFRM', 'SOFI', 'DUOL', 'BMBL', 'GTLB',
 
         # 뉴욕증권거래소 신규 추가
+        # -> 여기서 'AMAT', 'DIS' 제거
         'TTAN', 'PONY', 'NOTE', 'UBER', 'SPOT',
-        'RBLX', 'U', 'MTTR', 'WIMI', 'VUZI', 'SNAP', 'DIS', 'FVRR', 'UPST', 'PATH' ,'S'
-    ]
+        'RBLX', 'U', 'MTTR', 'WIMI', 'VUZI', 'SNAP', 'FVRR', 'UPST', 'PATH', 'S', 'FANG', 'VRSN',
 
+        # 바이오/유전자 편집
+        'ILMN',
+        'BEAM', 'NTLA', 'EDIT',
+
+        # 네트워크/보안/클라우드
+        'ERIC', 'NOK', 'INFN', 'LITE', 'FIVN', 'NTNX', 'PANW',
+
+        # 드론/방산
+        'UAVS', 'EH', 'KTOS', 'AVAV',
+
+        # 양자 컴퓨팅
+        'IONQ', 'RGTI', 'QBTS',
+
+        # 데이터/소프트웨어
+        'ESTC', 'DT', 'PD', 'AYX',
+        'IRBT', 'RBOT', 'RWLK', 'ZBRA', 'ABB',
+
+        # AI/소프트웨어
+        'BBAI', 'SOUN', 'TER', 'ROK', 'FANUY', 'FARO',
+
+        # [AI / 비전(Vision) / 챗봇 등]
+        'LPSN', 'VERI', 'AMBA',
+
+        # [AI 기반 신약개발 / 합성생물학]
+        'RXRX', 'EXAI', 'DNA',
+
+        # [자율주행(로보틱스 응용)]
+        'AUR',
+    ]
     @staticmethod
     def get_stock_data(symbol, interval, limit):
         """
