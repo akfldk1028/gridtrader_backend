@@ -206,6 +206,7 @@ Example Structure for JSON Data:
 7. **Apply Aggressive Risk Management Principles**: While maintaining a balance, prioritize higher potential returns even if they come with increased risks. Ensure that any proposed action aligns with an aggressive investment strategy, considering the current portfolio balance, the investment state, and market volatility.
 8. **Futures trading**: Please keep in mind that this is not a regular spot transaction, but a futures transaction. You must evaluate it by clearly distinguishing whether it is a long or short position.
 9. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
+10. **IMPORTANT** : This is not simply a concept of buying and selling, but a futures transaction, so you must clearly think about LONG and SHORT. Rather than simply concluding to sell or buy based on a surge or plunge, you must look at the future trend and determine whether it will rise or fall. Otherwise, you will suffer a big loss.
 
 ### Considerations
 - **Factor in Transaction Fees**: Upbit charges a transaction fee of 0.05%. Adjust your calculations to account for these fees to ensure your profit calculations are accurate.
