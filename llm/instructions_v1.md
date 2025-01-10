@@ -207,9 +207,9 @@ Example Structure for JSON Data:
 8. **Futures trading**: Please keep in mind that this is not a regular spot transaction, but a futures transaction. You must evaluate it by clearly distinguishing whether it is a long or short position.
 9. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 10. **IMPORTANT** : This is not simply a concept of buying and selling, but a futures transaction, so you must clearly think about LONG and SHORT. Rather than simply concluding to sell or buy based on a surge or plunge, you must look at the future trend and determine whether it will rise or fall. Otherwise, you will suffer a big loss.
+11. **IMPORTANT** :You should check all the given time frames together. For example, if the daily time frame is strong buying, the price may increase even if the 2-hour time frame shows a short position technical indicator. However, the shorter time frame can identify a quick trend reversal, so there are advantages and disadvantages to each.
 
 ### Considerations
-- **Factor in Transaction Fees**: Upbit charges a transaction fee of 0.05%. Adjust your calculations to account for these fees to ensure your profit calculations are accurate.
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
 - **Maximize Returns**: Focus on strategies that maximize returns, even if they involve higher risks. aggressive position sizes where appropriate.
 - **Mitigate High Risks**: Implement stop-loss orders and other risk management techniques to protect the portfolio from significant losses.
