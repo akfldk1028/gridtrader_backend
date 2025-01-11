@@ -332,7 +332,7 @@ class CloseOrderView(BinanceAPIView):
 class InvestorType(Enum):
     YOU = "DK"
     FRIEND = "DJ"
-
+    FRIEND2 = "SK"
 
 class TransactionType(Enum):
     DEPOSIT = "deposit"
@@ -408,6 +408,8 @@ class DailyBalanceView(BinanceAPIView):
             Transaction(date(2025, 1, 2), InvestorType.YOU, TransactionType.DEPOSIT, 15))
         self.investment_tracker.add_transaction(
             Transaction(date(2025, 1, 2), InvestorType.FRIEND, TransactionType.DEPOSIT, 22))
+        self.investment_tracker.add_transaction(
+            Transaction(date(2025, 1, 11), InvestorType.FRIEND2, TransactionType.DEPOSIT, 850))
 
     def get_balance(self, balance_data):
         balance_dict = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
@@ -475,32 +477,35 @@ class DailyBalanceView(BinanceAPIView):
             # 현재 날짜의 총 투자금 계산
             you_total_investment = self.investment_tracker.get_investment_amount(InvestorType.YOU, current_date)
             friend_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND, current_date)
-
+            friend2_total_investment = self.investment_tracker.get_investment_amount(InvestorType.FRIEND2, current_date)
 
             # 새로운 투자금 계산
             you_new_investment = you_total_investment - prev_you_investment
             friend_new_investment = friend_total_investment - prev_friend_investment
-
+            friend2_new_investment = friend2_total_investment - prev_friend2_investment
 
             # 이전 잔액에 새 투자금 추가
             you_balance = prev_you_balance + you_new_investment
             friend_balance = prev_friend_balance + friend_new_investment
+            friend2_balance = prev_friend2_balance + friend2_new_investment
 
             # 총 투자금 및 비율 계산 (Friend3 제외)
-            total_balance = you_balance + friend_balance
+            total_balance = you_balance + friend_balance + friend2_balance
             you_ratio = you_balance / total_balance if total_balance > 0 else 0
             friend_ratio = friend_balance / total_balance if total_balance > 0 else 0
-
+            friend2_ratio = friend2_balance / total_balance if total_balance > 0 else 0
 
             # 현재 잔액을 비율에 따라 분배 (Friend3 제외)
             you_balance = end_balance * you_ratio
             friend_balance = end_balance * friend_ratio
+            friend2_balance = end_balance * friend2_ratio
 
             # 수정된 profit_rate 계산
             you_profit_rate = self.investment_tracker.calculate_profit_rate(you_total_investment, you_balance,
                                                                             you_total_investment)
-            friend_profit_rate = self.investment_tracker.calculate_profit_rate(friend_total_investment, friend_balance,
-                                                                               friend_total_investment)
+            friend_profit_rate = self.investment_tracker.calculate_profit_rate(friend_total_investment, friend_balance, friend_total_investment)
+            friend2_profit_rate = self.investment_tracker.calculate_profit_rate(friend2_total_investment, friend2_balance, friend2_total_investment)
+
 
 
             daily_profits.append({
@@ -517,15 +522,22 @@ class DailyBalanceView(BinanceAPIView):
                     'balance': friend_balance,
                     'investment': friend_total_investment,
                     'profit_rate': friend_profit_rate
-                }
-
+                },
+                'friend2': {
+                    'balance': friend2_balance,
+                    'investment': friend2_total_investment,
+                    'profit_rate': friend2_profit_rate
+                },
             })
 
             # 다음 반복을 위해 현재 값을 이전 값으로 저장
             prev_you_investment = you_total_investment
             prev_friend_investment = friend_total_investment
+            prev_friend2_investment = friend2_total_investment
+
             prev_you_balance = you_balance
             prev_friend_balance = friend_balance
+            prev_friend2_balance = friend2_balance
 
         return daily_profits, latest_balance
     # def get_daily_profits(self, days=30):

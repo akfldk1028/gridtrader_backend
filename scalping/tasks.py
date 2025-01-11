@@ -25,28 +25,10 @@ def setup_scalping():
 
     # TASK1: 아침 8시 30분 및 오후 4시
     korea_morning_time = time(8, 30)
-    korea_afternoon_time = time(16, 0)
     korea_morning_datetime = datetime.combine(now.date(), korea_morning_time)
-    korea_afternoon_datetime = datetime.combine(now.date(), korea_afternoon_time)
-
-    # TASK2: 저녁 11시 30분 및 오전 7시
-    stock_evening_time = time(23, 30)
-    stock_morning_time = time(7, 0)
-    stock_evening_datetime = datetime.combine(now.date(), stock_evening_time)
-    stock_morning_datetime = datetime.combine(now.date(), stock_morning_time)
-
     # 다음 날로 시간 조정 (현재 시간이 이미 지정된 시간보다 늦었다면)
     if korea_morning_datetime < now:
         korea_morning_datetime += timedelta(days=1)
-
-    if korea_afternoon_datetime < now:
-        korea_afternoon_datetime += timedelta(days=1)
-
-    if stock_evening_datetime < now:
-        stock_evening_datetime += timedelta(days=1)
-
-    if stock_morning_datetime < now:
-        stock_morning_datetime += timedelta(days=1)
 
     # TASK1 스케줄 설정: 아침 8시 30분 및 오후 4시
     schedule(
@@ -55,26 +37,48 @@ def setup_scalping():
         next_run=korea_morning_datetime,
         repeats=-1  # 무한 반복
     )
-    schedule(
-        'scalping.tasks.koreaStockSymbol',
-        schedule_type=Schedule.DAILY,
-        next_run=korea_afternoon_datetime,
-        repeats=-1  # 무한 반복
-    )
 
-    # TASK2 스케줄 설정: 저녁 11시 30분 및 오전 7시
-    schedule(
-        'scalping.tasks.stockSymbol',
-        schedule_type=Schedule.DAILY,
-        next_run=stock_evening_datetime,
-        repeats=-1  # 무한 반복
-    )
-    schedule(
-        'scalping.tasks.stockSymbol',
-        schedule_type=Schedule.DAILY,
-        next_run=stock_morning_datetime,
-        repeats=-1  # 무한 반복
-    )
+    # 특정 시간대를 설정
+    specific_times = [
+        time(23, 0),  # 오후 11시 30분
+        time(6, 0),  # 오전 6시
+        time(17, 0),  # 오후 5시
+    ]
+
+    for specific_time in specific_times:
+        specific_datetime = datetime.combine(now.date(), specific_time)
+        if specific_datetime < now:  # 이미 지난 시간은 다음 날로 이동
+            specific_datetime += timedelta(days=1)
+
+        # 각 시간마다 스케줄 설정
+        schedule(
+            'scalping.tasks.stockSymbol',
+            schedule_type=Schedule.DAILY,
+            next_run=specific_datetime,
+            repeats=-1  # 무한 반복
+        )
+
+
+    # TASK2: 저녁 11시 30분 및 오전 7시
+    # stock_evening_time = time(23, 30)
+    # stock_evening_datetime = datetime.combine(now.date(), stock_evening_time)
+    #
+    # if stock_evening_datetime < now:
+    #     stock_evening_datetime += timedelta(days=1)
+    # # TASK2 스케줄 설정: 저녁 11시 30분 및 오전 7시
+    # schedule(
+    #     'scalping.tasks.stockSymbol',
+    #     schedule_type=Schedule.DAILY,
+    #     next_run=stock_evening_datetime,
+    #     repeats=-1  # 무한 반복
+    # )
+
+
+
+
+
+
+
 
 
 
