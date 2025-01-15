@@ -209,8 +209,7 @@ Example Structure for JSON Data:
 9. **Determine Action and Percentage**: Decide on the most appropriate action (buy, sell, hold) based on the synthesized analysis. Specify a higher percentage of the portfolio to be allocated to this action, embracing more significant opportunities while acknowledging the associated risks. Your response must be in JSON format.
 10. **IMPORTANT** : This is not simply a concept of buying and selling, but a futures transaction, so you must clearly think about LONG and SHORT. Rather than simply concluding to sell or buy based on a surge or plunge, you must look at the future trend and determine whether it will rise or fall. Otherwise, you will suffer a big loss.
 11. **IMPORTANT** :You should check all the given time frames together. In particular, focus on the 2-hour and 1-day timeframes. However, since we review once every two hours, we need to look closely at the two-hour timeframe as well. Make a close and quick judgment.
-
-- Keep in mind that the last data in each timeframe is the most recent data.
+- Keep in mind that the last data in each timeframe is the most recent data and By comparing prices, you can also determine whether your previous judgments were right or wrong..
 
 ### Considerations
 - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
