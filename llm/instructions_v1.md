@@ -170,6 +170,8 @@ Example Structure for JSON Data:
 - When **RSI crosses above RSI_signal**, it suggests that the bullish momentum is strengthening, increasing the probability of a price rise.
 - Conversely, when **RSI crosses below RSI_signal**, it indicates that the momentum is weakening, which may lead to a price decline.
 
+**To sum up** In other words, if the RSI signal is higher than the RSI and the color is lime or maroon, the probability of going up is high, and if the RSI is lower than the RSI signal and the color is green or red, the probability of going down is high.
+
 **Timeframe Considerations**:
 - **Longer Timeframes (e.g., Weekly, daily)**: Offer higher reliability as they capture broader market trends and reduce the noise associated with short-term fluctuations.
 - **Shorter Timeframes (e.g. Hours)**: Provide more frequent signals but may be less reliable due to increased market noise and volatility.
