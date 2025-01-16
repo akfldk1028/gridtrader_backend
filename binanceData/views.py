@@ -2146,7 +2146,20 @@ class stockDataView(APIView):
                 last_row = df_with_indicators.iloc[-1].to_dict()
 
                 # 각 간격별로 다른 조건 적용
-                if interval in {"1d", "1wk"}:
+                # if interval in {"1d", "1wk"}:
+                #     # 일봉 및 주봉: RSI > RSI_signal AND SqueezeColor가 'lime' 또는 'maroon'
+                #     condition = (
+                #             last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
+                #             last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                #     )
+                # elif interval == "1mo":
+                #     # 월봉: SqueezeColor가 'lime' 또는 'maroon'만 확인
+                #     condition = last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                # else:
+                #     # 지원되지 않는 간격
+                #     condition = False
+
+                if interval in {"1wk"}:
                     # 일봉 및 주봉: RSI > RSI_signal AND SqueezeColor가 'lime' 또는 'maroon'
                     condition = (
                             last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
@@ -2158,6 +2171,7 @@ class stockDataView(APIView):
                 else:
                     # 지원되지 않는 간격
                     condition = False
+
 
                 if not condition:
                     return False  # 조건 불만족
