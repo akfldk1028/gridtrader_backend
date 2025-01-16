@@ -2127,26 +2127,30 @@ class stockDataView(APIView):
 
     def get_symbol_status(self, symbol, intervals, limit):
         """
-        심볼의 주봉(1wk)과 월봉(1mo) 데이터를 확인하고 모든 조건을 만족하는지 반환.
+        심볼의 주봉(1wk)과 월봉(1mo) 데이터를 확인하고 조건에 맞는지 여부를 반환합니다.
         """
         try:
-            weekly_condition = False  # 주봉 조건 초기화
-            monthly_condition = False  # 월봉 조건 초기화
+            # 주봉과 월봉 조건 초기화
+            weekly_condition = False
+            monthly_condition = False
 
             for label, interval in intervals.items():
                 if interval not in {"1wk", "1mo"}:
-                    continue  # 주봉과 월봉 외의 interval은 무시
+                    continue  # 주봉(1wk)과 월봉(1mo) 외의 간격은 무시
 
+                # 주식 데이터 가져오기
                 df = self.get_stock_data(symbol, interval, limit)
                 if df is None or df.empty:
-                    return False  # 데이터가 없는 경우 조건 불만족
+                    return False  # 데이터 없음
 
+                # 데이터 포맷 및 지표 계산
                 formatted_data = self.format_stock_data(df)
                 df_with_indicators = self.calculate_indicators(formatted_data)
 
                 if df_with_indicators.empty:
-                    return False  # 지표 계산 실패 시 조건 불만족
+                    return False  # 지표 계산 실패
 
+                # 가장 최근 데이터 행 확인
                 last_row = df_with_indicators.iloc[-1].to_dict()
 
                 # 조건 확인
@@ -2155,18 +2159,18 @@ class stockDataView(APIView):
                         last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
                 )
 
+                # 주봉 또는 월봉 조건 업데이트
                 if interval == "1wk":
                     weekly_condition = condition
                 elif interval == "1mo":
                     monthly_condition = condition
 
-            # 주봉과 월봉 모두 만족해야 True
+            # 주봉과 월봉 조건이 모두 만족해야 True 반환
             return weekly_condition and monthly_condition
 
         except Exception as e:
             print(f"Error processing symbol {symbol}: {str(e)}")
             return False  # 에러 발생 시 조건 불만족
-
 
     # def get_symbol_status(self, symbol, intervals, limit):
     #     """
