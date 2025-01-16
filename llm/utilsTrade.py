@@ -529,7 +529,7 @@ def perform_new_analysis():
             coin_balance=Decimal(filtered_positions[0]["positionAmt"]),
             current_price=Decimal(current_price),
             selected_strategy=grid_strategy,
-            price_prediction=decision['percentage']
+            price_prediction=decision['Multiple']
         )
         update_strategy_config()
         return f"Analysis completed successfully in seconds. AnalysisResult id: {trading_record.id}"
