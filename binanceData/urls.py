@@ -12,4 +12,5 @@ urlpatterns = [
     path('stockData/', views.stockDataView.as_view(), ),
     path('KoreaStockData/', views.KoreaStockDataView.as_view(), ),
     path('currentPrice/', views.getCurrentPrice.as_view(), ),
+    path('ChinaStockData/', views.ChinaStockDataView.as_view(), ),
 ]

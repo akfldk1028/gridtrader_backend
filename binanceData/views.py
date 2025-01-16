@@ -2483,39 +2483,38 @@ class KoreaStockDataView(APIView):
         """
         try:
             for label, interval in intervals.items():
+                # 1d(일봉)은 건너뛰고 싶다면 아래에서 continue 처리
+                if interval == "1d":
+                    # 일봉은 아예 검사하지 않음
+                    continue
+
+                # 여기부터는 주봉(1wk) 또는 월봉(1mo)에 대해서만 조건을 적용
                 df = self.get_stock_data(symbol, interval, limit)
                 if df is None or df.empty:
-                    return False  # 데이터 없음, 조건 불만족
+                    return False  # 데이터 없음 -> 조건 불만족
 
                 formatted_data = self.format_stock_data(df)
                 df_with_indicators = self.calculate_indicators(formatted_data)
 
                 if df_with_indicators.empty:
-                    return False  # 지표 계산 실패, 조건 불만족
+                    return False  # 지표 계산 실패 -> 조건 불만족
 
                 last_row = df_with_indicators.iloc[-1].to_dict()
 
-                # 각 간격별로 다른 조건 적용
-                if interval in {"1d", "1wk"}:
-                    # 일봉 및 주봉: RSI > RSI_signal AND SqueezeColor가 'lime' 또는 'maroon'
-                    condition = (
-                            last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
-                            last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
-                    )
-                elif interval == "1mo":
-                    # 월봉: SqueezeColor가 'lime' 또는 'maroon'만 확인
-                    condition = last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
-                else:
-                    # 지원되지 않는 간격
-                    condition = False
+                # 주봉(1wk)과 월봉(1mo) 모두 동일한 조건 적용
+                condition = (
+                        last_row.get("RSI", 0) > last_row.get("RSI_signal", 0)
+                        and last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                )
 
                 if not condition:
-                    return False  # 조건 불만족
+                    return False  # 조건 불만족 시 즉시 종료
 
-            return True  # 모든 간격에 대해 조건 만족
+            return True  # 모든 간격(여기서는 주봉·월봉)에 대해 조건을 만족
         except Exception as e:
             print(f"Error processing symbol {symbol}: {str(e)}")
             return False  # 에러 발생 시 조건 불만족
+
 
     # def get_symbol_status(self, symbol, intervals, limit):
     #     """
@@ -2659,3 +2658,248 @@ class getCurrentPrice(APIView):
         except Exception as e:
             print(f"Exception fetching current price for {symbol}: {e}")
             return Response({"error": str(e)}, status=500)
+
+
+
+
+
+
+
+    # Yahoo Finance
+    #
+    # “숫자 종목코드 + .SS or .SZ”를 정확히 알고 있다면 yf.Ticker("600519.SS") 식으로 데이터를 가져올 수 있습니다.
+    # 다만, 본토 A주 종목 데이터는 해외 주식 대비 제공 범위나 신뢰도(과거 데이터 범위 등)가 다를 수 있으며, 종종 업데이트가 지연될 수 있습니다.
+    # Tushare (추천)
+    #
+    # 중국 로컬에서 많이 쓰는 무료/유료 API 서비스이며, Python 라이브러리 형태로 제공됨.
+    # 회원가입 후 발급받은 토큰을 이용해 상하이·선전·홍콩 등 다양한 중국 증시 데이터를 받아올 수 있음.
+    # 예시 코드:
+    # python
+    # 복사
+    # import tushare as ts
+    #
+    # # 토큰 설정
+    # ts.set_token('YOUR_TOKEN')
+    # pro = ts.pro_api()
+    #
+    # # 일봉 데이터 가져오기 (예: 상하이 증시 600519 마오타이)
+    # df = pro.daily(ts_code='600519.SH', start_date='20230101', end_date='20231231')
+    # print(df.head())
+    # 이런 식으로 숫자 종목코드 + .SH(상하이) / .SZ(선전) 형식의 ts_code를 사용합니다.
+
+
+class ChinaStockDataView(APIView):
+    """
+    중국 본토/홍콩 상장 종목을 대상으로
+    (1wk, 1mo) 조건( RSI > RSI_signal & SqueezeColor in {lime, maroon} )을 만족하는 심볼만 저장 및 반환
+    """
+
+    # 중국 본토/홍콩 주요 종목 예시
+    # - 상하이(.SS) : 구이저우 마오타이(600519.SS), 핑안보험(601318.SS), 공상은행(601398.SS) 등
+    # - 선전(.SZ) : BYD(002594.SZ), 메이디(000333.SZ), 우량예(000858.SZ) 등
+    # - 홍콩(.HK) : 텐센트(0700.HK), 알리바바 HK(9988.HK), 메이퇀(3690.HK) 등
+    CHINA_PREDEFINED_SYMBOLS = [
+        "600519.SS",  # 구이저우 마오타이
+        "601318.SS",  # 핑안보험
+        "601398.SS",  # 공상은행
+        "600036.SS",  # 중국건설은행
+        "600276.SS",  # 항서제약
+        "000858.SZ",  # 우량예
+        "002594.SZ",  # BYD
+        "000333.SZ",  # 메이디그룹
+        "300750.SZ",  # 닝더스다이(배터리)
+        "000001.SZ",  # 평안은행
+        "0700.HK",    # 텐센트
+        "9988.HK",    # 알리바바 (홍콩 상장)
+        "3690.HK",    # 메이퇀
+        "1211.HK",    # 비야디(홍콩)
+        # 필요하면 더 추가
+    ]
+
+    @staticmethod
+    def get_stock_data(symbol, interval, limit):
+        """
+        symbol: 주식 심볼 (예: 600519.SS)
+        interval: 데이터 간격 ('1d', '1wk', '1mo')
+        limit: 조회할 데이터 수 (여기서는 period 매핑 시에만 사용)
+        """
+        # interval에 따른 적절한 period 설정
+        if interval == '1d':
+            period = '6mo'
+        elif interval == '1wk':
+            period = 'max'
+        elif interval == '1mo':
+            period = 'max'
+        else:
+            raise ValueError(f"Unsupported interval: {interval}")
+
+        stock = yf.Ticker(symbol)
+        try:
+            df = stock.history(period=period, interval=interval)
+            if df.empty:
+                print(f"No data returned for symbol {symbol} / interval {interval}")
+            return df
+        except Exception as e:
+            print(f"Error fetching data for symbol {symbol}: {str(e)}")
+            return pd.DataFrame()
+
+    def calculate_indicators(self, data: Dict[str, List[float]]) -> pd.DataFrame:
+        """
+        'timestamp','open','high','low','close','volume' 형식의 데이터를
+        지표 계산에 활용하는 예시
+        """
+        if not data or not data.get('close'):
+            return pd.DataFrame()
+
+        df = pd.DataFrame(data)
+        # RSI 지표 계산 (예시)
+        analyzer = UltimateRSIAnalyzer(df, length=9)
+        df = analyzer.get_dataframe()
+
+        # SqueezeMomentumIndicator (예시)
+        indicator = SqueezeMomentumIndicator(df)
+        df = indicator.get_dataframe()
+
+        # NaN 처리
+        df.fillna(0, inplace=True)
+        return df
+
+    @staticmethod
+    def format_stock_data(df: pd.DataFrame) -> Dict[str, List]:
+        """
+        야후 파이낸스에서 받아온 df를
+        {'timestamp': [...], 'open': [...], ...} 형태의 dict로 변환
+        """
+        df.reset_index(inplace=True)
+        df.rename(columns={
+            'Date': 'timestamp',
+            'Open': 'open',
+            'High': 'high',
+            'Low': 'low',
+            'Close': 'close',
+            'Volume': 'volume'
+        }, inplace=True)
+        return {
+            'timestamp': df['timestamp'].astype(str).tolist(),
+            'open': df['open'].tolist(),
+            'high': df['high'].tolist(),
+            'low': df['low'].tolist(),
+            'close': df['close'].tolist(),
+            'volume': df['volume'].tolist()
+        }
+
+    def get_symbol_status(self, symbol, intervals, limit):
+        """
+        심볼과 간격별 데이터를 확인하고
+        주봉(1wk), 월봉(1mo) 모두 조건(RSI>RSI_signal & SqueezeColor in {lime, maroon})을 만족하는지 체크
+        일봉(1d)은 건너뜀
+        """
+        try:
+            for label, interval in intervals.items():
+                # 일봉은 검사 제외
+                if interval == "1d":
+                    continue
+
+                df = self.get_stock_data(symbol, interval, limit)
+                if df.empty:
+                    return False  # 데이터가 없으면 조건 불만족
+
+                formatted_data = self.format_stock_data(df)
+                df_with_indicators = self.calculate_indicators(formatted_data)
+                if df_with_indicators.empty:
+                    return False
+
+                last_row = df_with_indicators.iloc[-1].to_dict()
+
+                # 주봉·월봉 공통 조건
+                condition = (
+                    last_row.get("RSI", 0) > last_row.get("RSI_signal", 0)
+                    and last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
+                )
+
+                if not condition:
+                    return False
+            return True
+        except Exception as e:
+            print(f"Error processing symbol {symbol}: {str(e)}")
+            return False
+
+    def get_all_last_data(self, request):
+        limit = 500
+        intervals = {
+            '1day': '1d',
+            '1week': '1wk',
+            '1month': '1mo'
+        }
+        all_symbols = self.CHINA_PREDEFINED_SYMBOLS
+        filtered_symbols = []
+
+        try:
+            # 병렬 처리
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = {
+                    executor.submit(self.get_symbol_status, sym, intervals, limit): sym
+                    for sym in all_symbols
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    symbol = futures[future]
+                    try:
+                        if future.result():  # 조건 만족
+                            filtered_symbols.append(symbol)
+                    except Exception as e:
+                        print(f"Error processing symbol {symbol}: {str(e)}")
+
+            # DB 저장 (StockData에 'symbols'라는 필드가 있다고 가정)
+            if filtered_symbols:
+                StockData.objects.create(symbols=filtered_symbols)
+                print(f'{len(filtered_symbols)} symbols saved to StockData.')
+            else:
+                StockData.objects.create(symbols=[])
+                print('No symbols met the criteria.')
+
+            return Response({"symbols_saved": filtered_symbols})
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def get(self, request):
+        """
+        all_last=true로 GET하면 주봉·월봉 조건에 부합하는 심볼을 필터링해서 반환
+        아니면 단일 심볼에 대한 1d,1wk,1mo 데이터를 반환
+        """
+        all_last = request.GET.get('all_last', 'false').lower() == 'true'
+
+        if all_last:
+            return self.get_all_last_data(request)
+        else:
+            limit = 500
+            symbol = request.GET.get('symbol', '600519.SS')  # 기본값: 구이저우 마오타이
+            intervals = {
+                '1day': '1d',
+                '1week': '1wk',
+                '1month': '1mo'
+            }
+
+            result_all_intervals = {}
+            try:
+                for label, api_interval in intervals.items():
+                    df = self.get_stock_data(symbol, api_interval, limit)
+                    if df.empty:
+                        result_all_intervals[label] = {'error': f'No data for {api_interval}'}
+                        continue
+
+                    formatted_data = self.format_stock_data(df)
+                    df_with_indicators = self.calculate_indicators(formatted_data)
+                    records = df_with_indicators.iloc[-30:]  # 최근 30개
+                    records = records.replace({float('nan'): None}).to_dict(orient='records')
+                    result_all_intervals[label] = records
+
+                return Response(result_all_intervals)
+
+            except Exception as e:
+                return Response(
+                    {'error': f'An unexpected error occurred: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
