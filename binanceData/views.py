@@ -2059,7 +2059,7 @@ class stockDataView(APIView):
         'RXRX', 'EXAI', 'DNA', 'TEAM', 'UNH',
 
         # [자율주행(로보틱스 응용)]
-        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA',
+        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA'
     ]
     @staticmethod
     def get_stock_data(symbol, interval, limit):
