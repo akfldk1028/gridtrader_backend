@@ -311,8 +311,8 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
             "decision": result.get("decision", "HOLD").upper(),
             "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
             "reason": str(result.get("reason", "No reason provided")),
-            "grid_strategy": grid_strategy  # 추가된 부분
-
+            "grid_strategy": grid_strategy,  # 추가된 부분
+            "Multiple": max(float(result.get("Multiple", 0)), 5)
         }
 
         if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
