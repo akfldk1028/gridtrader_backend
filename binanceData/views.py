@@ -2707,6 +2707,12 @@ class ChinaStockDataView(APIView):
         "002747.SZ",  # Estun Automation (에스튼, 산업용 로봇)
         "300024.SZ",  # Siasun Robot & Automation (시아순, 중국 대표 로봇 기업)
 
+        # AI 소형주
+        "300223.SZ",  # Beijing THUNISOFT Corp (빅데이터 및 AI 플랫폼 개발)
+        "300123.SZ",  # Sunyard Technology (AI 및 핀테크 소프트웨어 개발)
+        "688100.SS",  # Hygon Information Technology (AI 칩 및 서버)
+        "002253.SZ",  # Chinasoft International (AI 및 클라우드 솔루션 개발)
+
         # ───── 인터넷·소프트웨어·플랫폼 ─────
         "0700.HK",  # Tencent (텐센트, 게임·클라우드·AI)
         "1810.HK",  # Xiaomi (샤오미, IoT·스마트폰)
@@ -2724,6 +2730,12 @@ class ChinaStockDataView(APIView):
         "002929.SZ",  # DJI (다장혁신, 드론 분야 글로벌 선두)
         "688011.SS",  # AVIC (중국항공산업그룹, 항공기 및 드론 제조)
         "002013.SZ",  # ShenZhen Protruly (프로트럴리, 드론 및 카메라 기술)
+
+        # 드론 소형주
+        "300159.SZ",  # New Dazheng Property Group (소형 드론 제조)
+        "300489.SZ",  # TIANJIN TIANLONG TECHNOLOGY (산업용 드론 및 방제용 드론)
+        "300728.SZ",  # Magnity Electronics (드론 부품 제조)
+        "300679.SZ",  # Hangke Technology (드론 및 항공 기술 연구)
 
         # ───── 배터리 관련 ─────
         "002091.SZ",  # Meidu Energy (메이두에너지, 리튬 배터리 소재)
@@ -2743,6 +2755,15 @@ class ChinaStockDataView(APIView):
         "002065.SZ",  # Donghua Software (동화소프트웨어, 의료 및 금융 분야의 빅데이터 솔루션)
         "600271.SS",  # Anhui USTC iFlytek (아이플라이텍, 음성인식 및 AI 기술)
         "300002.SZ",  # Shenzhen Sunline Tech (썬라인테크, 금융 IT 솔루션 및 빅데이터)
+
+        # ───── 게임 및 엔터테인먼트 ─────
+        "0700.HK",  # Tencent (텐센트, 세계 최대 게임 퍼블리셔)
+        "9999.HK",  # NetEase (넷이즈, MMORPG 및 모바일 게임 전문)
+        "002624.SZ",  # Perfect World (퍼펙트월드, 온라인 RPG 전문 개발사)
+        "300052.SZ",  # Zhejiang Century Huatong (절강화통, 게임·미디어 콘텐츠)
+        "002555.SZ",  # Sanqi Interactive Entertainment (37 인터랙티브, 모바일 게임 중심)
+        "600633.SS",  # CMGE (중국 대표 모바일 게임사)
+        "300418.SZ",  # Alpha Group (알파그룹, 게임 및 애니메이션 콘텐츠)
     ]
     @staticmethod
     def get_stock_data(symbol, interval, limit):
