@@ -325,7 +325,8 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
             "decision": "HOLD",
             "percentage": 0,
             "reason": f"Analysis failed: {str(e)}",
-            "grid_strategy": "RegularGrid"  # 오류 발생 시 기본 전략 설정
+            "grid_strategy": "RegularGrid",  # 오류 발생 시 기본 전략 설정
+            "Multiple": 0
         }
 
 
