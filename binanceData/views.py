@@ -2159,19 +2159,12 @@ class stockDataView(APIView):
                 #     # 지원되지 않는 간격
                 #     condition = False
 
-                if interval in {"1wk"}:
+                if interval in {"1wk", "1mo"}:
                     # 일봉 및 주봉: RSI > RSI_signal AND SqueezeColor가 'lime' 또는 'maroon'
                     condition = (
                             last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
                             last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
                     )
-                elif interval == "1mo":
-                    # 월봉: SqueezeColor가 'lime' 또는 'maroon'만 확인
-                    condition = (
-                            last_row.get("RSI", 0) > last_row.get("RSI_signal", 0) and
-                            last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
-                    )
-                    # condition = last_row.get("SqueezeColor", "").lower() in {"lime", "maroon"}
                 else:
                     # 지원되지 않는 간격
                     condition = False
