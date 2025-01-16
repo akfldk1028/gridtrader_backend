@@ -2069,10 +2069,8 @@ class stockDataView(APIView):
         limit: 조회할 데이터 수 (무시하고 period로 처리)
                AAPL: Period '1000d' is invalid, must be one of ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
         """
-        # interval에 따른 적절한 period 설정
-        if interval == '1d':
-            period = '6mo'  # 6개월
-        elif interval == '1wk':
+
+        if interval == '1wk':
             period = 'max'  # 1년
         elif interval == '1mo':
             period = 'max'  # 2년
