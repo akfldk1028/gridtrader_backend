@@ -2703,9 +2703,9 @@ class ChinaStockDataView(APIView):
         "002415.SZ",  # Hikvision (하이크비전, AI 기반 CCTV/보안)
         "002230.SZ",  # iFlytek (아이플라이텍, 음성인식 AI)
         "0020.HK",  # SenseTime (센스타임, AI 비전)
-        "000063.SZ",  # ZTE (5G·통신장비, AI/네트워크 분야)
+        "000063.SZ",  # ZTE (중흥통신, 5G·통신장비, AI/네트워크 분야)
         "002747.SZ",  # Estun Automation (에스튼, 산업용 로봇)
-        "300024.SZ",  # Siasun Robot & Automation (중국 대표 로봇 기업)
+        "300024.SZ",  # Siasun Robot & Automation (시아순, 중국 대표 로봇 기업)
 
         # ───── 인터넷·소프트웨어·플랫폼 ─────
         "0700.HK",  # Tencent (텐센트, 게임·클라우드·AI)
@@ -2728,7 +2728,7 @@ class ChinaStockDataView(APIView):
         # ───── 배터리 관련 ─────
         "002091.SZ",  # Meidu Energy (메이두에너지, 리튬 배터리 소재)
         "300014.SZ",  # Eve Energy (이브에너지, 리튬이온 배터리 제조)
-        "002812.SZ",  # Yunnan Energy (리튬 배터리 핵심 소재)
+        "002812.SZ",  # Yunnan Energy (윈난에너지, 리튬 배터리 핵심 소재)
         "600884.SS",  # Ganfeng Lithium (간펑리튬, 리튬 채굴 및 배터리)
         "002460.SZ",  # Huayou Cobalt (화유코발트, 배터리 원자재)
 
@@ -2736,6 +2736,13 @@ class ChinaStockDataView(APIView):
         "688256.SS",  # Cambricon (캄브리콘, AI 칩)
         "0981.HK",  # SMIC (중국 반도체 파운드리, 홍콩)
         "1347.HK",  # Hua Hong Semiconductor (화훙반도체, 홍콩)
+
+        # ───── 데이터 기술 / 빅데이터 ─────
+        "000977.SZ",  # Inspur Electronic Information Industry (인스퍼, 서버 및 빅데이터 솔루션)
+        "600588.SS",  # Yonyou Network Technology (용유네트워크, 기업용 소프트웨어 및 클라우드 서비스)
+        "002065.SZ",  # Donghua Software (동화소프트웨어, 의료 및 금융 분야의 빅데이터 솔루션)
+        "600271.SS",  # Anhui USTC iFlytek (아이플라이텍, 음성인식 및 AI 기술)
+        "300002.SZ",  # Shenzhen Sunline Tech (썬라인테크, 금융 IT 솔루션 및 빅데이터)
     ]
     @staticmethod
     def get_stock_data(symbol, interval, limit):
