@@ -2056,10 +2056,10 @@ class stockDataView(APIView):
         'LPSN', 'VERI', 'AMBA',
 
         # [AI 기반 신약개발 / 합성생물학]
-        'RXRX', 'EXAI', 'DNA',
+        'RXRX', 'EXAI', 'DNA', 'TEAM', 'UNH',
 
         # [자율주행(로보틱스 응용)]
-        'AUR',
+        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA',
     ]
     @staticmethod
     def get_stock_data(symbol, interval, limit):
