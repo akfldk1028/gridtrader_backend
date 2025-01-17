@@ -221,6 +221,7 @@ Example Structure for JSON Data:
 - **Stay Informed and Agile**: Continuously monitor market conditions and be ready to adjust strategies rapidly in response to new information or changes in the market environment.
 - **Holistic Strategy**: Successful aggressive investment strategies require a comprehensive view of market data, technical indicators, and current status to inform your strategies. Be bold in taking advantage of market opportunities.
 - Take a deep breath and work on this step by step.
+- This trading method uses grid trading, so don't repeat a decision multiple times if you are not sure about it after looking at previous decisions.
 - Your response must be JSON format.
 
 
