@@ -443,10 +443,10 @@ def perform_new_analysis():
         # Fetch Bitcoin data
         bitcoin_data = get_bitcoin_data_from_api(vt_symbol)
 
-        intervals = ['1h', '2h', '1d', '1w']
+        intervals = ['15m', '2h', '1d', '1w']
 
         trendline_prices = get_trendlines_prices(vt_symbol, intervals)
-        prices_1h = get_trendline_prices_for_interval(trendline_prices, '1h')
+        prices_15m = get_trendline_prices_for_interval(trendline_prices, '15m')
         prices_2h = get_trendline_prices_for_interval(trendline_prices, '2h')
         prices_1d = get_trendline_prices_for_interval(trendline_prices, '1d')
         prices_1w = get_trendline_prices_for_interval(trendline_prices, '1w')
@@ -463,7 +463,7 @@ def perform_new_analysis():
         #         "LongTermHigh": [], "LongTermLow": ["20552.50"]}}
         # Convert trendline prices to JSON string
         trendline_prices_str = json.dumps({
-            '1h': {k: [f"{price:.2f}" for price in v] for k, v in prices_1h.items()},
+            '15m': {k: [f"{price:.2f}" for price in v] for k, v in prices_15m.items()},
             '2h': {k: [f"{price:.2f}" for price in v] for k, v in prices_2h.items()},
             '1d': {k: [f"{price:.2f}" for price in v] for k, v in prices_1d.items()},
             '1w': {k: [f"{price:.2f}" for price in v] for k, v in prices_1w.items()}
