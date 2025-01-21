@@ -480,11 +480,12 @@ def perform_new_analysis():
 
         futures_positions = get_future_account("get-future-position")
         filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
+
+        # 필터링 결과가 비어 있다면 코인 밸런스를 0으로
         if len(filtered_positions) > 0:
             coin_balance = Decimal(filtered_positions[0]["positionAmt"])
         else:
             coin_balance = Decimal("0")
-        # print(filtered_positions["positionAmt"])
 
 
         current_status = {
@@ -529,7 +530,7 @@ def perform_new_analysis():
             trade_type=decision['decision'].upper(),
             result_string=decision['reason'],
             balance=Decimal(available_balance),
-            coin_balance=Decimal(filtered_positions[0]["positionAmt"]),
+            coin_balance= coin_balance,
             current_price=Decimal(current_price),
             selected_strategy=grid_strategy,
             price_prediction=decision['Multiple']
