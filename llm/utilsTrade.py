@@ -480,7 +480,10 @@ def perform_new_analysis():
 
         futures_positions = get_future_account("get-future-position")
         filtered_positions = [position for position in futures_positions if position["symbol"] == vt_symbol]
-
+        if len(filtered_positions) > 0:
+            coin_balance = Decimal(filtered_positions[0]["positionAmt"])
+        else:
+            coin_balance = Decimal("0")
         # print(filtered_positions["positionAmt"])
 
 
