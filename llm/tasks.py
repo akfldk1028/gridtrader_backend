@@ -30,7 +30,7 @@ def setup_bitcoin_analysis_task():
     schedule(
         'llm.tasks.run_new_bitcoin_analysis',
         schedule_type=Schedule.CRON,
-        cron="55 1-23/2 * * *",  # 홀수 시간(1,3,5,7,9,11,13,15,17,19,21,23), 매 시각 55분에 실행
+        cron="55 0-23/1 * * *",  # 홀수 시간(1,3,5,7,9,11,13,15,17,19,21,23), 매 시각 55분에 실행
         next_run=next_run,
         repeats=-1
     )

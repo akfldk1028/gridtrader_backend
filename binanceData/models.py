@@ -15,6 +15,11 @@ class StockData(CommonModel):
     def __str__(self):
         return f"{self.symbols}"
 
+class ChinaStockData(CommonModel):
+    symbols = models.JSONField(null=True, blank=True)  # nullable 설정
+
+    def __str__(self):
+        return f"{self.symbols}"
 class KoreaStockData(CommonModel):
     symbols = models.JSONField(null=True, blank=True)  # nullable 설정
 

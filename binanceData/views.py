@@ -17,7 +17,7 @@ from .analysis.rsi import RSIAnalyzer
 from .analysis.UltimateRSIAnalyzer import UltimateRSIAnalyzer
 from .analysis.SqueezeMomentumIndicator import SqueezeMomentumIndicator
 import concurrent.futures
-from .models import BinanceTradingSummary, KoreaStockData, StockData
+from .models import BinanceTradingSummary, KoreaStockData, StockData , ChinaStockData
 
 
 from .analysis.IchimokuIndicator import IchimokuIndicator
@@ -2062,6 +2062,13 @@ class stockDataView(APIView):
         # [자율주행(로보틱스 응용)]
         'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA'
     ]
+
+    PREDEFINED_SYMBOLS_SECOND = ['RXRX', 'TPG', 'PLMR', 'PINS', 'ZM', 'TMDX', 'PNS', 'UBER',
+                                 'AVTR', 'RVLV', 'AKRO', 'CMBM', 'MIRM', 'NOVA', 'CSTL', 'DT', 'INMD', 'ALRS',
+                                 'NVST', 'DDOG', 'MCBS', 'BNTX' , 'BRBR', 'BWIN', 'PGNY', 'SITM', 'BILL', 'SPT'
+
+                                  ]
+
     @staticmethod
     def get_stock_data(symbol, interval, limit):
         """
@@ -2209,14 +2216,19 @@ class stockDataView(APIView):
     #         print(f"Error processing symbol {symbol}: {str(e)}")
     #         return False  # 에러 발생 시 조건 불만족
 
-    def get_all_last_data(self, request):
+    def get_all_last_data(self, request, symbolList):
         limit = 500
         intervals = {
             '1day': '1d',
             '1week': '1wk',
             '1month': '1mo'
         }
-        all_symbols = self.PREDEFINED_SYMBOLS
+        if symbolList == 1:
+            all_symbols = self.PREDEFINED_SYMBOLS
+        elif symbolList == 2:
+            all_symbols = self.PREDEFINED_SYMBOLS_SECOND
+
+        # all_symbols = self.PREDEFINED_SYMBOLS
         filtered_symbols = []
 
         try:
@@ -2251,9 +2263,12 @@ class stockDataView(APIView):
             )
     def get(self, request):
         all_last = request.GET.get('all_last', 'false').lower() == 'true'
+        all_last_second = request.GET.get('all_last_second', 'false').lower() == 'true'
 
         if all_last:
-            return self.get_all_last_data(request)
+            return self.get_all_last_data(request, 1)
+        elif all_last_second:
+            return self.get_all_last_data(request, 2)
         else:
             limit = 1000
             symbol = request.GET.get('symbol', 'AAPL')  # 기본 심볼: AAPL
@@ -2901,10 +2916,10 @@ class ChinaStockDataView(APIView):
 
             # DB 저장 (StockData에 'symbols'라는 필드가 있다고 가정)
             if filtered_symbols:
-                StockData.objects.create(symbols=filtered_symbols)
+                ChinaStockData.objects.create(symbols=filtered_symbols)
                 print(f'{len(filtered_symbols)} symbols saved to StockData.')
             else:
-                StockData.objects.create(symbols=[])
+                ChinaStockData.objects.create(symbols=[])
                 print('No symbols met the criteria.')
 
             return Response({"symbols_saved": filtered_symbols})

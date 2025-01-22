@@ -19,6 +19,9 @@ def setup_scalping():
     Schedule.objects.filter(func='scalping.tasks.binance_save').delete()
     Schedule.objects.filter(func='scalping.tasks.koreaStockSymbol').delete()
     Schedule.objects.filter(func='scalping.tasks.stockSymbol').delete()
+    Schedule.objects.filter(func='scalping.tasks.SecondstockSymbol').delete()
+    Schedule.objects.filter(func='scalping.tasks.ChinastockSymbol').delete()
+
 
     now = datetime.now()
     next_run = now + timedelta(minutes=60)
@@ -45,6 +48,17 @@ def setup_scalping():
         time(17, 0),  # 오후 5시
     ]
 
+    specific_second_times = [
+        time(23, 30),  # 오후 11시 30분
+        time(17, 30),  # 오후 5시
+    ]
+
+    china_times = [
+        time(6, 30),  # 오후 11시 30분
+        time(15, 30),  # 오후 5시
+    ]
+
+
     for specific_time in specific_times:
         specific_datetime = datetime.combine(now.date(), specific_time)
         if specific_datetime < now:  # 이미 지난 시간은 다음 날로 이동
@@ -58,6 +72,31 @@ def setup_scalping():
             repeats=-1  # 무한 반복
         )
 
+    for specific_time in specific_second_times:
+        specific_second_datetime = datetime.combine(now.date(), specific_time)
+        if specific_second_datetime < now:  # 이미 지난 시간은 다음 날로 이동
+            specific_second_datetime += timedelta(days=1)
+
+        # 각 시간마다 스케줄 설정
+        schedule(
+            'scalping.tasks.SecondstockSymbol',
+            schedule_type=Schedule.DAILY,
+            next_run=specific_second_datetime,
+            repeats=-1  # 무한 반복
+        )
+
+    for specific_time in china_times:
+        china_times_datetime = datetime.combine(now.date(), specific_time)
+        if china_times_datetime < now:  # 이미 지난 시간은 다음 날로 이동
+            china_times_datetime += timedelta(days=1)
+
+        # 각 시간마다 스케줄 설정
+        schedule(
+            'scalping.tasks.ChinastockSymbol',
+            schedule_type=Schedule.DAILY,
+            next_run=china_times_datetime,
+            repeats=-1  # 무한 반복
+        )
 
     # TASK2: 저녁 11시 30분 및 오전 7시
     # stock_evening_time = time(23, 30)
@@ -114,6 +153,58 @@ def setup_scalping():
     #     next_run=next_run,               # 다음 실행 시간
     #     repeats=-1                       # 무한 반복
     # )
+def ChinastockSymbol():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/ChinaStockData/?all_last_second=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+def SecondstockSymbol():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_second=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
 
 
 def stockSymbol():
