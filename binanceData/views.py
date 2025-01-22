@@ -2065,10 +2065,17 @@ class stockDataView(APIView):
 
     PREDEFINED_SYMBOLS_SECOND = ['RXRX', 'TPG', 'PLMR', 'PINS', 'ZM', 'TMDX', 'PNS', 'UBER',
                                  'AVTR', 'RVLV', 'AKRO', 'CMBM', 'MIRM', 'NOVA', 'CSTL', 'DT', 'INMD', 'ALRS',
-                                 'NVST', 'DDOG', 'MCBS', 'BNTX' , 'BRBR', 'BWIN', 'PGNY', 'SITM', 'BILL', 'SPT'
-
+                                 'NVST', 'DDOG', 'MCBS', 'BNTX', 'BRBR', 'BWIN', 'PGNY', 'SITM', 'BILL', 'SPT',
+                                 'VEL', 'ANVS', 'BDTX', 'ARQT', 'SDGR', 'BEAM', 'ONEW', 'NREF', 'RVMD', 'GFL', 'ELVN', 'KROS', 'NARI',
+                                 'PLRX', 'LEGN', 'FOUR', 'RNA', 'AZEK', 'PCVX', 'RPRX', 'ACI', 'MEG', 'NRIX', 'VERX', 'LI', 'VITL', 'RKT',
+                                 'IBEX', 'NTST', 'INBX', 'HRMY', 'KYMR', 'STEP', 'DYN', 'BNL', 'BSY', 'GLSI', 'YALA', 'ASAN', 'THRY', 'AVO', 'IMNM',
+                                 'ASO', 'SQFT', 'ELUT', 'EBC', 'MNSO', 'PRAX', 'TARS', 'FHTX', 'MAX', 'ROOT', 'ALGM', 'SHC', 'DCBO',
+                                 'PUBM', 'DASH', 'ABNB', 'CVRX', 'YOU', 'INTA', 'S', 'RYAN', 'USCB', 'DUOL', 'CWAN', 'NU',
+                                 'DFH', 'IMCR', 'BVS', 'OSCR', 'SEMR', 'ALHC', 'KARO', 'COIN', 'APP', 'BMEA', 'RXRX', 'DV','EDR', 'BWMN', 'GLBE', 'VERA', 'FLYW', 'PAY',
+                                 'DLO', 'ZETA', 'MNDY', 'TASK', 'JANX', 'FA', 'DOCS'
                                   ]
 
+    # 2021  6월까지 확인완
     @staticmethod
     def get_stock_data(symbol, interval, limit):
         """
