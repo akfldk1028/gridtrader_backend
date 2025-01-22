@@ -41,63 +41,56 @@ def setup_scalping():
         repeats=-1  # 무한 반복
     )
 
-    # 특정 시간대를 설정
-    specific_times = [
-        time(23, 0),  # 오후 11시 30분
-        time(6, 0),  # 오전 6시
-        time(17, 0),  # 오후 5시
+    schedules = [
+        {
+            "task": "scalping.tasks.stockSymbol",
+            "base_time": time(23, 0),  # 오후 11시
+            "cron": "0 23 * * *"  # 매일 오후 11시에 실행
+        },
+        {
+            "task": "scalping.tasks.SecondstockSymbol",
+            "base_time": time(23, 30),  # 오후 11시 30분
+            "cron": "30 23 * * *"  # 매일 오후 11시 30분에 실행
+        },
+        {
+            "task": "scalping.tasks.ChinastockSymbol",
+            "base_time": time(6, 30),  # 오전 6시 30분
+            "cron": "30 6 * * *"  # 매일 오전 6시 30분에 실행
+        }
     ]
 
-    specific_second_times = [
-        time(23, 30),  # 오후 11시 30분
-        time(17, 30),  # 오후 5시
-    ]
+    # 스케줄 등록
+    for schedule_info in schedules:
+        task = schedule_info["task"]
+        base_time = schedule_info["base_time"]
+        cron = schedule_info["cron"]
 
-    china_times = [
-        time(6, 30),  # 오후 11시 30분
-        time(15, 30),  # 오후 5시
-    ]
+        # 기본 실행 시간 계산
+        next_run = datetime.combine(now.date(), base_time)
+        if now >= next_run:
+            next_run += timedelta(days=1)
 
-
-    for specific_time in specific_times:
-        specific_datetime = datetime.combine(now.date(), specific_time)
-        if specific_datetime < now:  # 이미 지난 시간은 다음 날로 이동
-            specific_datetime += timedelta(days=1)
-
-        # 각 시간마다 스케줄 설정
+        # 기본 스케줄 등록
         schedule(
-            'scalping.tasks.stockSymbol',
-            schedule_type=Schedule.DAILY,
-            next_run=specific_datetime,
-            repeats=-1  # 무한 반복
+            task,
+            schedule_type=Schedule.CRON,
+            cron=cron,
+            next_run=next_run,
+            repeats=-1
         )
 
-    for specific_time in specific_second_times:
-        specific_second_datetime = datetime.combine(now.date(), specific_time)
-        if specific_second_datetime < now:  # 이미 지난 시간은 다음 날로 이동
-            specific_second_datetime += timedelta(days=1)
+        # 12시간 간격 실행 시간 계산
+        next_run_12h = next_run + timedelta(hours=12)
+        cron_12h = f"{base_time.minute} {(base_time.hour + 12) % 24} * * *"
 
-        # 각 시간마다 스케줄 설정
+        # 12시간 간격 스케줄 등록
         schedule(
-            'scalping.tasks.SecondstockSymbol',
-            schedule_type=Schedule.DAILY,
-            next_run=specific_second_datetime,
-            repeats=-1  # 무한 반복
+            task,
+            schedule_type=Schedule.CRON,
+            cron=cron_12h,
+            next_run=next_run_12h,
+            repeats=-1
         )
-
-    for specific_time in china_times:
-        china_times_datetime = datetime.combine(now.date(), specific_time)
-        if china_times_datetime < now:  # 이미 지난 시간은 다음 날로 이동
-            china_times_datetime += timedelta(days=1)
-
-        # 각 시간마다 스케줄 설정
-        schedule(
-            'scalping.tasks.ChinastockSymbol',
-            schedule_type=Schedule.DAILY,
-            next_run=china_times_datetime,
-            repeats=-1  # 무한 반복
-        )
-
     # TASK2: 저녁 11시 30분 및 오전 7시
     # stock_evening_time = time(23, 30)
     # stock_evening_datetime = datetime.combine(now.date(), stock_evening_time)
