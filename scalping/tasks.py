@@ -45,52 +45,42 @@ def setup_scalping():
         {
             "task": "scalping.tasks.stockSymbol",
             "base_time": time(23, 0),  # 오후 11시
-            "cron": "0 23 * * *"  # 매일 오후 11시에 실행
+            "cron": "0 23/12 * * *"  # 오후 11시부터 12시간 간격
         },
         {
             "task": "scalping.tasks.SecondstockSymbol",
             "base_time": time(23, 30),  # 오후 11시 30분
-            "cron": "30 23 * * *"  # 매일 오후 11시 30분에 실행
+            "cron": "30 23/12 * * *"  # 오후 11시 30분부터 12시간 간격
         },
         {
             "task": "scalping.tasks.ChinastockSymbol",
             "base_time": time(6, 30),  # 오전 6시 30분
-            "cron": "30 6 * * *"  # 매일 오전 6시 30분에 실행
+            "cron": "30 6/12 * * *"  # 오전 6시 30분부터 12시간 간격
         }
     ]
 
-    # 스케줄 등록
     for schedule_info in schedules:
         task = schedule_info["task"]
         base_time = schedule_info["base_time"]
         cron = schedule_info["cron"]
 
-        # 기본 실행 시간 계산
+        # 기존 스케줄 삭제
+        Schedule.objects.filter(func=task).delete()
+
+        # 다음 실행 시간 계산
         next_run = datetime.combine(now.date(), base_time)
-        if now >= next_run:
+        if now >= next_run:  # 기본 시간보다 현재 시간이 크면 다음 날로 이동
             next_run += timedelta(days=1)
 
-        # 기본 스케줄 등록
+        # 스케줄 등록 (기본 실행 + 12시간 반복)
         schedule(
             task,
             schedule_type=Schedule.CRON,
             cron=cron,
             next_run=next_run,
-            repeats=-1
+            repeats=-1  # 무한 반복
         )
 
-        # 12시간 간격 실행 시간 계산
-        next_run_12h = next_run + timedelta(hours=12)
-        cron_12h = f"{base_time.minute} {(base_time.hour + 12) % 24} * * *"
-
-        # 12시간 간격 스케줄 등록
-        schedule(
-            task,
-            schedule_type=Schedule.CRON,
-            cron=cron_12h,
-            next_run=next_run_12h,
-            repeats=-1
-        )
     # TASK2: 저녁 11시 30분 및 오전 7시
     # stock_evening_time = time(23, 30)
     # stock_evening_datetime = datetime.combine(now.date(), stock_evening_time)
