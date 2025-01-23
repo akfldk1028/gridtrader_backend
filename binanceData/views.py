@@ -998,7 +998,6 @@ class BinanceLLMChartDataAPIView(APIView):
                 '15m': process_candles(fifteen_minutes_candles, '15m'),
                 '2h': process_candles(two_hour_candles, '2h'),
                 '1d': process_candles(one_day_candles, '1d'),
-                '1w': process_candles(one_week_candles, '1w')
             }
             return data
 

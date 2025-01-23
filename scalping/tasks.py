@@ -140,7 +140,7 @@ def ChinastockSymbol():
     """Fetch Bitcoin data with technical indicators from API"""
     import requests
 
-    base_url = "https://gridtrade.one/api/v1/binanceData/ChinaStockData/?all_last_second=true"
+    base_url = "https://gridtrade.one/api/v1/binanceData/ChinaStockData/?all_last=true"
     session = requests.Session()
     for attempt in range(3):
         try:
