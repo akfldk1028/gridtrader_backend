@@ -958,6 +958,8 @@ class BinanceLLMChartDataAPIView(APIView):
     def get_bitcoin_data(self, symbol: str) -> Dict[str, Any]:
         try:
             fifteen_minutes_candles = self.get_extended_kline_data(symbol, '15m')
+            one_hour_candles = self.get_extended_kline_data(symbol, '1h')
+
             two_hour_candles = self.get_extended_kline_data(symbol, '2h')
             one_day_candles = self.get_extended_kline_data(symbol, '1d')
             one_week_candles = self.get_extended_kline_data(symbol, '1w')
@@ -996,6 +998,7 @@ class BinanceLLMChartDataAPIView(APIView):
             # }
             data = {
                 '15m': process_candles(fifteen_minutes_candles, '15m'),
+                '1h': process_candles(one_hour_candles, '1h'),
                 '2h': process_candles(two_hour_candles, '2h'),
                 '1d': process_candles(one_day_candles, '1d'),
             }
