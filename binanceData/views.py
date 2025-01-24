@@ -2065,17 +2065,54 @@ class stockDataView(APIView):
         'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA'
     ]
 
-    PREDEFINED_SYMBOLS_SECOND = ['RXRX', 'TPG', 'PLMR', 'PINS', 'ZM', 'TMDX', 'PNS', 'UBER',
-                                 'AVTR', 'RVLV', 'AKRO', 'CMBM', 'MIRM', 'NOVA', 'CSTL', 'DT', 'INMD', 'ALRS',
-                                 'NVST', 'DDOG', 'MCBS', 'BNTX', 'BRBR', 'BWIN', 'PGNY', 'SITM', 'BILL', 'SPT',
-                                 'VEL', 'ANVS', 'BDTX', 'ARQT', 'SDGR', 'BEAM', 'ONEW', 'NREF', 'RVMD', 'GFL', 'ELVN', 'KROS', 'NARI',
-                                 'PLRX', 'LEGN', 'FOUR', 'RNA', 'AZEK', 'PCVX', 'RPRX', 'ACI', 'MEG', 'NRIX', 'VERX', 'LI', 'VITL', 'RKT',
-                                 'IBEX', 'NTST', 'INBX', 'HRMY', 'KYMR', 'STEP', 'DYN', 'BNL', 'BSY', 'GLSI', 'YALA', 'ASAN', 'THRY', 'AVO', 'IMNM',
-                                 'ASO', 'SQFT', 'ELUT', 'EBC', 'MNSO', 'PRAX', 'TARS', 'FHTX', 'MAX', 'ROOT', 'ALGM', 'SHC', 'DCBO',
-                                 'PUBM', 'DASH', 'ABNB', 'CVRX', 'YOU', 'INTA', 'S', 'RYAN', 'USCB', 'DUOL', 'CWAN', 'NU',
-                                 'DFH', 'IMCR', 'BVS', 'OSCR', 'SEMR', 'ALHC', 'KARO', 'COIN', 'APP', 'BMEA', 'RXRX', 'DV','EDR', 'BWMN', 'GLBE', 'VERA', 'FLYW', 'PAY',
-                                 'DLO', 'ZETA', 'MNDY', 'TASK', 'JANX', 'FA', 'DOCS'
-                                  ]
+    PREDEFINED_SYMBOLS_SECOND = [
+        'RXRX', 'TPG', 'PLMR', 'PINS', 'ZM', 'TMDX', 'PNS', 'UBER',
+        'AVTR', 'RVLV', 'AKRO', 'CMBM', 'MIRM', 'NOVA', 'CSTL', 'DT', 'INMD', 'ALRS',
+        'NVST', 'DDOG', 'MCBS', 'BNTX', 'BRBR', 'BWIN', 'PGNY', 'SITM', 'BILL', 'SPT',
+        'VEL', 'ANVS', 'BDTX', 'ARQT', 'SDGR', 'BEAM', 'ONEW', 'NREF', 'RVMD', 'GFL', 'ELVN', 'KROS', 'NARI',
+        'PLRX', 'LEGN', 'FOUR', 'RNA', 'AZEK', 'PCVX', 'RPRX', 'ACI', 'MEG', 'NRIX', 'VERX', 'LI', 'VITL', 'RKT',
+        'IBEX', 'NTST', 'INBX', 'HRMY', 'KYMR', 'STEP', 'DYN', 'BNL', 'BSY', 'GLSI', 'YALA', 'ASAN', 'THRY', 'AVO',
+        'IMNM',
+        'ASO', 'SQFT', 'ELUT', 'EBC', 'MNSO', 'PRAX', 'TARS', 'FHTX', 'MAX', 'ROOT', 'ALGM', 'SHC', 'DCBO',
+        'PUBM', 'DASH', 'ABNB', 'CVRX', 'YOU', 'INTA', 'S', 'RYAN', 'USCB', 'DUOL', 'CWAN', 'NU',
+        'DFH', 'IMCR', 'BVS', 'OSCR', 'SEMR', 'ALHC', 'KARO', 'COIN', 'APP', 'BMEA', 'RXRX', 'DV', 'EDR', 'BWMN',
+        'GLBE', 'VERA', 'FLYW', 'PAY',
+        'DLO', 'ZETA', 'MNDY', 'TASK', 'JANX', 'FA', 'DOCS', 'ADBE', 'ADSK',
+
+        # 새로 추가된 소프트웨어 관련 티커들
+        'SNPS',  # Synopsys
+        'ANSS',  # Ansys
+        'CHKP',  # Check Point Software
+        'FTNT',  # Fortinet
+        'ZI',  # ZoomInfo
+        'TTD',  # The Trade Desk
+        'APPN',  # Appian
+        'CFLT',  # Confluent
+        'BASE',  # Couchbase
+        'CYBR',  # CyberArk
+        'APPS',  # Digital Turbine
+        'DBX',  # Dropbox
+        'EXFY',  # Expensify
+        'GEN',  # Gen Digital (구 NortonLifeLock)
+        'FROG',  # JFrog
+        'MQ',  # Marqeta
+        'NICE',  # NICE Ltd.
+        'PTC',  # PTC Inc.
+        'QLYS',  # Qualys
+        'RPD',  # Rapid7
+        'TENB',  # Tenable
+        'TRMB',  # Trimble
+        'VRNT',  # Verint Systems
+        'VMEO',  # Vimeo
+        'AZPN',  # Aspen Technology
+        'AVID',  # Avid Technology
+        'CHGG',  # Chegg
+        'FRSH',  # Freshworks
+        'BIGC',  # BigCommerce Holdings
+        'LZ',  # LegalZoom
+        'DOMO',  # Domo
+        'EVBG'  # Everbridge
+    ]
 
     # 2021  6월까지 확인완
     @staticmethod
