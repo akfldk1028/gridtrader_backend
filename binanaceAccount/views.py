@@ -409,7 +409,7 @@ class DailyBalanceView(BinanceAPIView):
         self.investment_tracker.add_transaction(
             Transaction(date(2025, 1, 2), InvestorType.FRIEND, TransactionType.DEPOSIT, 22))
         self.investment_tracker.add_transaction(
-            Transaction(date(2025, 1, 11), InvestorType.FRIEND2, TransactionType.DEPOSIT, 850))
+            Transaction(date(2025, 1, 11), InvestorType.FRIEND2, TransactionType.DEPOSIT, 0))
         self.investment_tracker.add_transaction(
             Transaction(date(2025, 1, 15), InvestorType.FRIEND, TransactionType.DEPOSIT, 95))
 
