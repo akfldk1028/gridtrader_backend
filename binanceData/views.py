@@ -2118,7 +2118,7 @@ class stockDataView(APIView):
         'ZROZ',
         'TLT',
         'TEM',
-        'VST',
+        'VST'
     ]
 
     # 2021  6월까지 확인완
