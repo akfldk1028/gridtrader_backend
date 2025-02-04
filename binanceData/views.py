@@ -2111,7 +2111,14 @@ class stockDataView(APIView):
         'BIGC',  # BigCommerce Holdings
         'LZ',  # LegalZoom
         'DOMO',  # Domo
-        'EVBG'  # Everbridge
+        'EVBG'  # Everbridge,
+        
+        'GLD',
+        'IAU',
+        'ZROZ',
+        'TLT',
+        'TEM',
+        'VST',
     ]
 
     # 2021  6월까지 확인완
