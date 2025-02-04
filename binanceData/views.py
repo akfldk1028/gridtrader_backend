@@ -2111,7 +2111,7 @@ class stockDataView(APIView):
         'BIGC',  # BigCommerce Holdings
         'LZ',  # LegalZoom
         'DOMO',  # Domo
-        'EVBG'  # Everbridge,
+        'EVBG',  # Everbridge,
         
         'GLD',
         'IAU',
