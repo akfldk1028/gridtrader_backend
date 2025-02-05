@@ -2112,7 +2112,6 @@ class stockDataView(APIView):
         'LZ',  # LegalZoom
         'DOMO',  # Domo
         'EVBG',  # Everbridge,
-        
         'GLD',
         'IAU',
         'ZROZ',
@@ -2123,7 +2122,9 @@ class stockDataView(APIView):
         'RKLB',
         'S',
         'SYM',
-        'DNA'
+        'DNA',
+        'SMR'
+
 
     ]
 
