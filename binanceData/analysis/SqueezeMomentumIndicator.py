@@ -3,7 +3,7 @@ import numpy as np
 
 
 class SqueezeMomentumIndicator:
-    def __init__(self, df, length=20, mult=2.0, lengthKC=20, multKC=1.5, useTrueRange=True):
+    def __init__(self, df, length=14, mult=2.0, lengthKC=14, multKC=1.5, useTrueRange=True):
         """
         df:   pandas DataFrame with 'close', 'high', 'low' columns.
         length:   BB length (default 20)
