@@ -2056,13 +2056,13 @@ class stockDataView(APIView):
         'BBAI', 'SOUN', 'TER', 'ROK', 'FANUY', 'FARO',
 
         # [AI / 비전(Vision) / 챗봇 등]
-        'LPSN', 'VERI', 'AMBA',
+        'LPSN', 'VERI', 'AMBA', 'PLTR'
 
         # [AI 기반 신약개발 / 합성생물학]
-        'RXRX', 'EXAI', 'DNA', 'TEAM', 'UNH',
+        'RXRX', 'EXAI', 'DNA', 'TEAM', 'UNH', 'MU', 'AMGN', 'ABT', 'MDT', 'CHTR', 'GD', 'LUV', 'MPC', 'COP', 'ADI', 'QRVO', 'CDNS', 'BAX', 'BSX',
 
         # [자율주행(로보틱스 응용)]
-        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA'
+        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA', 'NEE', 'DUK', 'EXC'
     ]
 
     PREDEFINED_SYMBOLS_SECOND = [
@@ -2123,9 +2123,10 @@ class stockDataView(APIView):
         'S',
         'SYM',
         'DNA',
-        'SMR'
-
-
+        'SMR',
+        'FSLY'
+        'COUP',
+        'AI'
     ]
 
     # 2021  6월까지 확인완
