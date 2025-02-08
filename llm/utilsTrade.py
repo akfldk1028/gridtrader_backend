@@ -301,9 +301,9 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         # 결정에 따른 grid_strategy 설정
         decision = result.get("decision", "HOLD").upper()
 
-        if decision in ("BUY", "LONGGRID"):
+        if decision in ("BUY", "LONGGRID", "LONG"):
             grid_strategy = "LongGrid"
-        elif decision in ("SELL", "SHORTGRID"):
+        elif decision in ("SELL", "SHORTGRID", "SHORT"):
             grid_strategy = "ShortGrid"
         else:
             grid_strategy = "RegularGrid"
