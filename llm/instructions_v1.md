@@ -228,6 +228,7 @@ Example Structure for JSON Data:
 
 ## Examples
 ### Example Instruction for Making a Decision (JSON format)
+### Please keep in mind that you must answer with a json format in the example, and in the case of decison, you must answer among buy, short, and hold. Buy means long position, short means short position, and hold means maintenance.
 #### Example: Recommendation to Buy
 ```json
 {
