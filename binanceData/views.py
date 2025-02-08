@@ -275,7 +275,7 @@ class TrendLinesAPIView(APIView):
 
             # 사용 예:
             response_data = process_timestamps(response_data)
-            cache.set(key, json.dumps(response_data), timeout=None)
+            cache.set(key, json.dumps(response_data), timeout=900)
 
             return Response(response_data)
 
@@ -2633,7 +2633,7 @@ class KoreaStockDataView(APIView):
 
         try:
             # 병렬 처리 시작
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 futures = {
                     executor.submit(self.get_symbol_status, sym, intervals, limit): sym
                     for sym in all_symbols
@@ -2962,7 +2962,7 @@ class ChinaStockDataView(APIView):
 
         try:
             # 병렬 처리
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 futures = {
                     executor.submit(self.get_symbol_status, sym, intervals, limit): sym
                     for sym in all_symbols
