@@ -38,7 +38,7 @@ class Analysis(CommonModel):
 
     # 기본 필드
     symbol = models.CharField(max_length=20 , null=True, blank=True)
-    trade_type = models.CharField('거래 유형', max_length=4, choices=TRADE_TYPES, default='HOLD')
+    trade_type = models.CharField('거래 유형', max_length=20, default='HOLD')
     trade_amount_krw = models.DecimalField('거래 금액', max_digits=20, decimal_places=2, default=Decimal('0.00'))
 
     # 잔고 관련 필드

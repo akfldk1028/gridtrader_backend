@@ -45,12 +45,12 @@ def setup_scalping():
         {
             "task": "scalping.tasks.stockSymbol",
             "base_time": time(23, 0),  # 오후 11시
-            "cron": "0 23/12 * * *"  # 오후 11시부터 12시간 간격
+            "cron": "0 8,23 * * *"  # 오후 11시부터 12시간 간격
         },
         {
             "task": "scalping.tasks.SecondstockSymbol",
             "base_time": time(23, 30),  # 오후 11시 30분
-            "cron": "30 23/12 * * *"  # 오후 11시 30분부터 12시간 간격
+            "cron": "30 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
         },
         {
             "task": "scalping.tasks.ChinastockSymbol",
