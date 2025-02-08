@@ -300,19 +300,21 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
         grid_strategy = "RegularGrid"
         # 결정에 따른 grid_strategy 설정
         decision = result.get("decision", "HOLD").upper()
-        if decision == "BUY":
+
+        if decision in ("BUY", "LONGGRID"):
             grid_strategy = "LongGrid"
-        elif decision == "SELL":
+        elif decision in ("SELL", "SHORTGRID"):
             grid_strategy = "ShortGrid"
         else:
             grid_strategy = "RegularGrid"
+
 
         validated_result = {
             "decision": result.get("decision", "HOLD").upper(),
             "percentage": min(max(float(result.get("percentage", 0)), 0), 100),  # 0-100 사이로 제한
             "reason": str(result.get("reason", "No reason provided")),
             "grid_strategy": grid_strategy,  # 추가된 부분
-            "Multiple": max(float(result.get("Multiple", 0)), 5)
+            "Multiple": float(result.get("Multiple", 0))  # max() 함수 제거
         }
 
         if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
