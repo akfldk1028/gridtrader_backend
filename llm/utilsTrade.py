@@ -317,7 +317,7 @@ def analyze_with_gpt4(market_data, trendline_prices_str, current_status, current
             "Multiple": float(result.get("Multiple", 0))  # max() 함수 제거
         }
 
-        if validated_result["decision"] not in ["BUY", "SELL", "HOLD"]:
+        if validated_result["decision"] not in ["BUY", "LONGGRID", "LONG", "SELL", "SHORTGRID", "SHORT"]:
             validated_result["decision"] = "HOLD"
 
         return validated_result
