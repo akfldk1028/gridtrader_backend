@@ -2126,7 +2126,9 @@ class stockDataView(APIView):
         'SMR',
         'FSLY'
         'COUP',
-        'AI'
+        'AI',
+        'CALM',
+        'NBIS'
     ]
 
     # 2021  6월까지 확인완
