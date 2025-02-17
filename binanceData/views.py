@@ -924,7 +924,7 @@ class BinanceLLMChartDataAPIView(APIView):
         # UltimateRSIAnalyzer와 SqueezeMomentumIndicator는 커스텀 클래스으로 가정
         analyzer = UltimateRSIAnalyzer(df, length=9, smoType1='RMA', smoType2='EMA', smooth=7)
         df = analyzer.get_dataframe()
-        indicator = SqueezeMomentumIndicator(df)
+        indicator = SqueezeMomentumIndicator(df, length=20, mult=2.0, lengthKC=20, multKC=1.5, useTrueRange=True)
         df = indicator.get_dataframe()
         return df
 
@@ -2128,7 +2128,8 @@ class stockDataView(APIView):
         'COUP',
         'AI',
         'CALM',
-        'NBIS'
+        'NBIS',
+        'WRD'
     ]
 
     # 2021  6월까지 확인완
