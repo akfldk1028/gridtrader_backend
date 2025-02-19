@@ -2062,7 +2062,7 @@ class stockDataView(APIView):
         'RXRX', 'EXAI', 'DNA', 'TEAM', 'UNH', 'MU', 'AMGN', 'ABT', 'MDT', 'CHTR', 'GD', 'LUV', 'MPC', 'COP', 'ADI', 'QRVO', 'CDNS', 'BAX', 'BSX',
 
         # [자율주행(로보틱스 응용)]
-        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA', 'NEE', 'DUK', 'EXC'
+        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA', 'NEE', 'DUK', 'EXC', 'AAL', 'WFC'
     ]
 
     PREDEFINED_SYMBOLS_SECOND = [
@@ -2077,7 +2077,7 @@ class stockDataView(APIView):
         'PUBM', 'DASH', 'ABNB', 'CVRX', 'YOU', 'INTA', 'S', 'RYAN', 'USCB', 'DUOL', 'CWAN', 'NU',
         'DFH', 'IMCR', 'BVS', 'OSCR', 'SEMR', 'ALHC', 'KARO', 'COIN', 'APP', 'BMEA', 'RXRX', 'DV', 'EDR', 'BWMN',
         'GLBE', 'VERA', 'FLYW', 'PAY',
-        'DLO', 'ZETA', 'MNDY', 'TASK', 'JANX', 'FA', 'DOCS', 'ADBE', 'ADSK',
+        'DLO', 'ZETA', 'MNDY', 'TASK', 'JANX', 'FA', 'DOCS', 'ADBE', 'ADSK', 'BWXT', 'LYV'
 
         # 새로 추가된 소프트웨어 관련 티커들
         'SNPS',  # Synopsys
@@ -2129,7 +2129,39 @@ class stockDataView(APIView):
         'AI',
         'CALM',
         'NBIS',
-        'WRD'
+        'WRD',
+        'STZ',
+        'UAL',
+        'SKX',
+        'SLM',
+        'DAL',
+        'UAL',
+        'PCT',
+        'MIR',
+        'ELF',
+        'IQV',
+        'FE',
+        'BX',
+        'CG',
+        'CART',
+        'GLW',
+        'SMCI',
+        'APLD',
+        'REPYY',
+        'INSM',
+        'ASND',
+        'NVT',
+        'FHN',
+        'ABCB',
+        'WULF',
+        'IVVD',
+        'SIRI',
+        'POOL',
+        'IOT',
+        'RBRK',
+        'NRG',
+        'LVS',
+        'WYNN'
     ]
 
     # 2021  6월까지 확인완
