@@ -1997,7 +1997,7 @@ class stockDataView(APIView):
         'DIS', 'MCD', 'ABBV', 'T', 'PFE', 'BAC', 'HD', 'UNH', 'LLY', 'NKE',
         'CRM', 'IBM', 'GE', 'UPS', 'BA', 'MMM', 'CAT', 'SPGI', 'BLK', 'TMO',
         'COST', 'WBA', 'LOW', 'CVS', 'EL', 'MO', 'PM', 'KHC', 'CL', 'KMB',
-        'FDX', 'RTX', 'DHR',
+        'FDX', 'RTX', 'DHR', 'ADI', 'GRMN', 'ENPH', 'OXY', 'DVN', 'PODD', 'CRL',
 
         # 에너지 및 산업 분야 (대형 에너지 기업 및 자동차)
         'SLB', 'HAL', 'PSX', 'OXY', 'EOG', 'F', 'GM', 'DE', 'NOC', 'LMT',
@@ -2161,7 +2161,14 @@ class stockDataView(APIView):
         'RBRK',
         'NRG',
         'LVS',
-        'WYNN'
+        'WYNN',
+        'NTRA',
+        'TEVA',
+        'VTEX',
+        'PACB',
+        'TWST',
+        'CRSP',
+        'GH'
     ]
 
     # 2021  6월까지 확인완
