@@ -2168,7 +2168,22 @@ class stockDataView(APIView):
         'PACB',
         'TWST',
         'CRSP',
-        'GH'
+        'GH',
+        'CLS',
+        'FNF',
+        'FIX',
+        'GRAB',
+        'INOD',
+        'RIVN',
+        'SFM',
+        'CELH',
+        'XPEV',
+        'BIDU',
+        'WB',
+        'JD',
+        'BILI',
+        'NTES',
+        'PDD'
     ]
 
     # 2021  6월까지 확인완
