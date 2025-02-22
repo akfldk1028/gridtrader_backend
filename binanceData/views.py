@@ -1980,211 +1980,531 @@ class UpbitDataView(APIView):
 #http://127.0.0.1:8000/api/v1/binanceData/stockData/?symbol=AAPL
 # https://www.myfinpl.com/investment/stock/sector/consumer-defensive#goog_rewarded
 class stockDataView(APIView):
-
-    # PREDEFINED_SYMBOLS = [
-    #     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA',
-    #     'META', 'NVDA', 'NFLX', 'BRK-B', 'JNJ'
-    # ]
+    # 대형주 (Large Cap Stocks)
     PREDEFINED_SYMBOLS = [
-        # 나스닥 상장 주요 기업 (IT, 반도체, 소비재, 헬스케어)
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'ADBE', 'PYPL',
-        'CSCO', 'PEP', 'CMCSA', 'INTC', 'QCOM', 'TXN', 'AVGO', 'AMD', 'ISRG', 'MDLZ',
-        'BKNG', 'VRTX', 'HON', 'TMUS', 'LRCX', 'GILD', 'ADSK', 'AMAT', 'MRNA', 'ASML', 'NET',
-        'DOCU', 'OKTA', 'ZS', 'MDB', 'SHOP',
+        # ── 나스닥 상장 주요 기업 (IT, 반도체, 소비재, 헬스케어) ──
+        'AAPL',  # Apple Inc.
+        'MSFT',  # Microsoft Corp.
+        'GOOGL',  # Alphabet Inc. (Google)
+        'AMZN',  # Amazon.com Inc.
+        'TSLA',  # Tesla Inc.
+        'META',  # Meta Platforms Inc.
+        'NVDA',  # NVIDIA Corp.
+        'NFLX',  # Netflix Inc.
+        'ADBE',  # Adobe Inc.
+        'PYPL',  # PayPal Holdings Inc.
+        'CSCO',  # Cisco Systems Inc.
+        'PEP',  # PepsiCo Inc.
+        'CMCSA',  # Comcast Corp.
+        'INTC',  # Intel Corp.
+        'QCOM',  # Qualcomm Inc.
+        'TXN',  # Texas Instruments Inc.
+        'AVGO',  # Broadcom Inc.
+        'AMD',  # Advanced Micro Devices Inc.
+        'ISRG',  # Intuitive Surgical Inc.
+        'MDLZ',  # Mondelez International Inc.
+        'BKNG',  # Booking Holdings Inc.
+        'VRTX',  # Vertex Pharmaceuticals Inc.
+        'HON',  # Honeywell International Inc.
+        'TMUS',  # T‑Mobile US Inc.
+        'LRCX',  # Lam Research Corp.
+        'GILD',  # Gilead Sciences Inc.
+        'ADSK',  # Autodesk Inc.
+        'AMAT',  # Applied Materials Inc.
+        'MRNA',  # Moderna Inc.
+        'ASML',  # ASML Holding NV
+        'NET',  # Cloudflare Inc.
+        'ED',  # Consolidated Edison Inc.
+        'DOCU',  # DocuSign Inc.
+        'OKTA',  # Okta Inc.
+        'ZS',  # Zscaler Inc.
+        'MDB',  # MongoDB Inc.
+        'SHOP',  # Shopify Inc.
 
-        # 뉴욕증권거래소(NYSE) 주요 기업 (금융, 에너지, 산업, 소비재)
-        'BRK-B', 'JNJ', 'V', 'JPM', 'WMT', 'PG', 'MA', 'XOM', 'CVX', 'KO',
-        'DIS', 'MCD', 'ABBV', 'T', 'PFE', 'BAC', 'HD', 'UNH', 'LLY', 'NKE',
-        'CRM', 'IBM', 'GE', 'UPS', 'BA', 'MMM', 'CAT', 'SPGI', 'BLK', 'TMO',
-        'COST', 'WBA', 'LOW', 'CVS', 'EL', 'MO', 'PM', 'KHC', 'CL', 'KMB',
-        'FDX', 'RTX', 'DHR', 'ADI', 'GRMN', 'ENPH', 'OXY', 'DVN', 'PODD', 'CRL',
+        # ── 뉴욕증권거래소(NYSE) 주요 기업 (금융, 에너지, 산업, 소비재) ──
+        'BRK-B',  # Berkshire Hathaway Inc.
+        'JNJ',  # Johnson & Johnson
+        'V',  # Visa Inc.
+        'JPM',  # JPMorgan Chase & Co.
+        'WMT',  # Walmart Inc.
+        'PG',  # Procter & Gamble Co.
+        'MA',  # Mastercard Inc.
+        'XOM',  # ExxonMobil Corp.
+        'CVX',  # Chevron Corp.
+        'KO',  # Coca‑Cola Co.
+        'DIS',  # The Walt Disney Co.
+        'MCD',  # McDonald's Corp.
+        'ABBV',  # AbbVie Inc.
+        'T',  # AT&T Inc.
+        'PFE',  # Pfizer Inc.
+        'BAC',  # Bank of America Corp.
+        'HD',  # Home Depot Inc.
+        'UNH',  # UnitedHealth Group Inc.
+        'LLY',  # Eli Lilly & Co.
+        'NKE',  # Nike Inc.
+        'CRM',  # Salesforce.com Inc.
+        'IBM',  # IBM Corp.
+        'GE',  # General Electric Co.
+        'UPS',  # UPS
+        'BA',  # Boeing Co.
+        'MMM',  # 3M Co.
+        'CAT',  # Caterpillar Inc.
+        'SPGI',  # S&P Global Inc.
+        'BLK',  # BlackRock Inc.
+        'TMO',  # Thermo Fisher Scientific Inc.
+        'COST',  # Costco Wholesale Corp.
+        'WBA',  # Walgreens Boots Alliance Inc.
+        'LOW',  # Lowe's Companies Inc.
+        'CVS',  # CVS Health Corp.
+        'EL',  # Estée Lauder Companies Inc.
+        'MO',  # Altria Group Inc.
+        'PM',  # Philip Morris International Inc.
+        'KHC',  # Kraft Heinz Co.
+        'CL',  # Colgate‑Palmolive Co.
+        'KMB',  # Kimberly‑Clark Corp.
+        'FDX',  # FedEx Corp.
+        'RTX',  # Raytheon Technologies Corp.
+        'DHR',  # Danaher Corp.
+        'ADI',  # Analog Devices Inc.
+        'GRMN',  # Garmin Ltd.
+        'ENPH',  # Enphase Energy Inc.
+        'OXY',  # Occidental Petroleum Corp.
+        'DVN',  # Devon Energy Corp.
+        'PODD',  # Insulet Corp.
+        'CRL',  # Charles River Laboratories Intl.
 
-        # 에너지 및 산업 분야 (대형 에너지 기업 및 자동차)
-        'SLB', 'HAL', 'PSX', 'OXY', 'EOG', 'F', 'GM', 'DE', 'NOC', 'LMT',
+        # ── 에너지 및 산업 분야 (대형 에너지 기업 및 자동차) ──
+        'SLB',  # Schlumberger Ltd.
+        'HAL',  # Halliburton Co.
+        'PSX',  # Phillips 66
+        'EOG',  # EOG Resources Inc.
+        'F',  # Ford Motor Co.
+        'GM',  # General Motors Co.
+        'DE',  # Deere & Co.
+        'NOC',  # Northrop Grumman Corp.
+        'LMT',  # Lockheed Martin Corp.
 
-        # 클라우드 및 SaaS (뉴욕거래소와 나스닥 혼합)
-        # -> 여기서 'MDB', 'CRM' 두 번째 등장분 제거
-        'ORCL', 'SAP', 'INTU', 'NOW', 'ADP', 'SNOW', 'ZM', 'TWLO',
-        'CRWD', 'DDOG',
+        # ── 클라우드 및 SaaS (뉴욕/나스닥 혼합) ──
+        'ORCL',  # Oracle Corp.
+        'SAP',  # SAP SE
+        'INTU',  # Intuit Inc.
+        'NOW',  # ServiceNow Inc.
+        'ADP',  # Automatic Data Processing Inc.
+        'SNOW',  # Snowflake Inc.
+        'ZM',  # Zoom Video Communications Inc.
+        'TWLO',  # Twilio Inc.
+        'CRWD',  # CrowdStrike Holdings Inc.
+        'DDOG',  # Datadog Inc.
 
-        # 헬스케어 및 제약
-        # -> 여기서 'TMO' 두 번째 등장분 제거
-        'MRK', 'BMY', 'ABT', 'ZBH', 'SYK', 'BDX', 'CI',
+        # ── 헬스케어 및 제약 ──
+        'MRK',  # Merck & Co.
+        'BMY',  # Bristol‑Myers Squibb Co.
+        'ABT',  # Abbott Laboratories
+        'ZBH',  # Zimmer Biomet Holdings Inc.
+        'SYK',  # Stryker Corp.
+        'BDX',  # Becton Dickinson
+        'CI',  # Cigna Corp.
 
-        # 소비재 및 통신 (경기방어주 추가)
-        # -> 여기서 'KO', 'MCD', 'PG', 'CL', 'KMB', 'EL', 'T', 'WMT', 'COST' 제거
-        'PEP', 'SBUX', 'YUM', 'DPZ', 'VZ', 'TMUS', 'TGT', 'GEV',
+        # ── 소비재 및 통신 (경기방어주 추가) ──
+        'PEP',  # PepsiCo Inc.
+        'SBUX',  # Starbucks Corp.
+        'YUM',  # Yum! Brands Inc.
+        'DPZ',  # Domino's Pizza Inc.
+        'VZ',  # Verizon Communications Inc.
+        'TGT',  # Target Corp.
+        'GEV',  # [확인 필요]
 
-        # 추가된 경기방어주
-        # -> 여기서 'MDLZ' 제거
-        'KHC', 'GIS', 'HSY', 'CLX', 'HRL', 'CPB', 'CHD', 'MKC', 'SJM',
+        # ── 추가된 경기방어주 ──
+        'KHC',  # Kraft Heinz Co. [중복 처리]
+        'GIS',  # General Mills Inc.
+        'HSY',  # Hershey Co.
+        'CLX',  # Clorox Co.
+        'HRL',  # Hormel Foods Corp.
+        'CPB',  # Campbell Soup Co.
+        'CHD',  # Church & Dwight Co.
+        'MKC',  # McCormick & Co.
+        'SJM',  # J.M. Smucker Co.
 
-        'CONE', 'FATE', 'EXAS', 'ONON', 'SPLK',
-        'REGN', 'BIIB', 'INCY', 'ALXN',
-        'ROST', 'TAP', 'CPRT', 'KORS',
-        'HES', 'PXD', 'APA', 'OIL',
-        'COF', 'MTB', 'CBOE', 'FITB', 'RF',
-        'FLIR', 'VRSK', 'IFF', 'NVR', 'DOV',
-        'TEAM', 'WDAY', 'ANET', 'PTON',
+        # ── 기타 및 신규 추가 ──
+        'CONE',  # [확인 필요]
+        'FATE',  # Fate Therapeutics Inc.
+        'EXAS',  # Exact Sciences Corp.
+        'ONON',  # On Holding AG [확인 필요]
+        'SPLK',  # Splunk Inc.
+        'ATO',  # Atmos Energy Corp.
+        'REGN',  # Regeneron Pharmaceuticals Inc.
+        'BIIB',  # Biogen Inc.
+        'INCY',  # Incyte Corp.
+        'ALXN',  # Alexion Pharmaceuticals [현 Sobi]
+        'ROST',  # Ross Stores Inc.
+        'TAP',  # Molson Coors Beverage Co.
+        'CPRT',  # Copart Inc.
+        'KORS',  # Michael Kors Holdings Ltd.
+        'HES',  # Hess Corp.
+        'PXD',  # Pioneer Natural Resources Co.
+        'APA',  # Apache Corp.
+        'OIL',  # [확인 필요]
+        'COF',  # Capital One Financial Corp.
+        'MTB',  # M&T Bank Corp.
+        'CBOE',  # Cboe Global Markets Inc.
+        'FITB',  # Fifth Third Bancorp.
+        'RF',  # Regions Financial Corp.
+        'FLIR',  # FLIR Systems Inc. [현재 Teledyne]
+        'VRSK',  # Verisk Analytics Inc.
+        'IFF',  # International Flavors & Fragrances Inc.
+        'NVR',  # NVR Inc.
+        'DOV',  # Dover Corp.
+        'TEAM',  # Atlassian Corp.
+        'WDAY',  # Workday Inc.
+        'ANET',  # Arista Networks Inc.
+        'PTON',  # Peloton Interactive Inc.
 
-        # 나스닥 신규 추가
-        'ABNB', 'HOOD', 'COIN', 'AFRM', 'SOFI', 'DUOL', 'BMBL', 'GTLB',
+        # ── 나스닥 신규 추가 ──
+        'ABNB',  # Airbnb Inc.
+        'HOOD',  # Robinhood Markets Inc.
+        'COIN',  # Coinbase Global Inc.
+        'AFRM',  # Affirm Holdings Inc.
+        'SOFI',  # SoFi Technologies Inc.
+        'DUOL',  # Duolingo Inc.
+        'BMBL',  # Bumble Inc.
+        'GTLB',  # GitLab Inc.
 
-        # 뉴욕증권거래소 신규 추가
-        # -> 여기서 'AMAT', 'DIS' 제거
-        'TTAN', 'PONY', 'NOTE', 'UBER', 'SPOT',
-        'RBLX', 'U', 'MTTR', 'WIMI', 'VUZI', 'SNAP', 'FVRR', 'UPST', 'PATH', 'S', 'FANG', 'VRSN',
+        # ── 뉴욕증권거래소 신규 추가 ──
+        'TTAN',  # [확인 필요]
+        'PONY',  # [확인 필요]
+        'NOTE',  # [확인 필요]
+        'UBER',  # Uber Technologies Inc.
+        'SPOT',  # Spotify Technology S.A.
+        'RBLX',  # Roblox Corp.
+        'U',  # Unity Software Inc.
+        'MTTR',  # Matterport Inc.
+        'WIMI',  # WiMi Hologram Cloud Inc.
+        'VUZI',  # Vuzix Corp.
+        'SNAP',  # Snap Inc.
+        'FVRR',  # Fiverr International Ltd.
+        'UPST',  # Upstart Holdings Inc.
+        'PATH',  # UiPath Inc.
+        'S',  # [확인 필요]
+        'FANG',  # Diamondback Energy Inc.
+        'VRSN',  # VeriSign Inc.
 
-        # 바이오/유전자 편집
-        'ILMN',
-        'BEAM', 'NTLA', 'EDIT',
+        # ── 바이오/유전자 편집 ──
+        'ILMN',  # Illumina Inc.
+        'BEAM',  # Beam Therapeutics Inc.
+        'NTLA',  # Intellia Therapeutics Inc.
+        'EDIT',  # Editas Medicine Inc.
 
-        # 네트워크/보안/클라우드
-        'ERIC', 'NOK', 'INFN', 'LITE', 'FIVN', 'NTNX', 'PANW',
+        # ── 네트워크/보안/클라우드 ──
+        'ERIC',  # Ericsson
+        'NOK',  # Nokia Corp.
+        'INFN',  # Infinera Corp.
+        'LITE',  # Lumentum Holdings Inc.
+        'FIVN',  # Five9 Inc.
+        'NTNX',  # Nutanix Inc.
+        'PANW',  # Palo Alto Networks Inc.
 
-        # 드론/방산
-        'UAVS', 'EH', 'KTOS', 'AVAV',
+        # ── 드론/방산 ──
+        'UAVS',  # AgEagle Aerial Systems Inc.
+        'EH',  # EHang Holdings Ltd.
+        'KTOS',  # Kratos Defense & Security Solutions Inc.
+        'AVAV',  # AeroVironment Inc.
 
-        # 양자 컴퓨팅
-        'IONQ', 'RGTI', 'QBTS',
+        # ── 양자 컴퓨팅 ──
+        'IONQ',  # IonQ Inc.
+        'RGTI',  # [확인 필요]
+        'QBTS',  # [확인 필요]
 
-        # 데이터/소프트웨어
-        'ESTC', 'DT', 'PD', 'AYX',
-        'IRBT', 'RBOT', 'RWLK', 'ZBRA', 'ABB',
+        # ── 데이터/소프트웨어 ──
+        'ESTC',  # Elastic NV
+        'DT',  # Dynatrace Inc.
+        'PD',  # PagerDuty Inc.
+        'AYX',  # Alteryx Inc.
+        'IRBT',  # iRobot Corp.
+        'RBOT',  # [확인 필요]
+        'RWLK',  # [확인 필요]
+        'ZBRA',  # Zebra Technologies Corp.
+        'ABB',  # ABB Ltd.
 
-        # AI/소프트웨어
-        'BBAI', 'SOUN', 'TER', 'ROK', 'FANUY', 'FARO',
+        # ── AI/소프트웨어 ──
+        'BBAI',  # BigBear.ai Holdings Inc.
+        'SOUN',  # SoundHound Inc.
+        'TER',  # Teradyne Inc.
+        'ROK',  # Rockwell Automation Inc.
+        'FANUY',  # FANUC Corp.
+        'FARO',  # FARO Technologies Inc.
 
-        # [AI / 비전(Vision) / 챗봇 등]
-        'LPSN', 'VERI', 'AMBA', 'PLTR'
+        # ── [AI / 비전(Vision) / 챗봇 등] ──
+        'LPSN',  # LivePerson Inc.
+        'VERI',  # [확인 필요]
+        'AMBA',  # Ambarella Inc.
+        'PLTR',  # Palantir Technologies Inc.
+        'DTE',  # [확인 필요]
+        'JKHY',  # Jack Henry & Associates Inc.
 
-        # [AI 기반 신약개발 / 합성생물학]
-        'RXRX', 'EXAI', 'DNA', 'TEAM', 'UNH', 'MU', 'AMGN', 'ABT', 'MDT', 'CHTR', 'GD', 'LUV', 'MPC', 'COP', 'ADI', 'QRVO', 'CDNS', 'BAX', 'BSX',
+        # ── [AI 기반 신약개발 / 합성생물학] ──
+        'RXRX',  # Recursion Pharmaceuticals Inc.
+        'EXAI',  # [확인 필요]
+        'DNA',  # Ginkgo Bioworks Inc.
+        'MU',  # Micron Technology Inc.
+        'AMGN',  # Amgen Inc.
+        'MDT',  # Medtronic plc
+        'CHTR',  # Charter Communications Inc.
+        'GD',  # General Dynamics Corp.
+        'LUV',  # Southwest Airlines Co.
+        'MPC',  # Marathon Petroleum Corp.
+        'COP',  # ConocoPhillips
+        'QRVO',  # Qorvo Inc.
+        'CDNS',  # Cadence Design Systems Inc.
+        'BAX',  # Baxter International Inc.
+        'BSX',  # Boston Scientific Corp.
 
-        # [자율주행(로보틱스 응용)]
-        'AUR', 'ETN', 'FTAI', 'JOBY', 'LULU', 'NXPI', 'NWSA', 'ON', 'ROKU', 'SEDG', 'SANA', 'NEE', 'DUK', 'EXC', 'AAL', 'WFC'
+        # ── [자율주행(로보틱스 응용)] ──
+        'AUR',  # [확인 필요]
+        'ETN',  # Eaton Corp.
+        'FTAI',  # Fortress Transportation & Infrastructure Investors
+        'JOBY',  # Joby Aviation Inc.
+        'LULU',  # Lululemon Athletica Inc.
+        'NXPI',  # NXP Semiconductors NV
+        'NWSA',  # News Corp. (Class A)
+        'ON',  # ON Semiconductor Corp.
+        'ROKU',  # Roku Inc.
+        'SEDG',  # SolarEdge Technologies Inc.
+        'SANA',  # Sana Biotechnology Inc.
+        'NEE',  # NextEra Energy Inc.
+        'DUK',  # Duke Energy Corp.
+        'EXC',  # Exelon Corp.
+        'AAL',  # American Airlines Group Inc.
+        'WFC',  # Wells Fargo & Co.
+        'KVUE',  # [확인 필요]
+        'CAG',  # Conagra Brands Inc.
+        'SYY',  # Sysco Corp.
+        'BALL',  # Ball Corp.
+        'VICI',  # VICI Properties Inc.
+        'STT'  # State Street Corp.
     ]
 
+    # ── 소형주 (Small Cap Stocks) ──
     PREDEFINED_SYMBOLS_SECOND = [
-        'RXRX', 'TPG', 'PLMR', 'PINS', 'ZM', 'TMDX', 'PNS', 'UBER',
-        'AVTR', 'RVLV', 'AKRO', 'CMBM', 'MIRM', 'NOVA', 'CSTL', 'DT', 'INMD', 'ALRS',
-        'NVST', 'DDOG', 'MCBS', 'BNTX', 'BRBR', 'BWIN', 'PGNY', 'SITM', 'BILL', 'SPT',
-        'VEL', 'ANVS', 'BDTX', 'ARQT', 'SDGR', 'BEAM', 'ONEW', 'NREF', 'RVMD', 'GFL', 'ELVN', 'KROS', 'NARI',
-        'PLRX', 'LEGN', 'FOUR', 'RNA', 'AZEK', 'PCVX', 'RPRX', 'ACI', 'MEG', 'NRIX', 'VERX', 'LI', 'VITL', 'RKT',
-        'IBEX', 'NTST', 'INBX', 'HRMY', 'KYMR', 'STEP', 'DYN', 'BNL', 'BSY', 'GLSI', 'YALA', 'ASAN', 'THRY', 'AVO',
-        'IMNM',
-        'ASO', 'SQFT', 'ELUT', 'EBC', 'MNSO', 'PRAX', 'TARS', 'FHTX', 'MAX', 'ROOT', 'ALGM', 'SHC', 'DCBO',
-        'PUBM', 'DASH', 'ABNB', 'CVRX', 'YOU', 'INTA', 'S', 'RYAN', 'USCB', 'DUOL', 'CWAN', 'NU',
-        'DFH', 'IMCR', 'BVS', 'OSCR', 'SEMR', 'ALHC', 'KARO', 'COIN', 'APP', 'BMEA', 'RXRX', 'DV', 'EDR', 'BWMN',
-        'GLBE', 'VERA', 'FLYW', 'PAY',
-        'DLO', 'ZETA', 'MNDY', 'TASK', 'JANX', 'FA', 'DOCS', 'ADBE', 'ADSK', 'BWXT', 'LYV'
+        'RXRX',  # Recursion Pharmaceuticals Inc.
+        'TPG',  # TPG Capital? [확인 필요]
+        'PLMR',  # [확인 필요]
+        'PINS',  # Pinterest Inc.
+        'TMDX',  # [확인 필요]
+        'PNS',  # [확인 필요]
+        'AVTR',  # [확인 필요]
+        'RVLV',  # Revolve Group Inc.
+        'AKRO',  # Akero Therapeutics Inc.
+        'CMBM',  # [확인 필요]
+        'MIRM',  # [확인 필요]
+        'NOVA',  # Nova Ltd.
+        'CSTL',  # Castle Biosciences Inc.
+        'INMD',  # InMode Ltd.
+        'ALRS',  # [확인 필요]
+        'NVST',  # Envista Holdings Corp.
+        'MCBS',  # [확인 필요]
+        'BNTX',  # BioNTech SE
+        'BRBR',  # [확인 필요]
+        'BWIN',  # [확인 필요]
+        'PGNY',  # [확인 필요]
+        'SITM',  # [확인 필요]
+        'BILL',  # Bill.com Holdings Inc.
+        'SPT',  # [확인 필요]
+        'VEL',  # [확인 필요]
+        'ANVS',  # Anavex Life Sciences Corp.
+        'BDTX',  # [확인 필요]
+        'ARQT',  # ArQule Inc.
+        'SDGR',  # Schrödinger Inc.
+        'ONEW',  # [확인 필요]
+        'NREF',  # [확인 필요]
+        'RVMD',  # Revolution Medicines Inc.
+        'GFL',  # [확인 필요]
+        'ELVN',  # [확인 필요]
+        'KROS',  # [확인 필요]
+        'NARI',  # [확인 필요]
+        'PLRX',  # PLx Pharma Inc.
+        'LEGN',  # Legend Biotech Corp.
+        'FOUR',  # [확인 필요]
+        'RNA',  # Aclaris Therapeutics Inc.
+        'AZEK',  # Azek Co.
+        'PCVX',  # [확인 필요]
+        'RPRX',  # [확인 필요]
+        'ACI',  # ACI Worldwide? [확인 필요]
+        'MEG',  # [확인 필요]
+        'NRIX',  # Nurix Therapeutics Inc.
+        'VERX',  # [확인 필요]
+        'LI',  # Li Auto Inc.
+        'VITL',  # [확인 필요]
+        'RKT',  # Rocket Companies Inc.
+        'IBEX',  # IBEX Ltd.
+        'NTST',  # NetScout Systems Inc.
+        'INBX',  # [확인 필요]
+        'HRMY',  # Harmony Biosciences Inc.
+        'KYMR',  # Kymera Therapeutics Inc.
+        'STEP',  # StepStone Group Inc.
+        'BNL',  # [확인 필요]
+        'BSY',  # [확인 필요]
+        'GLSI',  # [확인 필요]
+        'YALA',  # [확인 필요]
+        'ASAN',  # Asana Inc.
+        'THRY',  # [확인 필요]
+        'AVO',  # [확인 필요]
+        'IMNM',  # [확인 필요]
+        'ASO',  # [확인 필요]
+        'SQFT',  # [확인 필요]
+        'ELUT',  # [확인 필요]
+        'EBC',  # [확인 필요]
+        'MNSO',  # [확인 필요]
+        'PRAX',  # [확인 필요]
+        'TARS',  # [확인 필요]
+        'FHTX',  # Foghorn Therapeutics Inc.
+        'MAX',  # Maxeon Solar Technologies
+        'ROOT',  # Root Inc.
+        'ALGM',  # Allegro MicroSystems Inc.
+        'SHC',  # [확인 필요]
+        'DCBO',  # [확인 필요]
+        'PUBM',  # [확인 필요]
+        'DASH',  # DoorDash Inc.
+        'CVRX',  # [확인 필요]
+        'YOU',  # [확인 필요]
+        'INTA',  # [확인 필요]
+        'S',  # [확인 필요]
+        'RYAN',  # Ryan Companies US Inc.
+        'USCB',  # U.S. Century Bancorp
+        'CWAN',  # [확인 필요]
+        'NU',  # Nu Holdings Ltd.
+        'DFH',  # [확인 필요]
+        'IMCR',  # Immersion Corp.
+        'BVS',  # [확인 필요]
+        'OSCR',  # [확인 필요]
+        'SEMR',  # [확인 필요]
+        'ALHC',  # Alamo Group Inc.
+        'KARO',  # [확인 필요]
+        'APP',  # AppLovin Corp.
+        'BMEA',  # Biomerica Inc.
+        'DV',  # [확인 필요]
+        'EDR',  # [확인 필요]
+        'BWMN',  # [확인 필요]
+        'GLBE',  # Global-E Online Ltd.
+        'VERA',  # Vera Therapeutics Inc.
+        'FLYW',  # [확인 필요]
+        'PAY',  # [확인 필요]
+        'DLO',  # [확인 필요]
+        'ZETA',  # Zeta Global Holdings Corp.
+        'MNDY',  # Monday.com Ltd.
+        'TASK',  # [확인 필요]
+        'JANX',  # Janux Therapeutics Inc.
+        'FA',  # [확인 필요]
+        'DOCS',  # Doximity Inc.
+        'BWXT',  # BWX Technologies Inc.
+        'LYV',  # Live Nation Entertainment Inc.
+        'PARA',  # [확인 필요],
 
-        # 새로 추가된 소프트웨어 관련 티커들
-        'SNPS',  # Synopsys
-        'ANSS',  # Ansys
-        'CHKP',  # Check Point Software
-        'FTNT',  # Fortinet
-        'ZI',  # ZoomInfo
-        'TTD',  # The Trade Desk
-        'APPN',  # Appian
-        'CFLT',  # Confluent
-        'BASE',  # Couchbase
-        'CYBR',  # CyberArk
-        'APPS',  # Digital Turbine
-        'DBX',  # Dropbox
-        'EXFY',  # Expensify
-        'GEN',  # Gen Digital (구 NortonLifeLock)
-        'FROG',  # JFrog
-        'MQ',  # Marqeta
+        # ── 새로 추가된 소프트웨어 관련 티커 ──
+        'SNPS',  # Synopsys Inc.
+        'ANSS',  # Ansys Inc.
+        'CHKP',  # Check Point Software Technologies Ltd.
+        'FTNT',  # Fortinet Inc.
+        'ZI',  # ZoomInfo Technologies Inc.
+        'TTD',  # The Trade Desk Inc.
+        'APPN',  # Appian Corp.
+        'CFLT',  # Confluent Inc.
+        'BASE',  # Couchbase Inc.
+        'CYBR',  # CyberArk Software Ltd.
+        'APPS',  # Digital Turbine Inc.
+        'DBX',  # Dropbox Inc.
+        'EXFY',  # Expensify Inc.
+        'GEN',  # Gen Digital Inc. (구 NortonLifeLock)
+        'FROG',  # JFrog Ltd.
+        'MQ',  # Marqeta Inc.
         'NICE',  # NICE Ltd.
         'PTC',  # PTC Inc.
-        'QLYS',  # Qualys
-        'RPD',  # Rapid7
-        'TENB',  # Tenable
-        'TRMB',  # Trimble
-        'VRNT',  # Verint Systems
-        'VMEO',  # Vimeo
-        'AZPN',  # Aspen Technology
-        'AVID',  # Avid Technology
-        'CHGG',  # Chegg
-        'FRSH',  # Freshworks
-        'BIGC',  # BigCommerce Holdings
-        'LZ',  # LegalZoom
-        'DOMO',  # Domo
-        'EVBG',  # Everbridge,
-        'GLD',
-        'IAU',
-        'ZROZ',
-        'TLT',
-        'TEM',
-        'VST',
-        'OKLO',
-        'RKLB',
-        'S',
-        'SYM',
-        'DNA',
-        'SMR',
-        'FSLY'
-        'COUP',
-        'AI',
-        'CALM',
-        'NBIS',
-        'WRD',
-        'STZ',
-        'UAL',
-        'SKX',
-        'SLM',
-        'DAL',
-        'UAL',
-        'PCT',
-        'MIR',
-        'ELF',
-        'IQV',
-        'FE',
-        'BX',
-        'CG',
-        'CART',
-        'GLW',
-        'SMCI',
-        'APLD',
-        'REPYY',
-        'INSM',
-        'ASND',
-        'NVT',
-        'FHN',
-        'ABCB',
-        'WULF',
-        'IVVD',
-        'SIRI',
-        'POOL',
-        'IOT',
-        'RBRK',
-        'NRG',
-        'LVS',
-        'WYNN',
-        'NTRA',
-        'TEVA',
-        'VTEX',
-        'PACB',
-        'TWST',
-        'CRSP',
-        'GH',
-        'CLS',
-        'FNF',
-        'FIX',
-        'GRAB',
-        'INOD',
-        'RIVN',
-        'SFM',
-        'CELH',
-        'XPEV',
-        'BIDU',
-        'WB',
-        'JD',
-        'BILI',
-        'NTES',
-        'PDD'
+        'QLYS',  # Qualys Inc.
+        'RPD',  # Rapid7 Inc.
+        'TENB',  # Tenable Holdings Inc.
+        'TRMB',  # Trimble Inc.
+        'VRNT',  # Verint Systems Inc.
+        'VMEO',  # Vimeo Inc.
+        'AZPN',  # Aspen Technology Inc.
+        'AVID',  # Avid Technology Inc.
+        'CHGG',  # Chegg Inc.
+        'FRSH',  # Freshworks Inc.
+        'BIGC',  # BigCommerce Holdings Inc.
+        'LZ',  # LegalZoom Inc. [확인 필요]
+        'DOMO',  # Domo Inc.
+        'EVBG',  # Everbridge Inc.
+        'GLD',  # SPDR Gold Trust (ETF)
+        'IAU',  # iShares Gold Trust (ETF)
+        'ZROZ',  # [확인 필요]
+        'TLT',  # iShares 20+ Year Treasury Bond ETF
+        'TEM',  # [확인 필요]
+        'VST',  # [확인 필요]
+        'OKLO',  # Oklo Inc.
+        'RKLB',  # [확인 필요]
+        'S',  # [확인 필요]
+        'SYM',  # Symbotic Inc.
+        'SMR',  # [확인 필요]
+        'FSLY',  # Fastly Inc.
+        'COUP',  # Coupang Inc.
+        'AI',  # C3.ai Inc.
+        'CALM',  # Cal-Maine Foods Inc.
+        'NBIS',  # [확인 필요]
+        'WRD',  # [확인 필요]
+        'STZ',  # Constellation Brands Inc.
+        'UAL',  # United Airlines Holdings Inc.
+        'SKX',  # Skechers U.S.A. Inc.
+        'SLM',  # SLM Corp.
+        'DAL',  # Delta Air Lines Inc.
+        'PCT',  # [확인 필요]
+        'MIR',  # [확인 필요]
+        'ELF',  # e.l.f. Beauty Inc.
+        'IQV',  # IQVIA Holdings Inc.
+        'FE',  # FirstEnergy Corp.
+        'BX',  # The Blackstone Group Inc.
+        'CG',  # The Carlyle Group Inc.
+        'CART',  # Carvana Co.
+        'GLW',  # Corning Inc.
+        'SMCI',  # Super Micro Computer Inc.
+        'APLD',  # [확인 필요]
+        'REPYY',  # [확인 필요]
+        'INSM',  # Insmed Inc.
+        'ASND',  # Ascendis Pharma A/S
+        'NVT',  # [확인 필요]
+        'FHN',  # [확인 필요]
+        'ABCB',  # Ameris Bancorp
+        'WULF',  # [확인 필요]
+        'IVVD',  # [확인 필요]
+        'SIRI',  # Sirius XM Holdings Inc.
+        'POOL',  # Pool Corp.
+        'IOT',  # [확인 필요]
+        'RBRK',  # [확인 필요]
+        'NRG',  # NRG Energy Inc.
+        'LVS',  # Las Vegas Sands Corp.
+        'WYNN',  # Wynn Resorts Ltd.
+        'NTRA',  # Natera Inc.
+        'TEVA',  # Teva Pharmaceutical Industries Ltd.
+        'VTEX',  # VTEX Inc.
+        'PACB',  # Pacific Biosciences of California Inc.
+        'WST',  # West Pharmaceutical Services Inc.
+        'TWST',  # [확인 필요]
+        'CRSP',  # CRISPR Therapeutics AG
+        'GH',  # Guardant Health Inc.
+        'CLS',  # Celestica Inc.
+        'FNF',  # Fidelity National Financial Inc.
+        'FIX',  # [확인 필요]
+        'GRAB',  # Grab Holdings Inc.
+        'INOD',  # [확인 필요]
+        'RIVN',  # Rivian Automotive Inc.
+        'SFM',  # [확인 필요]
+        'CELH',  # Celsius Holdings Inc.
+        'XPEV',  # Xpeng Inc.
+        'BIDU',  # Baidu Inc.
+        'WB',  # Weibo Corp.
+        'JD',  # JD.com Inc.
+        'BILI',  # Bilibili Inc.
+        'NTES',  # NetEase Inc.
+        'PDD'  # Pinduoduo Inc.
     ]
+
 
     # 2021  6월까지 확인완
     @staticmethod
