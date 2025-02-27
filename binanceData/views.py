@@ -2005,6 +2005,9 @@ class stockDataView(APIView):
         'MDLZ',  # Mondelez International Inc.
         'BKNG',  # Booking Holdings Inc.
         'VRTX',  # Vertex Pharmaceuticals Inc.
+        'VRT',
+        'MLM',
+        'HUBS',
         'HON',  # Honeywell International Inc.
         'TMUS',  # T‑Mobile US Inc.
         'LRCX',  # Lam Research Corp.
@@ -2052,6 +2055,7 @@ class stockDataView(APIView):
         'SPGI',  # S&P Global Inc.
         'BLK',  # BlackRock Inc.
         'TMO',  # Thermo Fisher Scientific Inc.
+        'FIS',
         'COST',  # Costco Wholesale Corp.
         'WBA',  # Walgreens Boots Alliance Inc.
         'LOW',  # Lowe's Companies Inc.
@@ -2072,7 +2076,9 @@ class stockDataView(APIView):
         'DVN',  # Devon Energy Corp.
         'PODD',  # Insulet Corp.
         'CRL',  # Charles River Laboratories Intl.
-
+        'WING',
+        'BCPC',
+        'BRC',
         # ── 에너지 및 산업 분야 (대형 에너지 기업 및 자동차) ──
         'SLB',  # Schlumberger Ltd.
         'HAL',  # Halliburton Co.
@@ -2280,7 +2286,37 @@ class stockDataView(APIView):
         'SYY',  # Sysco Corp.
         'BALL',  # Ball Corp.
         'VICI',  # VICI Properties Inc.
-        'STT'  # State Street Corp.
+        'STT',  # State Street Corp.
+        'SOLV',
+        'CNC',
+        'LNT',
+        'DG',
+        'PAYC',
+        'TDG',
+        'NCLH',
+        'AIG',
+        'VTR',
+        'AMRX',
+        'PAR',
+        'AMR',
+        'IAS',
+        'HP',
+        'NTAP',
+        'HEI',
+        'UTHR',
+        'AER',
+        'EME',
+        'KEYS',
+        'FSLR',
+        'FMS',
+        'PEG',
+        'EXR',
+        'SBAC',
+        'PSA',
+        'WLK',
+        'OC',
+        'ESNT',
+        'SXT'
     ]
 
     # ── 소형주 (Small Cap Stocks) ──
@@ -2421,6 +2457,8 @@ class stockDataView(APIView):
         'QLYS',  # Qualys Inc.
         'RPD',  # Rapid7 Inc.
         'TENB',  # Tenable Holdings Inc.
+        'ENB',
+        'MGA',
         'TRMB',  # Trimble Inc.
         'VRNT',  # Verint Systems Inc.
         'VMEO',  # Vimeo Inc.
@@ -2481,6 +2519,7 @@ class stockDataView(APIView):
         'LVS',  # Las Vegas Sands Corp.
         'WYNN',  # Wynn Resorts Ltd.
         'NTRA',  # Natera Inc.
+        'NTR',
         'TEVA',  # Teva Pharmaceutical Industries Ltd.
         'VTEX',  # VTEX Inc.
         'PACB',  # Pacific Biosciences of California Inc.
@@ -2502,7 +2541,41 @@ class stockDataView(APIView):
         'JD',  # JD.com Inc.
         'BILI',  # Bilibili Inc.
         'NTES',  # NetEase Inc.
-        'PDD'  # Pinduoduo Inc.
+        'PDD',  # Pinduoduo Inc.
+        'PWR',
+        'ACHR',
+        'CAVA',
+        'BKSY',
+        'RDW',
+        'LLYVK',
+        'A',
+        'AS',
+        'GFL',
+        'TJX',
+        'OKE',
+        'RY',
+        'NE',
+        'TNC',
+        'VMC',
+        'WSO',
+        'EXPD',
+        'FLR',
+        'RIO',
+        'TECK',
+        'CRPT',
+        'NEM',
+        'ATMU',
+        'ABR',
+        'IX',
+        'L',
+        'BAP',
+        'LSCC',
+        'WTS',
+        'ECL',
+        'DD',
+        'DXCM',
+        'IR',
+        'CME'
     ]
 
 
