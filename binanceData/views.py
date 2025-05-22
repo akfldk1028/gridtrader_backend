@@ -18,7 +18,7 @@ from .analysis.UltimateRSIAnalyzer import UltimateRSIAnalyzer
 from .analysis.SqueezeMomentumIndicator import SqueezeMomentumIndicator
 import concurrent.futures
 from .models import BinanceTradingSummary, KoreaStockData, StockData , ChinaStockData
-
+from typing import List, Dict
 
 from .analysis.IchimokuIndicator import IchimokuIndicator
 import numpy as np
@@ -2728,7 +2728,7 @@ class stockDataView(APIView):
     #         return False  # 에러 발생 시 조건 불만족
 
     @staticmethod
-    def batch_fetch(symbols: list[str], interval: str, period: str = 'max') -> dict[str, pd.DataFrame]:
+    def batch_fetch(symbols: List[str], interval: str, period: str = 'max') -> Dict[str, pd.DataFrame]:
         out: dict[str, pd.DataFrame] = {}
         for i in range(0, len(symbols), 20):
             chunk = symbols[i:i+20]
