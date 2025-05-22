@@ -2757,7 +2757,7 @@ class stockDataView(APIView):
                     except Exception as e:
                         print(f"Error processing symbol {symbol}: {str(e)}")
 
-            # 조건에 맞는 심볼 리스트 저장
+            # 조건에 맞는 심볼 리스트 저장 ddddd
             if filtered_symbols:
                 StockData.objects.create(symbols=filtered_symbols)
                 print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
