@@ -2727,51 +2727,142 @@ class stockDataView(APIView):
     #         print(f"Error processing symbol {symbol}: {str(e)}")
     #         return False  # 에러 발생 시 조건 불만족
 
-    def get_all_last_data(self, request, symbolList):
-        limit = 500
-        intervals = {
-            '1day': '1d',
-            '1week': '1wk',
-            '1month': '1mo'
-        }
-        if symbolList == 1:
-            all_symbols = self.PREDEFINED_SYMBOLS
-        elif symbolList == 2:
-            all_symbols = self.PREDEFINED_SYMBOLS_SECOND
+    @staticmethod
+    def batch_fetch(symbols: list[str], interval: str, period: str = 'max') -> dict[str, pd.DataFrame]:
+        out: dict[str, pd.DataFrame] = {}
+        for i in range(0, len(symbols), 20):
+            chunk = symbols[i:i+20]
+            try:
+                raw = yf.download(
+                    tickers=" ".join(chunk),
+                    period=period,
+                    interval=interval,
+                    group_by="ticker",
+                    threads=False,
+                    progress=False
+                )
+            except Exception as e:
+                print(f"Chunk download error ({interval}): {e}")
+                continue
 
-        # all_symbols = self.PREDEFINED_SYMBOLS
-        filtered_symbols = []
-
-        try:
-            # 병렬 처리 시작
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                futures = {
-                    executor.submit(self.get_symbol_status, sym, intervals, limit): sym
-                    for sym in all_symbols
-                }
-                for future in concurrent.futures.as_completed(futures):
-                    symbol = futures[future]
+            # 멀티-티커 vs 단일-티커 구분
+            if isinstance(raw.columns, pd.MultiIndex):
+                for sym in chunk:
                     try:
-                        if future.result():  # 조건 만족
-                            filtered_symbols.append(symbol)
-                    except Exception as e:
-                        print(f"Error processing symbol {symbol}: {str(e)}")
-
-            # 조건에 맞는 심볼 리스트 저장 ddddd
-            if filtered_symbols:
-                StockData.objects.create(symbols=filtered_symbols)
-                print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
+                        df = raw[sym].reset_index()
+                    except Exception:
+                        continue
+                    out[sym] = df
             else:
-                StockData.objects.create(symbols=[])
-                print('No symbols met the criteria.')
+                # 청크가 한 개 심볼일 때
+                df = raw.reset_index()
+                out[chunk[0]] = df
+        return out
 
-            # 조건에 맞는 심볼 리스트만 반환
-            return Response({"symbols_saved": filtered_symbols})
-        except Exception as e:
-            return Response(
-                {'error': f'An unexpected error occurred: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+    @method_decorator(cache_page(60 * 5))  # 5분 캐시
+    def get_all_last_data(self, request, symbolList):
+        # 1) 심볼 리스트 포맷
+        raw = (self.PREDEFINED_SYMBOLS if symbolList == 1
+               else self.PREDEFINED_SYMBOLS_SECOND)
+        symbols = [s.replace('-', '.') for s in raw]
+
+        # 2) batch_fetch로 전체(max) 주/월봉 불러오기
+        week_data  = self.batch_fetch(symbols, '1wk', period='max')
+        month_data = self.batch_fetch(symbols, '1mo', period='max')
+
+        # 3) 기간 슬라이스 정의
+        WEEKS = 104
+        MONTHS = 60
+
+        filtered: list[str] = []
+        for sym in symbols:
+            df_w = week_data.get(sym)
+            df_m = month_data.get(sym)
+
+            # 배치에서 누락된 심볼은 개별 history()로 재시도
+            if df_w is None or df_m is None:
+                try:
+                    tmp_w = yf.Ticker(sym).history(period='2y', interval='1wk')
+                    df_w = tmp_w.reset_index() if not tmp_w.empty else None
+                except Exception:
+                    df_w = None
+                try:
+                    tmp_m = yf.Ticker(sym).history(period='5y', interval='1mo')
+                    df_m = tmp_m.reset_index() if not tmp_m.empty else None
+                except Exception:
+                    df_m = None
+
+            # 둘 중 하나라도 없으면 건너뛰기
+            if df_w is None or df_m is None:
+                continue
+
+            # 최근 데이터만 사용
+            df_w = df_w.tail(WEEKS)
+            df_m = df_m.tail(MONTHS)
+
+            # 지표 계산 및 조건 확인
+            last_w = self.calculate_indicators(self.format_stock_data(df_w)).iloc[-1]
+            last_m = self.calculate_indicators(self.format_stock_data(df_m)).iloc[-1]
+
+            if (
+                last_w.RSI > last_w.RSI_signal and
+                last_w.SqueezeColor.lower() in {'lime', 'maroon'} and
+                last_m.SqueezeColor.lower() in {'lime', 'maroon'}
+            ):
+                # 원래 하이픈 포맷으로 복원
+                filtered.append(sym.replace('.', '-'))
+
+        # 4) DB 저장 및 응답
+        StockData.objects.create(symbols=filtered)
+        return Response({"symbols_saved": filtered})
+
+    # def get_all_last_data(self, request, symbolList):
+    #     limit = 500
+    #     intervals = {
+    #         '1day': '1d',
+    #         '1week': '1wk',
+    #         '1month': '1mo'
+    #     }
+    #     if symbolList == 1:
+    #         all_symbols = self.PREDEFINED_SYMBOLS
+    #     elif symbolList == 2:
+    #         all_symbols = self.PREDEFINED_SYMBOLS_SECOND
+    #
+    #     # all_symbols = self.PREDEFINED_SYMBOLS
+    #     filtered_symbols = []
+    #
+    #     try:
+    #         # 병렬 처리 시작
+    #         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    #             futures = {
+    #                 executor.submit(self.get_symbol_status, sym, intervals, limit): sym
+    #                 for sym in all_symbols
+    #             }
+    #             for future in concurrent.futures.as_completed(futures):
+    #                 symbol = futures[future]
+    #                 try:
+    #                     if future.result():  # 조건 만족
+    #                         filtered_symbols.append(symbol)
+    #                 except Exception as e:
+    #                     print(f"Error processing symbol {symbol}: {str(e)}")
+    #
+    #         # 조건에 맞는 심볼 리스트 저장 ddddd
+    #         if filtered_symbols:
+    #             StockData.objects.create(symbols=filtered_symbols)
+    #             print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
+    #         else:
+    #             StockData.objects.create(symbols=[])
+    #             print('No symbols met the criteria.')
+    #
+    #         # 조건에 맞는 심볼 리스트만 반환
+    #         return Response({"symbols_saved": filtered_symbols})
+    #     except Exception as e:
+    #         return Response(
+    #             {'error': f'An unexpected error occurred: {str(e)}'},
+    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #         )
+
+    @method_decorator(cache_page(60 * 5))  # 5분간 캐시
     def get(self, request):
         all_last = request.GET.get('all_last', 'false').lower() == 'true'
         all_last_second = request.GET.get('all_last_second', 'false').lower() == 'true'

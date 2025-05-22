@@ -94,7 +94,7 @@ Q_CLUSTER = {
     'name': 'bitcoinanace_task_cluster',  # 클러스터의 고유 이름
     'workers': 4,  # 동시에 실행할 작업자(worker) 수
     'recycle': 500,  # 작업자가 이 개수만큼의 작업을 처리한 후 재시작됨
-    'timeout': 500,  # 작업의 최대 실행 시간(초). 이 시간을 초과하면 작업이 중단됨
+    'timeout': 5000,  # 작업의 최대 실행 시간(초). 이 시간을 초과하면 작업이 중단됨
     'compress': True,  # 작업 데이터를 압축하여 저장
     'cpu_affinity': 1,  # 각 작업자를 특정 CPU 코어에 할당 (1은 모든 코어 사용)
     'save_limit': 250,  # 결과를 저장할 최대 작업 수
