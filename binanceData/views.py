@@ -1981,8 +1981,8 @@ class UpbitDataView(APIView):
 # https://www.myfinpl.com/investment/stock/sector/consumer-defensive#goog_rewarded
 class stockDataView(APIView):
     # 대형주 (Large Cap Stocks)
-    PREDEFINED_SYMBOLS = [
-        # ── 나스닥 상장 주요 기업 (IT, 반도체, 소비재, 헬스케어) ──
+    PREDEFINED_SYMBOLS_GROUP_1 = [
+        # 빅테크
         'AAPL',  # Apple Inc.
         'MSFT',  # Microsoft Corp.
         'GOOGL',  # Alphabet Inc. (Google)
@@ -2023,105 +2023,82 @@ class stockDataView(APIView):
         'ZS',  # Zscaler Inc.
         'MDB',  # MongoDB Inc.
         'SHOP',  # Shopify Inc.
+        # 반도체/하드웨어
+        'MU',  # Micron Technology Inc.
+        'QRVO',  # Qorvo Inc.
+        'CDNS',  # Cadence Design Systems Inc.
+        'NXPI',  # NXP Semiconductors NV
+        'ON',  # ON Semiconductor Corp.
+        'ADI',  # Analog Devices Inc.
+        'GRMN',  # Garmin Ltd.
+        'ENPH',  # Enphase Energy Inc.
+        'SEDG',  # SolarEdge Technologies Inc.
+        'LSCC',
+        'KLAC',
+        'MPWR',
+        'MRVL',
+        'SWKS',
+        'XLNX',
+        # 통신/네트워크
+        'ERIC',  # Ericsson
+        'NOK',  # Nokia Corp.
+        'INFN',  # Infinera Corp.
+        'LITE',  # Lumentum Holdings Inc.
+        'FIVN',  # Five9 Inc.
+        'NTNX',  # Nutanix Inc.
+        'PANW',  # Palo Alto Networks Inc.
+        'ANET',  # Arista Networks Inc.
+        'VRSN',  # VeriSign Inc.
+        'ZBRA',  # Zebra Technologies Corp.
+        'ABB',  # ABB Ltd.
+        'FARO',  # FARO Technologies Inc.
+    ]
 
-        # ── 뉴욕증권거래소(NYSE) 주요 기업 (금융, 에너지, 산업, 소비재) ──
+    # ── 그룹 2: 금융 & 소비재 (68개) ──
+    PREDEFINED_SYMBOLS_GROUP_2 = [
+        # 금융
         'BRK-B',  # Berkshire Hathaway Inc.
-        'JNJ',  # Johnson & Johnson
         'V',  # Visa Inc.
         'JPM',  # JPMorgan Chase & Co.
+        'MA',  # Mastercard Inc.
+        'BAC',  # Bank of America Corp.
+        'WFC',  # Wells Fargo & Co.
+        'BLK',  # BlackRock Inc.
+        'SPGI',  # S&P Global Inc.
+        'COF',  # Capital One Financial Corp.
+        'MTB',  # M&T Bank Corp.
+        'CBOE',  # Cboe Global Markets Inc.
+        'FITB',  # Fifth Third Bancorp.
+        'RF',  # Regions Financial Corp.
+        'STT',  # State Street Corp.
+        'FIS',
+        'AIG',
+        # 소비재
         'WMT',  # Walmart Inc.
         'PG',  # Procter & Gamble Co.
-        'MA',  # Mastercard Inc.
-        'XOM',  # ExxonMobil Corp.
-        'CVX',  # Chevron Corp.
         'KO',  # Coca‑Cola Co.
         'DIS',  # The Walt Disney Co.
         'MCD',  # McDonald's Corp.
-        'ABBV',  # AbbVie Inc.
-        'T',  # AT&T Inc.
-        'PFE',  # Pfizer Inc.
-        'BAC',  # Bank of America Corp.
         'HD',  # Home Depot Inc.
-        'UNH',  # UnitedHealth Group Inc.
-        'LLY',  # Eli Lilly & Co.
         'NKE',  # Nike Inc.
-        'CRM',  # Salesforce.com Inc.
-        'IBM',  # IBM Corp.
-        'GE',  # General Electric Co.
-        'UPS',  # UPS
-        'BA',  # Boeing Co.
-        'MMM',  # 3M Co.
-        'CAT',  # Caterpillar Inc.
-        'SPGI',  # S&P Global Inc.
-        'BLK',  # BlackRock Inc.
-        'TMO',  # Thermo Fisher Scientific Inc.
-        'FIS',
         'COST',  # Costco Wholesale Corp.
         'WBA',  # Walgreens Boots Alliance Inc.
         'LOW',  # Lowe's Companies Inc.
         'CVS',  # CVS Health Corp.
         'EL',  # Estée Lauder Companies Inc.
+        'SBUX',  # Starbucks Corp.
+        'YUM',  # Yum! Brands Inc.
+        'DPZ',  # Domino's Pizza Inc.
+        'TGT',  # Target Corp.
+        'LULU',  # Lululemon Athletica Inc.
+        'ROST',  # Ross Stores Inc.
+        'DG',
+        # 소비재 방어주
         'MO',  # Altria Group Inc.
         'PM',  # Philip Morris International Inc.
         'KHC',  # Kraft Heinz Co.
         'CL',  # Colgate‑Palmolive Co.
         'KMB',  # Kimberly‑Clark Corp.
-        'FDX',  # FedEx Corp.
-        'RTX',  # Raytheon Technologies Corp.
-        'DHR',  # Danaher Corp.
-        'ADI',  # Analog Devices Inc.
-        'GRMN',  # Garmin Ltd.
-        'ENPH',  # Enphase Energy Inc.
-        'OXY',  # Occidental Petroleum Corp.
-        'DVN',  # Devon Energy Corp.
-        'PODD',  # Insulet Corp.
-        'CRL',  # Charles River Laboratories Intl.
-        'WING',
-        'BCPC',
-        'BRC',
-        # ── 에너지 및 산업 분야 (대형 에너지 기업 및 자동차) ──
-        'SLB',  # Schlumberger Ltd.
-        'HAL',  # Halliburton Co.
-        'PSX',  # Phillips 66
-        'EOG',  # EOG Resources Inc.
-        'F',  # Ford Motor Co.
-        'GM',  # General Motors Co.
-        'DE',  # Deere & Co.
-        'NOC',  # Northrop Grumman Corp.
-        'LMT',  # Lockheed Martin Corp.
-
-        # ── 클라우드 및 SaaS (뉴욕/나스닥 혼합) ──
-        'ORCL',  # Oracle Corp.
-        'SAP',  # SAP SE
-        'INTU',  # Intuit Inc.
-        'NOW',  # ServiceNow Inc.
-        'ADP',  # Automatic Data Processing Inc.
-        'SNOW',  # Snowflake Inc.
-        'ZM',  # Zoom Video Communications Inc.
-        'TWLO',  # Twilio Inc.
-        'CRWD',  # CrowdStrike Holdings Inc.
-        'DDOG',  # Datadog Inc.
-
-        # ── 헬스케어 및 제약 ──
-        'MRK',  # Merck & Co.
-        'BMY',  # Bristol‑Myers Squibb Co.
-        'ABT',  # Abbott Laboratories
-        'ZBH',  # Zimmer Biomet Holdings Inc.
-        'SYK',  # Stryker Corp.
-        'BDX',  # Becton Dickinson
-        'CI',  # Cigna Corp.
-
-        # ── 소비재 및 통신 (경기방어주 추가) ──
-        'PEP',  # PepsiCo Inc.
-        'SBUX',  # Starbucks Corp.
-        'YUM',  # Yum! Brands Inc.
-        'DPZ',  # Domino's Pizza Inc.
-        'VZ',  # Verizon Communications Inc.
-        'TGT',  # Target Corp.
-        'GEV',  # [확인 필요]
-
-        # ── 추가된 경기방어주 ──
-        'KHC',  # Kraft Heinz Co. [중복 처리]
         'GIS',  # General Mills Inc.
         'HSY',  # Hershey Co.
         'CLX',  # Clorox Co.
@@ -2130,167 +2107,238 @@ class stockDataView(APIView):
         'CHD',  # Church & Dwight Co.
         'MKC',  # McCormick & Co.
         'SJM',  # J.M. Smucker Co.
-
-        # ── 기타 및 신규 추가 ──
-        'CONE',  # [확인 필요]
-        'FATE',  # Fate Therapeutics Inc.
-        'EXAS',  # Exact Sciences Corp.
-        'ONON',  # On Holding AG [확인 필요]
-        'SPLK',  # Splunk Inc.
-        'ATO',  # Atmos Energy Corp.
-        'REGN',  # Regeneron Pharmaceuticals Inc.
-        'BIIB',  # Biogen Inc.
-        'INCY',  # Incyte Corp.
-        'ALXN',  # Alexion Pharmaceuticals [현 Sobi]
-        'ROST',  # Ross Stores Inc.
+        'CAG',  # Conagra Brands Inc.
+        'SYY',  # Sysco Corp.
         'TAP',  # Molson Coors Beverage Co.
-        'CPRT',  # Copart Inc.
         'KORS',  # Michael Kors Holdings Ltd.
-        'HES',  # Hess Corp.
-        'PXD',  # Pioneer Natural Resources Co.
-        'APA',  # Apache Corp.
-        'OIL',  # [확인 필요]
-        'COF',  # Capital One Financial Corp.
-        'MTB',  # M&T Bank Corp.
-        'CBOE',  # Cboe Global Markets Inc.
-        'FITB',  # Fifth Third Bancorp.
-        'RF',  # Regions Financial Corp.
-        'FLIR',  # FLIR Systems Inc. [현재 Teledyne]
-        'VRSK',  # Verisk Analytics Inc.
-        'IFF',  # International Flavors & Fragrances Inc.
-        'NVR',  # NVR Inc.
-        'DOV',  # Dover Corp.
-        'TEAM',  # Atlassian Corp.
-        'WDAY',  # Workday Inc.
-        'ANET',  # Arista Networks Inc.
-        'PTON',  # Peloton Interactive Inc.
-
-        # ── 나스닥 신규 추가 ──
+        # 여행/레저
+        'UBER',  # Uber Technologies Inc.
         'ABNB',  # Airbnb Inc.
+        'LYV',  # Live Nation Entertainment Inc.
+        'NCLH',
+        'VICI',  # VICI Properties Inc.
+        # 기타 소비/서비스
+        'PTON',  # Peloton Interactive Inc.
         'HOOD',  # Robinhood Markets Inc.
         'COIN',  # Coinbase Global Inc.
         'AFRM',  # Affirm Holdings Inc.
         'SOFI',  # SoFi Technologies Inc.
         'DUOL',  # Duolingo Inc.
         'BMBL',  # Bumble Inc.
-        'GTLB',  # GitLab Inc.
-
-        # ── 뉴욕증권거래소 신규 추가 ──
-        'TTAN',  # [확인 필요]
-        'PONY',  # [확인 필요]
-        'NOTE',  # [확인 필요]
-        'UBER',  # Uber Technologies Inc.
         'SPOT',  # Spotify Technology S.A.
-        'RBLX',  # Roblox Corp.
-        'U',  # Unity Software Inc.
-        'MTTR',  # Matterport Inc.
-        'WIMI',  # WiMi Hologram Cloud Inc.
-        'VUZI',  # Vuzix Corp.
+        'ROKU',  # Roku Inc.
         'SNAP',  # Snap Inc.
         'FVRR',  # Fiverr International Ltd.
-        'UPST',  # Upstart Holdings Inc.
-        'PATH',  # UiPath Inc.
-        'S',  # [확인 필요]
-        'FANG',  # Diamondback Energy Inc.
-        'VRSN',  # VeriSign Inc.
+    ]
 
-        # ── 바이오/유전자 편집 ──
+    # ── 그룹 3: 헬스케어 & 바이오 (68개) ──
+    PREDEFINED_SYMBOLS_GROUP_3 = [
+        # 대형 제약/헬스케어
+        'JNJ',  # Johnson & Johnson
+        'ABBV',  # AbbVie Inc.
+        'PFE',  # Pfizer Inc.
+        'UNH',  # UnitedHealth Group Inc.
+        'LLY',  # Eli Lilly & Co.
+        'TMO',  # Thermo Fisher Scientific Inc.
+        'MRK',  # Merck & Co.
+        'BMY',  # Bristol‑Myers Squibb Co.
+        'ABT',  # Abbott Laboratories
+        'AMGN',  # Amgen Inc.
+        'MDT',  # Medtronic plc
+        'DHR',  # Danaher Corp.
+        'CI',  # Cigna Corp.
+        'CNC',
+        # 의료기기/서비스
+        'ZBH',  # Zimmer Biomet Holdings Inc.
+        'SYK',  # Stryker Corp.
+        'BDX',  # Becton Dickinson
+        'BAX',  # Baxter International Inc.
+        'BSX',  # Boston Scientific Corp.
+        'PODD',  # Insulet Corp.
+        'CRL',  # Charles River Laboratories Intl.
+        'IQV',
+        'DXCM',
+        # 바이오테크
+        'REGN',  # Regeneron Pharmaceuticals Inc.
+        'BIIB',  # Biogen Inc.
+        'INCY',  # Incyte Corp.
+        'ALXN',  # Alexion Pharmaceuticals [현 Sobi]
+        'EXAS',  # Exact Sciences Corp.
+        'FATE',  # Fate Therapeutics Inc.
+        'UTHR',
+        'AMRX',
+        # 유전자 편집/차세대 바이오
         'ILMN',  # Illumina Inc.
         'BEAM',  # Beam Therapeutics Inc.
         'NTLA',  # Intellia Therapeutics Inc.
         'EDIT',  # Editas Medicine Inc.
+        'CRSP',
+        'PACB',
+        'TWST',
+        'DNA',  # Ginkgo Bioworks Inc.
+        'SANA',  # Sana Biotechnology Inc.
+        # AI 신약개발
+        'RXRX',  # Recursion Pharmaceuticals Inc.
+        'EXAI',  # [확인 필요]
+        # 부동산/REIT
+        'EXR',
+        'SBAC',
+        'PSA',
+        'VTR',
+        # 기타
+        'CONE',  # [확인 필요]
+        'ONON',  # On Holding AG [확인 필요]
+        'KVUE',  # [확인 필요]
+        'TTAN',  # [확인 필요]
+        'PONY',  # [확인 필요]
+        'NOTE',  # [확인 필요]
+        'GEV',  # [확인 필요]
+        'WING',
+        'BCPC',
+        'BRC',
+        'LNT',
+        'PAR',
+        'AMR',
+        'IAS',
+        'HP',
+        'HEI',
+        'AER',
+        'EME',
+        'ESNT',
+        'SXT',
+        'SOLV',
+    ]
 
-        # ── 네트워크/보안/클라우드 ──
-        'ERIC',  # Ericsson
-        'NOK',  # Nokia Corp.
-        'INFN',  # Infinera Corp.
-        'LITE',  # Lumentum Holdings Inc.
-        'FIVN',  # Five9 Inc.
-        'NTNX',  # Nutanix Inc.
-        'PANW',  # Palo Alto Networks Inc.
-
-        # ── 드론/방산 ──
-        'UAVS',  # AgEagle Aerial Systems Inc.
-        'EH',  # EHang Holdings Ltd.
+    # ── 그룹 4: 에너지 & 산업재 (68개) ──
+    PREDEFINED_SYMBOLS_GROUP_4 = [
+        # 에너지
+        'XOM',  # ExxonMobil Corp.
+        'CVX',  # Chevron Corp.
+        'COP',  # ConocoPhillips
+        'OXY',  # Occidental Petroleum Corp.
+        'DVN',  # Devon Energy Corp.
+        'SLB',  # Schlumberger Ltd.
+        'HAL',  # Halliburton Co.
+        'PSX',  # Phillips 66
+        'EOG',  # EOG Resources Inc.
+        'MPC',  # Marathon Petroleum Corp.
+        'HES',  # Hess Corp.
+        'PXD',  # Pioneer Natural Resources Co.
+        'APA',  # Apache Corp.
+        'FANG',  # Diamondback Energy Inc.
+        'OKE',
+        'NEE',  # NextEra Energy Inc.
+        'DUK',  # Duke Energy Corp.
+        'EXC',  # Exelon Corp.
+        'ATO',  # Atmos Energy Corp.
+        'PEG',
+        # 산업재
+        'GE',  # General Electric Co.
+        'BA',  # Boeing Co.
+        'MMM',  # 3M Co.
+        'CAT',  # Caterpillar Inc.
+        'UPS',  # UPS
+        'RTX',  # Raytheon Technologies Corp.
+        'FDX',  # FedEx Corp.
+        'DE',  # Deere & Co.
+        'NOC',  # Northrop Grumman Corp.
+        'LMT',  # Lockheed Martin Corp.
+        'GD',  # General Dynamics Corp.
+        'ETN',  # Eaton Corp.
+        'DOV',  # Dover Corp.
+        'NVR',  # NVR Inc.
+        'IFF',  # International Flavors & Fragrances Inc.
+        'BALL',  # Ball Corp.
+        'WLK',
+        'OC',
+        'KEYS',
+        'FSLR',
+        'FMS',
+        # 자동차
+        'F',  # Ford Motor Co.
+        'GM',  # General Motors Co.
+        # 항공
+        'LUV',  # Southwest Airlines Co.
+        'AAL',  # American Airlines Group Inc.
+        'UAL',
+        'DAL',
+        # 방산/드론
         'KTOS',  # Kratos Defense & Security Solutions Inc.
         'AVAV',  # AeroVironment Inc.
+        'UAVS',  # AgEagle Aerial Systems Inc.
+        'EH',  # EHang Holdings Ltd.
+        'JOBY',  # Joby Aviation Inc.
+        'FTAI',  # Fortress Transportation & Infrastructure Investors
+        'AUR',  # [확인 필요]
+        # 통신
+        'T',  # AT&T Inc.
+        'VZ',  # Verizon Communications Inc.
+        'CHTR',  # Charter Communications Inc.
+        'NWSA',  # News Corp. (Class A)
+        # 기타
+        'OIL',  # [확인 필요]
+        'FLIR',  # FLIR Systems Inc. [현재 Teledyne]
+        'VRSK',  # Verisk Analytics Inc.
+        'CPRT',  # Copart Inc.
+        'TDG',
+        'NTAP',
+    ]
 
-        # ── 양자 컴퓨팅 ──
-        'IONQ',  # IonQ Inc.
-        'RGTI',  # [확인 필요]
-        'QBTS',  # [확인 필요]
-
-        # ── 데이터/소프트웨어 ──
+    # ── 그룹 5: 클라우드/SaaS & 신기술 (66개) ──
+    PREDEFINED_SYMBOLS_GROUP_5 = [
+        # 엔터프라이즈 소프트웨어
+        'CRM',  # Salesforce.com Inc.
+        'ORCL',  # Oracle Corp.
+        'SAP',  # SAP SE
+        'INTU',  # Intuit Inc.
+        'NOW',  # ServiceNow Inc.
+        'ADP',  # Automatic Data Processing Inc.
+        'IBM',  # IBM Corp.
+        'SPLK',  # Splunk Inc.
+        'TEAM',  # Atlassian Corp.
+        'WDAY',  # Workday Inc.
+        'JKHY',  # Jack Henry & Associates Inc.
+        'PAYC',
+        # 클라우드/데이터
+        'SNOW',  # Snowflake Inc.
+        'ZM',  # Zoom Video Communications Inc.
+        'TWLO',  # Twilio Inc.
+        'CRWD',  # CrowdStrike Holdings Inc.
+        'DDOG',  # Datadog Inc.
+        'GTLB',  # GitLab Inc.
         'ESTC',  # Elastic NV
         'DT',  # Dynatrace Inc.
         'PD',  # PagerDuty Inc.
         'AYX',  # Alteryx Inc.
-        'IRBT',  # iRobot Corp.
-        'RBOT',  # [확인 필요]
-        'RWLK',  # [확인 필요]
-        'ZBRA',  # Zebra Technologies Corp.
-        'ABB',  # ABB Ltd.
-
-        # ── AI/소프트웨어 ──
+        'PLTR',  # Palantir Technologies Inc.
+        'PATH',  # UiPath Inc.
+        'UPST',  # Upstart Holdings Inc.
+        # AI/로보틱스
         'BBAI',  # BigBear.ai Holdings Inc.
         'SOUN',  # SoundHound Inc.
         'TER',  # Teradyne Inc.
         'ROK',  # Rockwell Automation Inc.
         'FANUY',  # FANUC Corp.
-        'FARO',  # FARO Technologies Inc.
-
-        # ── [AI / 비전(Vision) / 챗봇 등] ──
+        'IRBT',  # iRobot Corp.
+        'RBOT',  # [확인 필요]
+        'RWLK',  # [확인 필요]
         'LPSN',  # LivePerson Inc.
         'VERI',  # [확인 필요]
         'AMBA',  # Ambarella Inc.
-        'PLTR',  # Palantir Technologies Inc.
         'DTE',  # [확인 필요]
-        'JKHY',  # Jack Henry & Associates Inc.
-
-        # ── [AI 기반 신약개발 / 합성생물학] ──
-        'RXRX',  # Recursion Pharmaceuticals Inc.
-        'EXAI',  # [확인 필요]
-        'DNA',  # Ginkgo Bioworks Inc.
-        'MU',  # Micron Technology Inc.
-        'AMGN',  # Amgen Inc.
-        'MDT',  # Medtronic plc
-        'CHTR',  # Charter Communications Inc.
-        'GD',  # General Dynamics Corp.
-        'LUV',  # Southwest Airlines Co.
-        'MPC',  # Marathon Petroleum Corp.
-        'COP',  # ConocoPhillips
-        'QRVO',  # Qorvo Inc.
-        'CDNS',  # Cadence Design Systems Inc.
-        'BAX',  # Baxter International Inc.
-        'BSX',  # Boston Scientific Corp.
-
-        # ── [자율주행(로보틱스 응용)] ──
-        'AUR',  # [확인 필요]
-        'ETN',  # Eaton Corp.
-        'FTAI',  # Fortress Transportation & Infrastructure Investors
-        'JOBY',  # Joby Aviation Inc.
-        'LULU',  # Lululemon Athletica Inc.
-        'NXPI',  # NXP Semiconductors NV
-        'NWSA',  # News Corp. (Class A)
-        'ON',  # ON Semiconductor Corp.
-        'ROKU',  # Roku Inc.
-        'SEDG',  # SolarEdge Technologies Inc.
-        'SANA',  # Sana Biotechnology Inc.
-        'NEE',  # NextEra Energy Inc.
-        'DUK',  # Duke Energy Corp.
-        'EXC',  # Exelon Corp.
-        'AAL',  # American Airlines Group Inc.
-        'WFC',  # Wells Fargo & Co.
-        'KVUE',  # [확인 필요]
-        'CAG',  # Conagra Brands Inc.
-        'SYY',  # Sysco Corp.
-        'BALL',  # Ball Corp.
-        'VICI',  # VICI Properties Inc.
-        'STT',  # State Street Corp.
-        'SOLV',
-        'CNC',
-        'LNT',
-        'DG',
+        # 게임/메타버스
+        'RBLX',  # Roblox Corp.
+        'U',  # Unity Software Inc.
+        'MTTR',  # Matterport Inc.
+        'WIMI',  # WiMi Hologram Cloud Inc.
+        'VUZI',  # Vuzix Corp.
+        # 양자 컴퓨팅
+        'IONQ',  # IonQ Inc.
+        'RGTI',  # [확인 필요]
+        'QBTS',  # [확인 필요]
+        # 기타 신기술
+        'S',  # [확인 필요]
+        # 추가 항목
         'PAYC',
         'TDG',
         'NCLH',
@@ -2316,11 +2364,11 @@ class stockDataView(APIView):
         'WLK',
         'OC',
         'ESNT',
-        'SXT'
+        'SXT',
     ]
 
-    # ── 소형주 (Small Cap Stocks) ──
-    PREDEFINED_SYMBOLS_SECOND = [
+    # ── 그룹 1: 바이오텍/헬스케어 중심 (52개) ──
+    PREDEFINED_SYMBOLS_GROUP_6 = [
         'RXRX',  # Recursion Pharmaceuticals Inc.
         'TPG',  # TPG Capital? [확인 필요]
         'PLMR',  # [확인 필요]
@@ -2373,6 +2421,10 @@ class stockDataView(APIView):
         'RKT',  # Rocket Companies Inc.
         'IBEX',  # IBEX Ltd.
         'NTST',  # NetScout Systems Inc.
+    ]
+
+    # ── 그룹 2: 테크/소프트웨어 중심 (52개) ──
+    PREDEFINED_SYMBOLS_GROUP_7 = [
         'INBX',  # [확인 필요]
         'HRMY',  # Harmony Biosciences Inc.
         'KYMR',  # Kymera Therapeutics Inc.
@@ -2425,6 +2477,10 @@ class stockDataView(APIView):
         'FLYW',  # [확인 필요]
         'PAY',  # [확인 필요]
         'DLO',  # [확인 필요]
+    ]
+
+    # ── 그룹 3: 엔터프라이즈 소프트웨어 (52개) ──
+    PREDEFINED_SYMBOLS_GROUP_8 = [
         'ZETA',  # Zeta Global Holdings Corp.
         'MNDY',  # Monday.com Ltd.
         'TASK',  # [확인 필요]
@@ -2433,9 +2489,7 @@ class stockDataView(APIView):
         'DOCS',  # Doximity Inc.
         'BWXT',  # BWX Technologies Inc.
         'LYV',  # Live Nation Entertainment Inc.
-        'PARA',  # [확인 필요],
-
-        # ── 새로 추가된 소프트웨어 관련 티커 ──
+        'PARA',  # [확인 필요]
         'SNPS',  # Synopsys Inc.
         'ANSS',  # Ansys Inc.
         'CHKP',  # Check Point Software Technologies Ltd.
@@ -2479,6 +2533,10 @@ class stockDataView(APIView):
         'OKLO',  # Oklo Inc.
         'RKLB',  # [확인 필요]
         'S',  # [확인 필요]
+    ]
+
+    # ── 그룹 4: 소비재/산업재 (52개) ──
+    PREDEFINED_SYMBOLS_GROUP_9 = [
         'SYM',  # Symbotic Inc.
         'SMR',  # [확인 필요]
         'FSLY',  # Fastly Inc.
@@ -2531,6 +2589,10 @@ class stockDataView(APIView):
         'FNF',  # Fidelity National Financial Inc.
         'FIX',  # [확인 필요]
         'GRAB',  # Grab Holdings Inc.
+    ]
+
+    # ── 그룹 5: 글로벌/다각화 (50개) ──
+    PREDEFINED_SYMBOLS_GROUP_10 = [
         'INOD',  # [확인 필요]
         'RIVN',  # Rivian Automotive Inc.
         'SFM',  # [확인 필요]
@@ -2575,9 +2637,8 @@ class stockDataView(APIView):
         'DD',
         'DXCM',
         'IR',
-        'CME'
+        'CME',
     ]
-
 
     # 2021  6월까지 확인완
     @staticmethod
@@ -2759,118 +2820,159 @@ class stockDataView(APIView):
                 out[chunk[0]] = df
         return out
 
-    @method_decorator(cache_page(60 * 5))  # 5분 캐시
-    def get_all_last_data(self, request, symbolList):
-        # 1) 심볼 리스트 포맷
-        raw = (self.PREDEFINED_SYMBOLS if symbolList == 1
-               else self.PREDEFINED_SYMBOLS_SECOND)
-        symbols = [s.replace('-', '.') for s in raw]
-
-        # 2) batch_fetch로 전체(max) 주/월봉 불러오기
-        week_data  = self.batch_fetch(symbols, '1wk', period='max')
-        month_data = self.batch_fetch(symbols, '1mo', period='max')
-
-        # 3) 기간 슬라이스 정의
-        WEEKS = 104
-        MONTHS = 60
-
-        filtered: list[str] = []
-        for sym in symbols:
-            df_w = week_data.get(sym)
-            df_m = month_data.get(sym)
-
-            # 배치에서 누락된 심볼은 개별 history()로 재시도
-            if df_w is None or df_m is None:
-                try:
-                    tmp_w = yf.Ticker(sym).history(period='2y', interval='1wk')
-                    df_w = tmp_w.reset_index() if not tmp_w.empty else None
-                except Exception:
-                    df_w = None
-                try:
-                    tmp_m = yf.Ticker(sym).history(period='5y', interval='1mo')
-                    df_m = tmp_m.reset_index() if not tmp_m.empty else None
-                except Exception:
-                    df_m = None
-
-            # 둘 중 하나라도 없으면 건너뛰기
-            if df_w is None or df_m is None:
-                continue
-
-            # 최근 데이터만 사용
-            df_w = df_w.tail(WEEKS)
-            df_m = df_m.tail(MONTHS)
-
-            # 지표 계산 및 조건 확인
-            last_w = self.calculate_indicators(self.format_stock_data(df_w)).iloc[-1]
-            last_m = self.calculate_indicators(self.format_stock_data(df_m)).iloc[-1]
-
-            if (
-                last_w.RSI > last_w.RSI_signal and
-                last_w.SqueezeColor.lower() in {'lime', 'maroon'} and
-                last_m.SqueezeColor.lower() in {'lime', 'maroon'}
-            ):
-                # 원래 하이픈 포맷으로 복원
-                filtered.append(sym.replace('.', '-'))
-
-        # 4) DB 저장 및 응답
-        StockData.objects.create(symbols=filtered)
-        return Response({"symbols_saved": filtered})
-
+    # @method_decorator(cache_page(60 * 5))  # 5분 캐시
     # def get_all_last_data(self, request, symbolList):
-    #     limit = 500
-    #     intervals = {
-    #         '1day': '1d',
-    #         '1week': '1wk',
-    #         '1month': '1mo'
-    #     }
-    #     if symbolList == 1:
-    #         all_symbols = self.PREDEFINED_SYMBOLS
-    #     elif symbolList == 2:
-    #         all_symbols = self.PREDEFINED_SYMBOLS_SECOND
+    #     # 1) 심볼 리스트 포맷
+    #     raw = (self.PREDEFINED_SYMBOLS if symbolList == 1
+    #            else self.PREDEFINED_SYMBOLS_SECOND)
+    #     symbols = [s.replace('-', '.') for s in raw]
     #
-    #     # all_symbols = self.PREDEFINED_SYMBOLS
-    #     filtered_symbols = []
+    #     # 2) batch_fetch로 전체(max) 주/월봉 불러오기
+    #     week_data  = self.batch_fetch(symbols, '1wk', period='max')
+    #     month_data = self.batch_fetch(symbols, '1mo', period='max')
     #
-    #     try:
-    #         # 병렬 처리 시작
-    #         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    #             futures = {
-    #                 executor.submit(self.get_symbol_status, sym, intervals, limit): sym
-    #                 for sym in all_symbols
-    #             }
-    #             for future in concurrent.futures.as_completed(futures):
-    #                 symbol = futures[future]
-    #                 try:
-    #                     if future.result():  # 조건 만족
-    #                         filtered_symbols.append(symbol)
-    #                 except Exception as e:
-    #                     print(f"Error processing symbol {symbol}: {str(e)}")
+    #     # 3) 기간 슬라이스 정의
+    #     WEEKS = 104
+    #     MONTHS = 60
     #
-    #         # 조건에 맞는 심볼 리스트 저장 ddddd
-    #         if filtered_symbols:
-    #             StockData.objects.create(symbols=filtered_symbols)
-    #             print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
-    #         else:
-    #             StockData.objects.create(symbols=[])
-    #             print('No symbols met the criteria.')
+    #     filtered: list[str] = []
+    #     for sym in symbols:
+    #         df_w = week_data.get(sym)
+    #         df_m = month_data.get(sym)
     #
-    #         # 조건에 맞는 심볼 리스트만 반환
-    #         return Response({"symbols_saved": filtered_symbols})
-    #     except Exception as e:
-    #         return Response(
-    #             {'error': f'An unexpected error occurred: {str(e)}'},
-    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #         )
+    #         # 배치에서 누락된 심볼은 개별 history()로 재시도
+    #         if df_w is None or df_m is None:
+    #             try:
+    #                 tmp_w = yf.Ticker(sym).history(period='2y', interval='1wk')
+    #                 df_w = tmp_w.reset_index() if not tmp_w.empty else None
+    #             except Exception:
+    #                 df_w = None
+    #             try:
+    #                 tmp_m = yf.Ticker(sym).history(period='5y', interval='1mo')
+    #                 df_m = tmp_m.reset_index() if not tmp_m.empty else None
+    #             except Exception:
+    #                 df_m = None
+    #
+    #         # 둘 중 하나라도 없으면 건너뛰기
+    #         if df_w is None or df_m is None:
+    #             continue
+    #
+    #         # 최근 데이터만 사용
+    #         df_w = df_w.tail(WEEKS)
+    #         df_m = df_m.tail(MONTHS)
+    #
+    #         # 지표 계산 및 조건 확인
+    #         last_w = self.calculate_indicators(self.format_stock_data(df_w)).iloc[-1]
+    #         last_m = self.calculate_indicators(self.format_stock_data(df_m)).iloc[-1]
+    #
+    #         if (
+    #             last_w.RSI > last_w.RSI_signal and
+    #             last_w.SqueezeColor.lower() in {'lime', 'maroon'} and
+    #             last_m.SqueezeColor.lower() in {'lime', 'maroon'}
+    #         ):
+    #             # 원래 하이픈 포맷으로 복원
+    #             filtered.append(sym.replace('.', '-'))
+    #
+    #     # 4) DB 저장 및 응답
+    #     StockData.objects.create(symbols=filtered)
+    #     return Response({"symbols_saved": filtered})
+
+    def get_all_last_data(self, request, symbolList):
+        limit = 500
+        intervals = {
+            '1day': '1d',
+            '1week': '1wk',
+            '1month': '1mo'
+        }
+        if symbolList == 1:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_1
+        elif symbolList == 2:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_2
+        elif symbolList == 3:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_3
+        elif symbolList == 4:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_4
+        elif symbolList == 5:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_5
+        elif symbolList == 6:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_6
+        elif symbolList == 7:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_7
+        elif symbolList == 8:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_8
+        elif symbolList == 9:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_9
+        elif symbolList == 10:
+            all_symbols = self.PREDEFINED_SYMBOLS_GROUP_10
+
+
+        # all_symbols = self.PREDEFINED_SYMBOLS
+        filtered_symbols = []
+
+        try:
+            # 병렬 처리 시작
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = {
+                    executor.submit(self.get_symbol_status, sym, intervals, limit): sym
+                    for sym in all_symbols
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    symbol = futures[future]
+                    try:
+                        if future.result():  # 조건 만족
+                            filtered_symbols.append(symbol)
+                    except Exception as e:
+                        print(f"Error processing symbol {symbol}: {str(e)}")
+
+            # 조건에 맞는 심볼 리스트 저장 ddddd
+            if filtered_symbols:
+                StockData.objects.create(symbols=filtered_symbols)
+                print(f'{len(filtered_symbols)} symbols saved to TradingRecord.')
+            else:
+                StockData.objects.create(symbols=[])
+                print('No symbols met the criteria.')
+
+            # 조건에 맞는 심볼 리스트만 반환
+            return Response({"symbols_saved": filtered_symbols})
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @method_decorator(cache_page(60 * 5))  # 5분간 캐시
     def get(self, request):
         all_last = request.GET.get('all_last', 'false').lower() == 'true'
         all_last_second = request.GET.get('all_last_second', 'false').lower() == 'true'
+        all_last_3 = request.GET.get('all_last_3', 'false').lower() == 'true'
+        all_last_4 = request.GET.get('all_last_4', 'false').lower() == 'true'
+        all_last_5 = request.GET.get('all_last_5', 'false').lower() == 'true'
+        all_last_6 = request.GET.get('all_last_6', 'false').lower() == 'true'
+        all_last_7 = request.GET.get('all_last_7', 'false').lower() == 'true'
+        all_last_8 = request.GET.get('all_last_8', 'false').lower() == 'true'
+        all_last_9 = request.GET.get('all_last_9', 'false').lower() == 'true'
+        all_last_10 = request.GET.get('all_last_10', 'false').lower() == 'true'
 
         if all_last:
             return self.get_all_last_data(request, 1)
         elif all_last_second:
             return self.get_all_last_data(request, 2)
+        elif all_last_3:
+            return self.get_all_last_data(request, 3)
+        elif all_last_4:
+            return self.get_all_last_data(request, 4)
+        elif all_last_5:
+            return self.get_all_last_data(request, 5)
+        elif all_last_6:
+            return self.get_all_last_data(request, 6)
+        elif all_last_7:
+            return self.get_all_last_data(request, 7)
+        elif all_last_8:
+            return self.get_all_last_data(request, 8)
+        elif all_last_9:
+            return self.get_all_last_data(request, 9)
+        elif all_last_10:
+            return self.get_all_last_data(request, 10)
         else:
             limit = 1000
             symbol = request.GET.get('symbol', 'AAPL')  # 기본 심볼: AAPL

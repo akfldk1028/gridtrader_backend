@@ -20,6 +20,20 @@ def setup_scalping():
     Schedule.objects.filter(func='scalping.tasks.koreaStockSymbol').delete()
     Schedule.objects.filter(func='scalping.tasks.stockSymbol').delete()
     Schedule.objects.filter(func='scalping.tasks.SecondstockSymbol').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol3').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol4').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol5').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol6').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol7').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol8').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol9').delete()
+    Schedule.objects.filter(func='scalping.tasks.stockSymbol10').delete()
+
+
+
+
+
+
     Schedule.objects.filter(func='scalping.tasks.ChinastockSymbol').delete()
 
 
@@ -53,6 +67,47 @@ def setup_scalping():
             "cron": "30 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
         },
         {
+            "task": "scalping.tasks.stockSymbol3",
+            "base_time": time(23, 32),  # 오후 11시 30분
+            "cron": "32 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol4",
+            "base_time": time(23, 34),  # 오후 11시 30분
+            "cron": "34 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol5",
+            "base_time": time(23, 36),  # 오후 11시 30분
+            "cron": "36 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol6",
+            "base_time": time(23, 38),  # 오후 11시 30분
+            "cron": "38 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol7",
+            "base_time": time(23, 40),  # 오후 11시 30분
+            "cron": "40 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol8",
+            "base_time": time(23, 42),  # 오후 11시 30분
+            "cron": "42 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol9",
+            "base_time": time(23, 44),  # 오후 11시 30분
+            "cron": "44 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+        {
+            "task": "scalping.tasks.stockSymbol10",
+            "base_time": time(23, 46),  # 오후 11시 30분
+            "cron": "46 8,23 * * *"  # 오후 11시 30분부터 12시간 간격
+        },
+
+        {
             "task": "scalping.tasks.ChinastockSymbol",
             "base_time": time(6, 30),  # 오전 6시 30분
             "cron": "30 6/12 * * *"  # 오전 6시 30분부터 12시간 간격
@@ -81,28 +136,6 @@ def setup_scalping():
             repeats=-1  # 무한 반복
         )
 
-    # TASK2: 저녁 11시 30분 및 오전 7시
-    # stock_evening_time = time(23, 30)
-    # stock_evening_datetime = datetime.combine(now.date(), stock_evening_time)
-    #
-    # if stock_evening_datetime < now:
-    #     stock_evening_datetime += timedelta(days=1)
-    # # TASK2 스케줄 설정: 저녁 11시 30분 및 오전 7시
-    # schedule(
-    #     'scalping.tasks.stockSymbol',
-    #     schedule_type=Schedule.DAILY,
-    #     next_run=stock_evening_datetime,
-    #     repeats=-1  # 무한 반복
-    # )
-
-
-
-
-
-
-
-
-
 
     schedule(
         'scalping.tasks.scheduled_filter_and_save',
@@ -122,20 +155,6 @@ def setup_scalping():
     )
 
 
-    # schedule(
-    #     'scalping.tasks.scalping',
-    #     schedule_type=Schedule.MINUTES,  # MINUTES로 변경
-    #     minutes=60,  # 1분마다 실행
-    #     next_run=next_run,
-    #     repeats=-1  # 무한 반복
-    # )
-    # schedule(
-    #     'scalping.tasks.analyze_coins',  # 실행할 함수
-    #     schedule_type=Schedule.MINUTES,   # 분 단위 실행
-    #     minutes=10,                       # 10분마다 실행
-    #     next_run=next_run,               # 다음 실행 시간
-    #     repeats=-1                       # 무한 반복
-    # )
 def ChinastockSymbol():
     """Fetch Bitcoin data with technical indicators from API"""
     import requests
@@ -161,33 +180,6 @@ def ChinastockSymbol():
             session.close()
 
     return None
-
-def SecondstockSymbol():
-    """Fetch Bitcoin data with technical indicators from API"""
-    import requests
-
-    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_second=true"
-    session = requests.Session()
-    for attempt in range(3):
-        try:
-            response = session.get(
-                f"{base_url}",
-                timeout=30,
-                verify=False,
-                headers={'User-Agent': 'Mozilla/5.0'}
-            )
-            response.raise_for_status()
-            return response.json()
-
-        except Exception as e:
-            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
-            if attempt < 3 - 1:
-                continue
-        finally:
-            session.close()
-
-    return None
-
 
 
 def stockSymbol():
@@ -218,6 +210,243 @@ def stockSymbol():
 
 
 
+def SecondstockSymbol():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_second=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+
+
+def stockSymbol3():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_3=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+
+def stockSymbol4():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_4=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+def stockSymbol5():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_5=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+
+def stockSymbol6():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_6=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+def stockSymbol7():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_7=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+def stockSymbol8():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_8=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+def stockSymbol9():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_9=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
+
+def stockSymbol10():
+    """Fetch Bitcoin data with technical indicators from API"""
+    import requests
+
+    base_url = "https://gridtrade.one/api/v1/binanceData/stockData/?all_last_10=true"
+    session = requests.Session()
+    for attempt in range(3):
+        try:
+            response = session.get(
+                f"{base_url}",
+                timeout=30,
+                verify=False,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except Exception as e:
+            print(f"데이터 가져오기 실패 (시도 {attempt + 1}/{3}): {e}")
+            if attempt < 3 - 1:
+                continue
+        finally:
+            session.close()
+
+    return None
 def koreaStockSymbol():
     """Fetch Bitcoin data with technical indicators from API"""
     import requests
